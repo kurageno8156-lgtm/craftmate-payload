@@ -1,0 +1,494 @@
+:root {
+  --bg-main: #0f172a;
+  --bg-panel: #1e293b;
+  --bg-card: #334155;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent-green: #10b981;
+  --accent-blue: #38bdf8;
+  --accent-purple: #a855f7;
+  --accent-red: #ef4444;
+  --accent-yellow: #f59e0b;
+  --border-color: #475569;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  line-height: 1.5;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 16px;
+  gap: 16px;
+}
+
+/* ヘッダー */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--bg-panel);
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mc-icon {
+  font-size: 24px;
+}
+
+.logo h1 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.badge {
+  font-size: 11px;
+  background-color: #0284c7;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  margin-left: 8px;
+  vertical-align: middle;
+  text-transform: uppercase;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.dot.online {
+  background-color: var(--accent-green);
+  box-shadow: 0 0 10px var(--accent-green);
+}
+
+.dot.offline {
+  background-color: var(--accent-red);
+  box-shadow: 0 0 10px var(--accent-red);
+}
+
+.llm-badge {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--accent-blue);
+  font-weight: 500;
+}
+
+/* メイングリッド */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* パネル共通 */
+.panel {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden;
+}
+
+.panel h2 {
+  font-size: 16px;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+}
+
+.panel h3 {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+/* 左カラム: ステータス */
+.status-panel {
+  overflow-y: auto;
+}
+
+.stats-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stat-card {
+  background-color: var(--bg-card);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.stat-label {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.progress-bar {
+  background-color: rgba(0, 0, 0, 0.4);
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.progress-bar.hp .progress-fill { background-color: var(--accent-red); }
+.progress-bar.food .progress-fill { background-color: var(--accent-yellow); }
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: var(--bg-card);
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.info-key {
+  color: var(--text-muted);
+}
+
+.info-value {
+  font-weight: 600;
+  color: var(--accent-blue);
+}
+
+/* 装備 */
+.armor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.armor-slot {
+  background-color: var(--bg-card);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* インベントリ */
+.inventory-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 150px;
+  overflow-y: auto;
+  background-color: var(--bg-card);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.inv-item {
+  background-color: #1e293b;
+  border: 1px solid var(--border-color);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.inv-count {
+  color: var(--accent-yellow);
+  font-weight: bold;
+}
+
+/* エンティティリスト */
+.entities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 130px;
+  overflow-y: auto;
+  background-color: var(--bg-card);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.entity-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background-color: #1e293b;
+}
+
+.entity-item.hostile {
+  border-left: 3px solid var(--accent-red);
+}
+
+.entity-item.player {
+  border-left: 3px solid var(--accent-green);
+}
+
+.empty-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 8px;
+  width: 100%;
+}
+
+/* 右カラム: ReActログ & アクション */
+.action-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.current-task-box {
+  background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+  padding: 12px 16px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.task-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: #bfdbfe;
+}
+
+.btn-cancel {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-cancel:hover {
+  background-color: #dc2626;
+}
+
+.task-content {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* ログコンテナ */
+.logs-container {
+  flex: 1;
+  background-color: #0b1120;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.log-entry {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.log-entry.system {
+  background-color: #1e293b;
+  border-left: 4px solid var(--border-color);
+}
+
+.log-entry.thinking {
+  background-color: #2e1065;
+  border-left: 4px solid var(--accent-purple);
+}
+
+.log-entry.acting {
+  background-color: #0c4a6e;
+  border-left: 4px solid var(--accent-blue);
+}
+
+.log-entry.success {
+  background-color: #064e3b;
+  border-left: 4px solid var(--accent-green);
+}
+
+.log-entry.failure {
+  background-color: #450a0a;
+  border-left: 4px solid var(--accent-red);
+}
+
+.log-entry.finished {
+  background-color: #14532d;
+  border: 1px solid var(--accent-green);
+}
+
+.log-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.log-thought {
+  font-style: italic;
+  color: #ddd6fe;
+}
+
+.log-action {
+  font-family: monospace;
+  font-weight: bold;
+  color: #7dd3fc;
+}
+
+.log-obs {
+  color: #f1f5f9;
+}
+
+/* 入力エリア */
+.command-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quick-commands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quick-btn {
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-btn:hover {
+  background-color: #475569;
+  border-color: var(--accent-blue);
+}
+
+.command-form {
+  display: flex;
+  gap: 8px;
+}
+
+.command-form input {
+  flex: 1;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text-main);
+  font-size: 14px;
+  outline: none;
+}
+
+.command-form input:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.btn-send {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-send:hover {
+  background-color: #1d4ed8;
+}

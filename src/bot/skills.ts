@@ -1,0 +1,664 @@
+﻿import { Bot } from 'mineflayer';
+import { Vec3 } from 'vec3';
+import { ToolCallResult } from '../types.js';
+import pkgPathfinder from 'mineflayer-pathfinder';
+import minecraftData from 'minecraft-data';
+
+const { goals, Movements } = pkgPathfinder;
+
+
+/**
+ * タイムアウト付きPromise実行ヘルパー
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, errorMsg: string): Promise<T> {
+  let timeoutId: NodeJS.Timeout;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(errorMsg));
+    }, ms);
+  });
+
+  return Promise.race([
+    promise.then(res => {
+      clearTimeout(timeoutId);
+      return res;
+    }),
+    timeoutPromise,
+  ]);
+}
+
+export class SkillManager {
+  private bot: Bot;
+  private mcData: any;
+  private isFollowing: boolean = false;
+  private followTarget: string | null = null;
+  private followInterval: NodeJS.Timeout | null = null;
+
+  constructor(bot: Bot) {
+    this.bot = bot;
+    this.bot.once('spawn', () => {
+      this.mcData = minecraftData(this.bot.version);
+    });
+  }
+
+  private getMCData() {
+    if (!this.mcData && this.bot.version) {
+      this.mcData = minecraftData(this.bot.version);
+    }
+    return this.mcData;
+  }
+
+  private getMovements(): any {
+    const movements = new Movements(this.bot);
+    movements.canDig = true;
+    movements.allow1by1towers = false;
+    movements.maxDropDown = 4;
+    return movements;
+  }
+
+  /**
+   * チャット発言
+   */
+  public async chat(message: string): Promise<ToolCallResult> {
+    try {
+      this.bot.chat(message);
+      return { success: true, message: `チャット発言: "${message}"` };
+    } catch (err: any) {
+      return { success: false, message: `チャット送信エラー: ${err.message}` };
+    }
+  }
+
+  /**
+   * 指定プレイヤーの元へ移動
+   */
+  public async goToPlayer(playerName: string): Promise<ToolCallResult> {
+    this.stopFollowing();
+    const targetPlayer = this.bot.players[playerName]?.entity;
+    if (!targetPlayer) {
+      return {
+        success: false,
+        message: `プレイヤー "${playerName}" が見つかりません。近くにいるか確認してください。`,
+      };
+    }
+
+    try {
+      const movements = this.getMovements();
+      this.bot.pathfinder.setMovements(movements);
+      const goal = new goals.GoalNear(
+        targetPlayer.position.x,
+        targetPlayer.position.y,
+        targetPlayer.position.z,
+        2
+      );
+      await withTimeout(this.bot.pathfinder.goto(goal), 20000, `プレイヤー "${playerName}" への移動がタイムアウトしました。`);
+      return {
+        success: true,
+        message: `プレイヤー "${playerName}" の位置 (${Math.round(targetPlayer.position.x)}, ${Math.round(targetPlayer.position.y)}, ${Math.round(targetPlayer.position.z)}) に到着しました。`,
+      };
+    } catch (err: any) {
+      this.bot.pathfinder.stop();
+      return {
+        success: false,
+        message: `プレイヤー "${playerName}" への移動中にエラーが発生しました: ${err.message}`,
+      };
+    }
+  }
+
+  /**
+   * 指定座標へ移動
+   */
+  public async goToCoordinates(x: number, y: number, z: number, range: number = 1): Promise<ToolCallResult> {
+    this.stopFollowing();
+    try {
+      const movements = this.getMovements();
+      this.bot.pathfinder.setMovements(movements);
+      const goal = new goals.GoalNear(x, y, z, Math.max(1, range));
+      await withTimeout(this.bot.pathfinder.goto(goal), 20000, `座標 (${x}, ${y}, ${z}) への移動がタイムアウトしました。`);
+      return {
+        success: true,
+        message: `指定座標 (${x}, ${y}, ${z}) の近くに到着しました。現在地: (${Math.round(this.bot.entity.position.x)}, ${Math.round(this.bot.entity.position.y)}, ${Math.round(this.bot.entity.position.z)})`,
+      };
+    } catch (err: any) {
+      this.bot.pathfinder.stop();
+      return {
+        success: false,
+        message: `座標 (${x}, ${y}, ${z}) への移動に失敗しました: ${err.message}`,
+      };
+    }
+  }
+
+  /**
+   * プレイヤーを追従開始
+   */
+  public async followPlayer(playerName: string): Promise<ToolCallResult> {
+    this.stopFollowing();
+    const targetPlayer = this.bot.players[playerName]?.entity;
+    if (!targetPlayer) {
+      return {
+        success: false,
+        message: `プレイヤー "${playerName}" が見つかりません。`,
+      };
+    }
+
+    this.isFollowing = true;
+    this.followTarget = playerName;
+
+    const movements = this.getMovements();
+    this.bot.pathfinder.setMovements(movements);
+    const goal = new goals.GoalFollow(targetPlayer, 3);
+    this.bot.pathfinder.setGoal(goal, true);
+
+    return {
+      success: true,
+      message: `プレイヤー "${playerName}" の追従を開始しました。`,
+    };
+  }
+
+  /**
+   * 移動や追従の停止
+   */
+  public async stopActions(): Promise<ToolCallResult> {
+    this.stopFollowing();
+    this.bot.pathfinder.stop();
+    if ((this.bot as any).pvp) {
+      (this.bot as any).pvp.stop();
+    }
+    return { success: true, message: 'すべての行動・移動を停止しました。' };
+  }
+
+  private stopFollowing() {
+    this.isFollowing = false;
+    this.followTarget = null;
+    if (this.followInterval) {
+      clearInterval(this.followInterval);
+      this.followInterval = null;
+    }
+  }
+
+  /**
+   * 最適なツールを装備
+   */
+  private async equipToolForBlock(block: any): Promise<void> {
+    if (!block) return;
+    const inv = this.bot.inventory.items();
+    const bName = block.name.toLowerCase();
+
+    let bestTool = null;
+    if (bName.includes('log') || bName.includes('wood') || bName.includes('plank')) {
+      bestTool = inv.find(i => i.name.includes('axe') && !i.name.includes('pickaxe'));
+    } else if (bName.includes('stone') || bName.includes('ore') || bName.includes('cobble') || bName.includes('iron') || bName.includes('gold') || bName.includes('diamond')) {
+      // 強いツルハシ優先 (netherite > diamond > iron > stone > wooden)
+      bestTool = inv.find(i => i.name === 'netherite_pickaxe')
+        || inv.find(i => i.name === 'diamond_pickaxe')
+        || inv.find(i => i.name === 'iron_pickaxe')
+        || inv.find(i => i.name === 'stone_pickaxe')
+        || inv.find(i => i.name === 'wooden_pickaxe')
+        || inv.find(i => i.name.includes('pickaxe'));
+    } else if (bName.includes('dirt') || bName.includes('sand') || bName.includes('gravel')) {
+      bestTool = inv.find(i => i.name.includes('shovel'));
+    }
+
+    if (bestTool) {
+      try {
+        await this.bot.equip(bestTool, 'hand');
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  /**
+   * 採掘に必要なツールのチェック（前提ツールの確認）
+   */
+  private checkToolRequirement(blockName: string): { ok: boolean; reason?: string } {
+    const inv = this.bot.inventory.items();
+    const b = blockName.toLowerCase();
+
+    const hasPickaxe = (types: string[]) => inv.some(i => types.some(t => i.name.includes(t)));
+
+    // ダイヤ/金/赤石鉱石 -> 鉄ツルハシ以上必要
+    if (b.includes('diamond') || b.includes('gold') || b.includes('redstone') || b.includes('emerald')) {
+      if (!hasPickaxe(['iron_pickaxe', 'diamond_pickaxe', 'netherite_pickaxe'])) {
+        return {
+          ok: false,
+          reason: `"${blockName}" の採掘には「鉄のツルハシ (iron_pickaxe)」以上が必要です。現在の持ち物に鉄のツルハシがありません。まずは石のツルハシで鉄鉱石を採掘・製錬して鉄のツルハシを作成してください。`,
+        };
+      }
+    }
+
+    // 鉄鉱石/ラピス -> 石ツルハシ以上必要
+    if (b.includes('iron_ore') || b.includes('iron') || b.includes('lapis')) {
+      if (!hasPickaxe(['stone_pickaxe', 'iron_pickaxe', 'diamond_pickaxe', 'netherite_pickaxe'])) {
+        return {
+          ok: false,
+          reason: `"${blockName}" の採掘には「石のツルハシ (stone_pickaxe)」以上が必要です。素手や木のツルハシではアイテムがドロップしません。まずは木を掘って木のツルハシを作り、丸石を3個掘って石のツルハシをクラフトしてください。`,
+        };
+      }
+    }
+
+    // 石/丸石/石炭鉱石 -> 木ツルハシ以上必要
+    if (b.includes('stone') || b.includes('cobble') || b.includes('coal_ore') || b.includes('deepslate')) {
+      if (!hasPickaxe(['pickaxe'])) {
+        return {
+          ok: false,
+          reason: `"${blockName}" の採掘には「ツルハシ (pickaxe)」が必要です。素手ではドロップしません。まずは木（原木）を掘って木材と作業台を作り、木のツルハシ(wooden_pickaxe)をクラフトしてください。`,
+        };
+      }
+    }
+
+    return { ok: true };
+  }
+
+  /**
+   * 指定ブロックの探索・採掘・ドロップアイテム回収
+   */
+  public async mineAndCollect(blockName: string, count: number = 1): Promise<ToolCallResult> {
+    this.stopFollowing();
+    const mcData = this.getMCData();
+    if (!mcData) return { success: false, message: 'Minecraftデータが初期化されていません。' };
+
+    // 1. ツールの前提条件チェック
+    const toolCheck = this.checkToolRequirement(blockName);
+    if (!toolCheck.ok) {
+      return { success: false, message: toolCheck.reason! };
+    }
+
+    // 2. ブロックIDのマッピング
+    let targetBlockIds: number[] = [];
+    const lowerName = blockName.toLowerCase().replace(/ /g, '_');
+
+    if (lowerName === 'wood' || lowerName === 'log' || lowerName === '木' || lowerName === '原木') {
+      const logs = Object.values(mcData.blocksByName)
+        .filter((b: any) => b.name.endsWith('_log') || b.name.endsWith('_stem') || b.name === 'log')
+        .map((b: any) => b.id);
+      targetBlockIds = logs;
+    } else if (lowerName === 'iron_ore' || lowerName === 'iron' || lowerName === '鉄鉱石') {
+      const ores = Object.values(mcData.blocksByName)
+        .filter((b: any) => b.name === 'iron_ore' || b.name === 'deepslate_iron_ore')
+        .map((b: any) => b.id);
+      targetBlockIds = ores;
+    } else if (lowerName === 'coal_ore' || lowerName === 'coal' || lowerName === '石炭') {
+      const ores = Object.values(mcData.blocksByName)
+        .filter((b: any) => b.name === 'coal_ore' || b.name === 'deepslate_coal_ore')
+        .map((b: any) => b.id);
+      targetBlockIds = ores;
+    } else if (lowerName === 'diamond_ore' || lowerName === 'diamond' || lowerName === 'ダイヤ') {
+      const ores = Object.values(mcData.blocksByName)
+        .filter((b: any) => b.name === 'diamond_ore' || b.name === 'deepslate_diamond_ore')
+        .map((b: any) => b.id);
+      targetBlockIds = ores;
+    } else if (lowerName === 'stone' || lowerName === '石' || lowerName === '丸石') {
+      const stones = Object.values(mcData.blocksByName)
+        .filter((b: any) => b.name === 'stone' || b.name === 'cobblestone' || b.name === 'andesite' || b.name === 'diorite' || b.name === 'granite')
+        .map((b: any) => b.id);
+      targetBlockIds = stones;
+    } else {
+      const block = mcData.blocksByName[lowerName];
+      if (block) {
+        targetBlockIds = [block.id];
+      } else {
+        const matches = Object.values(mcData.blocksByName)
+          .filter((b: any) => b.name.includes(lowerName))
+          .map((b: any) => b.id);
+        if (matches.length > 0) {
+          targetBlockIds = matches;
+        } else {
+          return { success: false, message: `ブロック "${blockName}" がMinecraft内に見つかりません。` };
+        }
+      }
+    }
+
+    let collected = 0;
+    const maxScanRadius = 32;
+
+    for (let i = 0; i < count; i++) {
+      // 周囲から見つかるブロックを探索
+      const block = this.bot.findBlock({
+        matching: targetBlockIds,
+        maxDistance: maxScanRadius,
+      });
+
+      if (!block) {
+        if (collected > 0) {
+          return {
+            success: true,
+            message: `半径${maxScanRadius}m以内にこれ以上 "${blockName}" が見つかりませんでした。${collected}個採掘しました。`,
+          };
+        }
+        return {
+          success: false,
+          message: `半径${maxScanRadius}m以内に "${blockName}" が見つかりませんでした。視界が開けた場所や洞窟を探すか、別の行動をとってください。`,
+        };
+      }
+
+      await this.equipToolForBlock(block);
+
+      try {
+        // タイムアウト付きで採掘＆回収を実行 (1個あたり15秒上限)
+        await withTimeout((async () => {
+          if ((this.bot as any).collectBlock) {
+            await (this.bot as any).collectBlock.collect(block);
+          } else {
+            const movements = this.getMovements();
+            this.bot.pathfinder.setMovements(movements);
+            await this.bot.pathfinder.goto(new goals.GoalLookAtBlock(block.position, this.bot.world));
+            await this.bot.dig(block);
+            // 落ちたアイテムの回収
+            await this.bot.pathfinder.goto(new goals.GoalNear(block.position.x, block.position.y, block.position.z, 1));
+          }
+        })(), 15000, `"${blockName}" の採掘・回収がタイムアウトしました。`);
+
+        collected++;
+      } catch (err: any) {
+        console.warn(`[Mine] Error collecting block at step ${i + 1}:`, err.message);
+        this.bot.pathfinder.stop();
+        if (collected > 0) {
+          return {
+            success: true,
+            message: `${collected}個採掘後に中断しました: ${err.message}`,
+          };
+        }
+        return {
+          success: false,
+          message: `"${blockName}" の採掘中にエラーまたはタイムアウトが発生しました: ${err.message}`,
+        };
+      }
+    }
+
+    return {
+      success: true,
+      message: `ブロック "${blockName}" を ${collected} 個採掘・回収しました。`,
+    };
+  }
+
+  /**
+   * アイテムのクラフト
+   */
+  public async craftItem(itemName: string, count: number = 1): Promise<ToolCallResult> {
+    const mcData = this.getMCData();
+    if (!mcData) return { success: false, message: 'Minecraftデータが初期化されていません。' };
+
+    let lowerName = itemName.toLowerCase().replace(/ /g, '_');
+
+    // 一般的な日本語名やエイリアスのマッピング
+    if (lowerName === '作業台' || lowerName === 'crafting_table') lowerName = 'crafting_table';
+    if (lowerName === '棒' || lowerName === 'stick') lowerName = 'stick';
+    if (lowerName === '木材' || lowerName === 'planks') lowerName = 'oak_planks';
+    if (lowerName === '木のツルハシ' || lowerName === 'wood_pickaxe') lowerName = 'wooden_pickaxe';
+    if (lowerName === '石のツルハシ' || lowerName === 'stone_pickaxe') lowerName = 'stone_pickaxe';
+    if (lowerName === '鉄のツルハシ' || lowerName === 'iron_pickaxe') lowerName = 'iron_pickaxe';
+    if (lowerName === 'かまど' || lowerName === 'furnace') lowerName = 'furnace';
+
+    const item = mcData.itemsByName[lowerName] || mcData.blocksByName[lowerName];
+    if (!item) {
+      return { success: false, message: `アイテム "${itemName}" が見つかりません。` };
+    }
+
+    // 周囲の作業台を探索 (3x3レシピ用)
+    let craftingTableBlock = this.bot.findBlock({
+      matching: mcData.blocksByName.crafting_table?.id,
+      maxDistance: 4,
+    });
+
+    let recipes = (this.bot as any).recipesFor(item.id, null, 1, craftingTableBlock);
+
+    // 作業台が近くにないが、インベントリに作業台を持っている場合は設置を試みる
+    if ((!recipes || recipes.length === 0) && !craftingTableBlock) {
+      const tableItem = this.bot.inventory.items().find(i => i.name === 'crafting_table');
+      if (tableItem) {
+        console.log('[Craft] Placing crafting table from inventory...');
+        await this.placeBlock('crafting_table');
+        craftingTableBlock = this.bot.findBlock({
+          matching: mcData.blocksByName.crafting_table?.id,
+          maxDistance: 4,
+        });
+        recipes = (this.bot as any).recipesFor(item.id, null, 1, craftingTableBlock);
+      }
+    }
+
+    if (!recipes || recipes.length === 0) {
+      const tableRecipes = (this.bot as any).recipesFor(item.id, null, 1, true);
+      if (tableRecipes && tableRecipes.length > 0) {
+        return {
+          success: false,
+          message: `"${itemName}" のクラフトには「作業台 (crafting_table)」が必要です。まずは木材4個で作業台を作り、設置してください。`,
+        };
+      }
+      return {
+        success: false,
+        message: `"${itemName}" のクラフト素材が不足しています。必要な素材を確認して採掘・収集してください。`,
+      };
+    }
+
+    try {
+      const recipe = recipes[0];
+      await withTimeout(
+        this.bot.craft(recipe, count, craftingTableBlock || undefined),
+        10000,
+        `"${itemName}" のクラフト処理がタイムアウトしました。`
+      );
+      return {
+        success: true,
+        message: `"${itemName}" を ${count} 個クラフトしました。`,
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: `"${itemName}" のクラフトに失敗しました: ${err.message}`,
+      };
+    }
+  }
+
+  /**
+   * ブロックを設置
+   */
+  public async placeBlock(blockName: string, x?: number, y?: number, z?: number): Promise<ToolCallResult> {
+    const mcData = this.getMCData();
+    if (!mcData) return { success: false, message: 'Minecraftデータが初期化されていません。' };
+
+    const lowerName = blockName.toLowerCase().replace(/ /g, '_');
+    const blockItem = mcData.itemsByName[lowerName] || mcData.blocksByName[lowerName];
+    if (!blockItem) {
+      return { success: false, message: `アイテム "${blockName}" が見つかりません。` };
+    }
+
+    const itemInInv = this.bot.inventory.items().find(i => i.type === blockItem.id);
+    if (!itemInInv) {
+      return { success: false, message: `インベントリに "${blockName}" を持っていません。` };
+    }
+
+    try {
+      await this.bot.equip(itemInInv, 'hand');
+
+      let targetPos: Vec3;
+      if (x !== undefined && y !== undefined && z !== undefined) {
+        targetPos = new Vec3(x, y, z);
+      } else {
+        // 目の前の地面 (足元の1つ前)
+        targetPos = this.bot.entity.position.offset(0, -1, 1).floored();
+      }
+
+      const referenceBlock = this.bot.blockAt(targetPos);
+      if (!referenceBlock) {
+        return { success: false, message: '設置先の基準ブロックが見つかりません。' };
+      }
+
+      await withTimeout(
+        this.bot.placeBlock(referenceBlock, new Vec3(0, 1, 0)),
+        5000,
+        `"${blockName}" の設置がタイムアウトしました。`
+      );
+      return {
+        success: true,
+        message: `"${blockName}" を設置しました。`,
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: `"${blockName}" の設置に失敗しました: ${err.message}`,
+      };
+    }
+  }
+
+  /**
+   * 指定モブまたはターゲットを攻撃
+   */
+  public async attackTarget(targetName: string): Promise<ToolCallResult> {
+    this.stopFollowing();
+    const lowerName = targetName.toLowerCase();
+
+    let targetEntity = null;
+    for (const id in this.bot.entities) {
+      const entity = this.bot.entities[id];
+      if (!entity || entity === this.bot.entity) continue;
+
+      const eName = (entity.name || entity.username || '').toLowerCase();
+      if (eName.includes(lowerName) || (lowerName === 'mob' && entity.type === 'mob')) {
+        targetEntity = entity;
+        break;
+      }
+    }
+
+    if (!targetEntity) {
+      return {
+        success: false,
+        message: `周囲にターゲット "${targetName}" が見つかりません。`,
+      };
+    }
+
+    try {
+      const weapon = this.bot.inventory.items().find(i =>
+        i.name.includes('sword') || i.name.includes('axe')
+      );
+      if (weapon) {
+        await this.bot.equip(weapon, 'hand');
+      }
+    } catch {
+      // ignore
+    }
+
+    try {
+      if ((this.bot as any).pvp) {
+        (this.bot as any).pvp.attack(targetEntity);
+        return {
+          success: true,
+          message: `ターゲット "${targetName}" への攻撃を開始しました。`,
+        };
+      } else {
+        await this.bot.attack(targetEntity);
+        return {
+          success: true,
+          message: `ターゲット "${targetName}" を攻撃しました。`,
+        };
+      }
+    } catch (err: any) {
+      return {
+        success: false,
+        message: `攻撃中にエラーが発生しました: ${err.message}`,
+      };
+    }
+  }
+
+  /**
+   * プレイヤーにアイテムを渡す
+   */
+  public async giveItemsToPlayer(playerName: string, itemName: string, count: number = 1): Promise<ToolCallResult> {
+    const targetPlayer = this.bot.players[playerName]?.entity;
+    if (!targetPlayer) {
+      return { success: false, message: `プレイヤー "${playerName}" が見つかりません。` };
+    }
+
+    const moveRes = await this.goToPlayer(playerName);
+    if (!moveRes.success) return moveRes;
+
+    const mcData = this.getMCData();
+    const lowerName = itemName.toLowerCase().replace(/ /g, '_');
+    const itemInfo = mcData?.itemsByName[lowerName] || mcData?.blocksByName[lowerName];
+
+    const invItem = this.bot.inventory.items().find(i =>
+      i.name.toLowerCase() === lowerName || (itemInfo && i.type === itemInfo.id)
+    );
+
+    if (!invItem) {
+      return { success: false, message: `インベントリに "${itemName}" がありません。` };
+    }
+
+    try {
+      await this.bot.lookAt(targetPlayer.position.offset(0, 1.5, 0));
+      const dropCount = Math.min(count, invItem.count);
+      await this.bot.toss(invItem.type, null, dropCount);
+      return {
+        success: true,
+        message: `プレイヤー "${playerName}" に "${itemName}" を ${dropCount} 個渡しました。`,
+      };
+    } catch (err: any) {
+      return { success: false, message: `アイテムを渡すのに失敗しました: ${err.message}` };
+    }
+  }
+
+  /**
+   * アイテムを捨てる
+   */
+  public async dropItem(itemName: string, count: number = 1): Promise<ToolCallResult> {
+    const lowerName = itemName.toLowerCase().replace(/ /g, '_');
+    const invItem = this.bot.inventory.items().find(i =>
+      i.name.toLowerCase().includes(lowerName)
+    );
+
+    if (!invItem) {
+      return { success: false, message: `インベントリに "${itemName}" がありません。` };
+    }
+
+    try {
+      const dropCount = Math.min(count, invItem.count);
+      await this.bot.toss(invItem.type, null, dropCount);
+      return {
+        success: true,
+        message: `"${itemName}" を ${dropCount} 個その場に捨てました。`,
+      };
+    } catch (err: any) {
+      return { success: false, message: `アイテムを捨てるのに失敗しました: ${err.message}` };
+    }
+  }
+
+  /**
+   * 装備品を着用
+   */
+  public async equipItem(itemName: string, destination: 'hand' | 'head' | 'torso' | 'legs' | 'feet' = 'hand'): Promise<ToolCallResult> {
+    const lowerName = itemName.toLowerCase().replace(/ /g, '_');
+    const item = this.bot.inventory.items().find(i => i.name.toLowerCase().includes(lowerName));
+
+    if (!item) {
+      return { success: false, message: `インベントリに "${itemName}" がありません。` };
+    }
+
+    try {
+      await this.bot.equip(item, destination);
+      return {
+        success: true,
+        message: `"${itemName}" を ${destination} に装備しました。`,
+      };
+    } catch (err: any) {
+      return { success: false, message: `装備に失敗しました: ${err.message}` };
+    }
+  }
+
+  /**
+   * 食事を摂る
+   */
+  public async eat(): Promise<ToolCallResult> {
+    try {
+      if ((this.bot as any).autoEat) {
+        await (this.bot as any).autoEat.eat();
+        return { success: true, message: '食事をして満腹度を回復しました。' };
+      }
+      return { success: false, message: 'auto-eat プラグインが無効です。' };
+    } catch (err: any) {
+      return { success: false, message: `食事に失敗しました: ${err.message}` };
+    }
+  }
+}
+
+
+
+
