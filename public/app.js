@@ -1,4 +1,4 @@
-const socket = io();
+﻿const socket = io();
 
 // DOM要素
 const connStatus = document.getElementById('connection-status');
@@ -48,8 +48,13 @@ socket.on('connect', () => {
 });
 
 socket.on('status', (status) => {
-  updateConnectionUI(true);
-  renderStatus(status);
+  if (status && Object.prototype.hasOwnProperty.call(status, 'status')) {
+    updateConnectionUI(status.connected);
+    renderStatus(status.status);
+  } else {
+    updateConnectionUI(true);
+    renderStatus(status);
+  }
 });
 
 socket.on('disconnect', () => {
@@ -215,3 +220,155 @@ document.querySelectorAll('.quick-btn').forEach(btn => {
     }
   });
 });
+
+const settingsModal = document.getElementById('settings-modal');
+const settingsForm = document.getElementById('settings-form');
+const settingsMessage = document.getElementById('settings-message');
+const providerSelect = document.getElementById('setting-provider');
+const apiKeyInput = document.getElementById('setting-api-key');
+
+function showSettingsMessage(message, state) {
+  settingsMessage.textContent = message || '';
+  settingsMessage.className = `settings-message${state ? ` ${state}` : ''}`;
+}
+
+function setConnectionState(name, connected) {
+  const dot = document.getElementById(`${name}-health-dot`);
+  const label = document.getElementById(`${name}-health-label`);
+  dot.className = `connection-dot ${connected ? 'online' : 'offline'}`;
+  label.textContent = connected ? 'Connected' : 'Disconnected';
+  label.style.color = connected ? 'var(--accent-green)' : 'var(--accent-red)';
+}
+
+async function refreshHealth() {
+  try {
+    const response = await fetch('/api/health', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Health check failed');
+    const health = await response.json();
+    setConnectionState('minecraft', health.minecraftConnected);
+    setConnectionState('ai', health.aiConnected);
+    document.getElementById('health-checked').textContent = `Checked ${new Date().toLocaleTimeString()}`;
+  } catch {
+    setConnectionState('minecraft', false);
+    setConnectionState('ai', false);
+    document.getElementById('health-checked').textContent = 'Status unavailable';
+  }
+}
+
+async function loadSettings() {
+  try {
+    const response = await fetch('/api/settings', { cache: 'no-store' });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not load settings');
+    document.getElementById('setting-mc-port').value = data.mcPort || 25565;
+    document.getElementById('setting-username').value = data.username || 'AIMAN';
+    document.getElementById('setting-web-port').value = data.webPort || 3000;
+    providerSelect.value = data.provider || 'gemini';
+    apiKeyInput.value = '';
+    document.getElementById('api-key-help').textContent = data.apiKeyConfigured
+      ? 'A key is saved. Enter a new one only if you want to replace it.'
+      : 'No key is saved for this provider. Ollama does not need an API key.';
+    showSettingsMessage('', '');
+    await refreshHealth();
+  } catch (error) {
+    showSettingsMessage(error.message || 'Could not load settings.', 'error');
+  }
+}
+
+document.getElementById('btn-settings').addEventListener('click', () => {
+  settingsModal.hidden = false;
+  document.getElementById('setting-mc-port').focus();
+  loadSettings();
+});
+document.getElementById('btn-close-settings').addEventListener('click', () => { settingsModal.hidden = true; });
+settingsModal.querySelector('[data-close-settings]').addEventListener('click', () => { settingsModal.hidden = true; });
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !settingsModal.hidden) settingsModal.hidden = true;
+});
+providerSelect.addEventListener('change', () => {
+  const needsKey = providerSelect.value !== 'ollama';
+  document.getElementById('api-key-help').textContent = needsKey
+    ? 'Leave blank to keep the saved key; enter a key only to add or replace it.'
+    : 'Ollama runs locally and does not need an API key.';
+});
+
+settingsForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const saveButton = document.getElementById('btn-save-settings');
+  saveButton.disabled = true;
+  showSettingsMessage('Saving settings…');
+  const payload = {
+    mcPort: Number(document.getElementById('setting-mc-port').value),
+    username: document.getElementById('setting-username').value.trim(),
+    webPort: Number(document.getElementById('setting-web-port').value),
+    provider: providerSelect.value,
+    aiApiKey: apiKeyInput.value,
+  };
+  try {
+    const response = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Could not save settings');
+    apiKeyInput.value = '';
+    showSettingsMessage(result.reconnecting ? 'Saved. Minecraft is reconnecting with the new settings.' : 'Settings saved.', 'success');
+    if (result.webPortChanged) {
+      showSettingsMessage('Saved. Reopening the dashboard on its new port…', 'success');
+      setTimeout(() => { window.location.href = `${window.location.protocol}//${window.location.hostname}:${result.webPort}`; }, 1200);
+    }
+    refreshHealth();
+    fetch('/api/status').then(response => response.json()).then(data => {
+      if (data.config) llmInfo.textContent = `🧠 AI Brain: ${data.config.provider.toUpperCase()} (${data.config.model})`;
+    }).catch(() => {});
+  } catch (error) {
+    showSettingsMessage(error.message || 'Could not save settings.', 'error');
+  } finally {
+    saveButton.disabled = false;
+  }
+});
+
+document.getElementById('btn-reconnect').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    const response = await fetch('/api/reconnect', { method: 'POST' });
+    if (!response.ok) throw new Error('Minecraft reconnect failed');
+    showSettingsMessage('Minecraft reconnect started.', 'success');
+  } catch (error) {
+    showSettingsMessage(error.message, 'error');
+  } finally {
+    button.disabled = false;
+    refreshHealth();
+  }
+});
+
+document.getElementById('btn-ai-restart').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    const response = await fetch('/api/ai/restart', { method: 'POST' });
+    if (!response.ok) throw new Error('AI client restart failed');
+    showSettingsMessage('AI client reloaded with the saved provider settings.', 'success');
+    refreshHealth();
+  } catch (error) {
+    showSettingsMessage(error.message, 'error');
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.getElementById('btn-download-logs').addEventListener('click', () => {
+  const lines = Array.from(logsContainer.querySelectorAll('.log-entry')).map(entry => entry.innerText.trim());
+  const blob = new Blob([lines.join('\n\n') + '\n'], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `craftmate-logs-${new Date().toISOString().slice(0, 10)}.txt`;
+  link.click();
+  URL.revokeObjectURL(url);
+});
+
+refreshHealth();
+setInterval(refreshHealth, 10000);

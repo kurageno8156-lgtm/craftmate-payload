@@ -19,9 +19,12 @@ Minecraft内でプレイヤーが自然言語（日本語）で指示を出す�
   - Botの体力・満腹度・座標・装備・インベントリ・周囲Mobをグラフィカルに表示
   - AIの思考ログ（ReAct Timeline）をリアルタイム表示
   - Web画面から直接指示の送信やタスク中断が可能
+  - 右上の「⚙️ Settings」からMinecraft/Webポート、Bot名、Gemini/Groq/Ollamaを変更できます。設定は `.env` に保存され、Minecraft接続とAIクライアントに反映されます。
+  - MinecraftとAIプロバイダーの接続状態を確認し、再接続、AIクライアント再読み込み、ログのダウンロードを行えます。
 - **⚡ マルチLLMプロバイダ対応**:
   - **Google Gemini API** (無料＆超高速・推奨)
   - **OpenAI API** (GPT-4o 等)
+  - **Groq** (GroqCloud API)
   - **Ollama** (ローカルLLM完全オフライン動作)
 
 ---

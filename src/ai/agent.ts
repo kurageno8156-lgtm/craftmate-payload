@@ -216,6 +216,10 @@ ${currentEnv}
     this.emit('taskCancelled');
   }
 
+  public restartAIClient(): void {
+    this.llmClient = new LLMClient(this.botWrapper.config);
+  }
+
   public getCurrentTask(): string | null {
     return this.currentTask;
   }

@@ -21,6 +21,7 @@ export class MinecraftBot extends EventEmitter {
   public config: BotConfig;
   public isConnected: boolean = false;
   private reconnectTimeout: NodeJS.Timeout | null = null;
+  private suppressReconnect = false;
 
   constructor(config: BotConfig) {
     super();
@@ -54,6 +55,31 @@ export class MinecraftBot extends EventEmitter {
     }
   }
 
+  public reconnect(): void {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
+    this.suppressReconnect = true;
+    this.isConnected = false;
+    const oldBot = this.bot;
+    if (oldBot) {
+      this.bot = undefined as unknown as Bot;
+      try {
+        oldBot.quit();
+      } catch (err) {
+        console.warn('[Bot] Could not close the previous connection cleanly:', err);
+      }
+    }
+
+    this.reconnectTimeout = setTimeout(() => {
+      this.reconnectTimeout = null;
+      this.suppressReconnect = false;
+      this.start();
+    }, 500);
+  }
+
   private setupPlugins(): void {
     this.bot.loadPlugin(pathfinder);
     this.bot.loadPlugin(collectBlock);
@@ -69,13 +95,16 @@ export class MinecraftBot extends EventEmitter {
   }
 
   private setupEvents(): void {
+    const connectedBot = this.bot;
     this.bot.on('login', () => {
+      if (this.bot !== connectedBot) return;
       console.log(`[Bot] Logged into server successfully as ${this.bot.username}`);
       this.isConnected = true;
       this.emit('connected');
     });
 
     this.bot.once('spawn', () => {
+      if (this.bot !== connectedBot) return;
       console.log('[Bot] Bot spawned in the world!');
 
       // 自動防衛（自衛ガード）開始
@@ -96,6 +125,7 @@ export class MinecraftBot extends EventEmitter {
 
     // プレイヤーからのチャット受信
     this.bot.on('chat', (username: string, message: string) => {
+      if (this.bot !== connectedBot) return;
       if (username === this.bot.username) return; // 自分の発言は無視
 
       console.log(`[Chat] <${username}>: ${message}`);
@@ -112,24 +142,28 @@ export class MinecraftBot extends EventEmitter {
 
     // 体力・満腹度変化
     this.bot.on('health', () => {
+      if (this.bot !== connectedBot) return;
       this.emit('statusUpdate', this.getStatus());
     });
 
     // 死亡時
     this.bot.on('death', () => {
+      if (this.bot !== connectedBot) return;
       console.warn('[Bot] Bot died! Respawning...');
       this.emit('botDied');
     });
 
     // エラーハンドリング (未接続時や切断時)
     this.bot.on('error', (err: any) => {
+      if (this.bot !== connectedBot) return;
       console.warn(`[Bot] Connection Notice: ${err.message || '接続待ち中...'}`);
       this.isConnected = false;
       this.emit('botError', err);
-      this.scheduleReconnect();
+      if (!this.suppressReconnect) this.scheduleReconnect();
     });
 
     this.bot.on('kicked', (reason: any) => {
+      if (this.bot !== connectedBot) return;
       let reasonStr = reason;
       try {
         if (typeof reason === 'object') {
@@ -141,14 +175,15 @@ export class MinecraftBot extends EventEmitter {
       console.warn(`[Bot] ⚠️ Kicked from server: ${reasonStr}`);
       this.isConnected = false;
       this.emit('kicked', reasonStr);
-      this.scheduleReconnect();
+      if (!this.suppressReconnect) this.scheduleReconnect();
     });
 
     this.bot.on('end', (reason: any) => {
+      if (this.bot !== connectedBot) return;
       console.log(`[Bot] Disconnected from server (Reason: ${reason || 'normal'}).`);
       this.isConnected = false;
       this.emit('disconnected');
-      this.scheduleReconnect();
+      if (!this.suppressReconnect) this.scheduleReconnect();
     });
   }
 

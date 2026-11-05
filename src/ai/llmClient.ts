@@ -91,6 +91,11 @@ export class LLMClient {
       this.geminiAi = new GoogleGenerativeAI(this.config.geminiApiKey);
     } else if (this.config.llmProvider === 'openai' && this.config.openaiApiKey) {
       this.openAiClient = new OpenAI({ apiKey: this.config.openaiApiKey });
+    } else if (this.config.llmProvider === 'groq' && this.config.groqApiKey) {
+      this.openAiClient = new OpenAI({
+        apiKey: this.config.groqApiKey,
+        baseURL: 'https://api.groq.com/openai/v1',
+      });
     } else if (this.config.llmProvider === 'ollama') {
       this.openAiClient = new OpenAI({
         baseURL: this.config.ollamaBaseUrl,
@@ -311,11 +316,20 @@ export class LLMClient {
   ): Promise<LLMResponse> {
     if (!this.openAiClient) {
       if (this.config.llmProvider === 'openai' && !this.config.openaiApiKey) {
-        throw new Error('OPENAI_API_KEY が設定されていません。.env ファイルを確認してください。');
+        throw new Error('OPENAI_API_KEY is not configured. Check the .env file.');
+      }
+      if (this.config.llmProvider === 'groq' && !this.config.groqApiKey) {
+        throw new Error('GROQ_API_KEY is not configured. Check the .env file.');
       }
       this.openAiClient = new OpenAI({
-        apiKey: this.config.openaiApiKey || 'ollama',
-        baseURL: this.config.llmProvider === 'ollama' ? this.config.ollamaBaseUrl : undefined,
+        apiKey: this.config.llmProvider === 'groq'
+          ? this.config.groqApiKey || ''
+          : this.config.openaiApiKey || 'ollama',
+        baseURL: this.config.llmProvider === 'ollama'
+          ? this.config.ollamaBaseUrl
+          : this.config.llmProvider === 'groq'
+            ? 'https://api.groq.com/openai/v1'
+            : undefined,
       });
     }
 
@@ -336,7 +350,11 @@ export class LLMClient {
       })),
     ];
 
-    const modelName = this.config.llmProvider === 'ollama' ? this.config.ollamaModel : this.config.openaiModel;
+    const modelName = this.config.llmProvider === 'ollama'
+      ? this.config.ollamaModel
+      : this.config.llmProvider === 'groq'
+        ? this.config.groqModel
+        : this.config.openaiModel;
 
     const completion = await this.openAiClient.chat.completions.create({
       model: modelName,
