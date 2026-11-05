@@ -53,6 +53,16 @@ export class WebServer {
   }
 
   private setupRoutes(): void {
+    this.app.get('/api/version', (req, res) => {
+      try {
+        const packagePath = path.resolve(__dirname, '../../package.json');
+        const packageInfo = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+        res.json({ version: String(packageInfo.version || '0.0.0') });
+      } catch {
+        res.status(500).json({ error: 'Could not read the application version.' });
+      }
+    });
+
     this.app.get('/api/status', (req, res) => {
       const status = this.botWrapper.getStatus(
         this.agent.getCurrentTask(),

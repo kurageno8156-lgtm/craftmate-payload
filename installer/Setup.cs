@@ -4,6 +4,8 @@ using System.Drawing;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
@@ -64,9 +66,9 @@ namespace CraftMateSetup
         private CheckBox _chkAgree, _chkLaunch;
         private ProgressBar _progressBar;
 
-        private const string CurrentVersion = "1.0.0";
+        private const string CurrentVersion = "1.3.0";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.2.0/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.0/app_payload.zip";
 
         public InstallerForm(string lang)
         {
@@ -97,14 +99,14 @@ namespace CraftMateSetup
 
             // インストール先
             _lblPath = new Label();
-            _lblPath.Text = _lang == "ja" ? "インストール先フォルダ:" : "Install Folder:";
+            _lblPath.Text = _lang == "ja" ? "インストール先の親フォルダー:" : "Install Base Folder:";
             _lblPath.Location = new Point(20, 90);
             _lblPath.AutoSize = true;
 
             _txtPath = new TextBox();
             _txtPath.Location = new Point(20, 115);
             _txtPath.Width = 450;
-            _txtPath.Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "CraftMate");
+            _txtPath.Text = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
 
             _btnBrowse = new Button();
             _btnBrowse.Text = _lang == "ja" ? "参照..." : "Browse...";
@@ -234,7 +236,16 @@ namespace CraftMateSetup
         {
             try
             {
-                string target = _txtPath.Text.Trim();
+                string installRoot = _txtPath.Text.Trim();
+                if (string.IsNullOrEmpty(installRoot))
+                {
+                    throw new InvalidOperationException("Choose an installation base folder.");
+                }
+                installRoot = Path.GetFullPath(installRoot);
+                string folderName = Path.GetFileName(installRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+                string target = string.Equals(folderName, "CraftMate", StringComparison.OrdinalIgnoreCase)
+                    ? installRoot
+                    : Path.Combine(installRoot, "CraftMate");
                 Directory.CreateDirectory(target);
                 string tempZip = Path.GetTempFileName();
 
@@ -273,45 +284,66 @@ namespace CraftMateSetup
                         }
                     }
                 }
-                                File.Delete(tempZip);
+                File.Delete(tempZip);
+                InstallEmbeddedUninstaller(target);
+
+                try
+                {
+                    string desktopDirectory = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                    string programsDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Programs);
+                    string startMenuFolder = Path.Combine(programsDirectory, "CraftMate");
+                    Directory.CreateDirectory(startMenuFolder);
+                    string executable = Path.Combine(target, "CraftMate.exe");
+                    CreateShortcut(Path.Combine(desktopDirectory, "CraftMate.lnk"), executable, target);
+                    CreateShortcut(Path.Combine(startMenuFolder, "CraftMate.lnk"), executable, target);
+                }
+                catch (Exception shortcutError)
+                {
+                    Invoke(new Action(delegate { _txtLog.AppendText("Shortcut creation warning: " + shortcutError.Message + "\r\n"); }));
+                }
 
                 // =====================================================
-                // Windowsの「アプリと機能」に登録（システムアプリ化）
+                // Windowsの「インストールされているアプリ」に登録
                 // =====================================================
                 try
                 {
                     string uninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\CraftMate";
                     using (RegistryKey key = Registry.CurrentUser.CreateSubKey(uninstallKey))
                     {
-                        if (key != null)
+                        if (key == null)
                         {
-                            key.SetValue("DisplayName", "CraftMate - Minecraft AI Agent");
-                            key.SetValue("DisplayVersion", "1.2.0");
-                            key.SetValue("Publisher", "CraftMate Team");
-                            key.SetValue("InstallLocation", target);
-
-                            // アイコンのパス（インストール先のapp.icoを指定）
-                            string iconPath = Path.Combine(target, "app.ico");
-                            if (File.Exists(iconPath)) {
-                                key.SetValue("DisplayIcon", iconPath);
-                            }
-
-                            // アンインストーラーのパス
-                            string uninstaller = Path.Combine(target, "Uninstall.exe");
-                            if (File.Exists(uninstaller)) {
-                                key.SetValue("UninstallString", uninstaller);
-                            }
-
-                            // 推定サイズ（KB単位）
-                            try {
-                                long size = 0;
-                                foreach (FileInfo f in new DirectoryInfo(target).GetFiles("*", SearchOption.AllDirectories)) size += f.Length;
-                                key.SetValue("EstimatedSize", (int)(size / 1024), RegistryValueKind.DWord);
-                            } catch { }
-
-                            key.SetValue("NoModify", 1, RegistryValueKind.DWord);
-                            key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
+                            throw new InvalidOperationException("Could not create the CraftMate uninstall registry key.");
                         }
+
+                        string uninstaller = Path.Combine(target, "Uninstall.exe");
+                        string iconPath = Path.Combine(target, "public", "app.ico");
+                        long sizeBytes = 0;
+                        try
+                        {
+                            foreach (FileInfo file in new DirectoryInfo(target).GetFiles("*", SearchOption.AllDirectories))
+                            {
+                                sizeBytes += file.Length;
+                            }
+                        }
+                        catch (Exception sizeError)
+                        {
+                            Invoke(new Action(delegate { _txtLog.AppendText("Size estimate warning: " + sizeError.Message + "\r\n"); }));
+                        }
+
+                        int estimatedSizeKb = (int)Math.Min(int.MaxValue, Math.Ceiling(sizeBytes / 1024.0));
+                        key.SetValue("DisplayName", "CraftMate - Minecraft AI Agent", RegistryValueKind.String);
+                        key.SetValue("DisplayVersion", CurrentVersion, RegistryValueKind.String);
+                        key.SetValue("Publisher", "CraftMate Team", RegistryValueKind.String);
+                        key.SetValue("InstallLocation", target, RegistryValueKind.String);
+                        key.SetValue("UninstallString", "\"" + uninstaller + "\"", RegistryValueKind.String);
+                        key.SetValue("DisplayIcon", iconPath, RegistryValueKind.String);
+                        key.SetValue("EstimatedSize", estimatedSizeKb, RegistryValueKind.DWord);
+                        key.SetValue("NoModify", 1, RegistryValueKind.DWord);
+                        key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
+
+                        // Stale registrations may have hidden the app from Windows Settings.
+                        key.DeleteValue("SystemComponent", false);
+                        key.Flush();
                     }
                 }
                 catch (Exception ex) {
@@ -339,6 +371,50 @@ namespace CraftMateSetup
             finally
             {
                 Invoke(new Action(delegate { _btnInstall.Enabled = true; _chkAgree.Enabled = true; }));
+            }
+        }
+
+        private static void CreateShortcut(string shortcutPath, string targetPath, string workingDirectory)
+        {
+            Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+            if (shellType == null)
+            {
+                throw new InvalidOperationException("Windows Script Host is unavailable.");
+            }
+
+            object shell = Activator.CreateInstance(shellType);
+            object shortcut = null;
+            try
+            {
+                shortcut = shellType.InvokeMember("CreateShortcut", BindingFlags.InvokeMethod, null, shell, new object[] { shortcutPath });
+                Type shortcutType = shortcut.GetType();
+                shortcutType.InvokeMember("TargetPath", BindingFlags.SetProperty, null, shortcut, new object[] { targetPath });
+                shortcutType.InvokeMember("WorkingDirectory", BindingFlags.SetProperty, null, shortcut, new object[] { workingDirectory });
+                shortcutType.InvokeMember("Description", BindingFlags.SetProperty, null, shortcut, new object[] { "CraftMate - Minecraft AI Agent" });
+                shortcutType.InvokeMember("IconLocation", BindingFlags.SetProperty, null, shortcut, new object[] { Path.Combine(workingDirectory, "public", "app.ico") + ",0" });
+                shortcutType.InvokeMember("Save", BindingFlags.InvokeMethod, null, shortcut, null);
+            }
+            finally
+            {
+                if (shortcut != null && Marshal.IsComObject(shortcut)) Marshal.ReleaseComObject(shortcut);
+                if (Marshal.IsComObject(shell)) Marshal.ReleaseComObject(shell);
+            }
+        }
+
+        private static void InstallEmbeddedUninstaller(string targetDirectory)
+        {
+            using (Stream resource = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("CraftMate.Uninstall.exe"))
+            {
+                if (resource == null)
+                {
+                    throw new InvalidOperationException("The uninstaller is missing from the setup package.");
+                }
+
+                string uninstallerPath = Path.Combine(targetDirectory, "Uninstall.exe");
+                using (FileStream output = new FileStream(uninstallerPath, FileMode.Create, FileAccess.Write))
+                {
+                    resource.CopyTo(output);
+                }
             }
         }
     }

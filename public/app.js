@@ -359,6 +359,50 @@ document.getElementById('btn-ai-restart').addEventListener('click', async event 
   }
 });
 
+function compareVersions(left, right) {
+  const parse = version => {
+    const match = String(version).replace(/^v/i, '').match(/^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/);
+    if (!match) throw new Error(`Unrecognized version: ${version}`);
+    return match.slice(1, 4).map(Number);
+  };
+  const a = parse(left);
+  const b = parse(right);
+  for (let index = 0; index < 3; index += 1) {
+    if (a[index] > b[index]) return 1;
+    if (a[index] < b[index]) return -1;
+  }
+  return 0;
+}
+
+document.getElementById('btn-check-updates').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  showSettingsMessage('Checking for updates…');
+  try {
+    const [versionResponse, releaseResponse] = await Promise.all([
+      fetch('/api/version', { cache: 'no-store' }),
+      fetch('https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest', {
+        headers: { Accept: 'application/vnd.github+json' },
+        cache: 'no-store',
+      }),
+    ]);
+    if (!versionResponse.ok) throw new Error('Could not determine the current version.');
+    if (!releaseResponse.ok) throw new Error('Could not check GitHub releases.');
+    const [current, latest] = await Promise.all([versionResponse.json(), releaseResponse.json()]);
+    const latestVersion = String(latest.tag_name || '').replace(/^v/i, '');
+    if (!latestVersion) throw new Error('The latest GitHub release has no version tag.');
+    if (compareVersions(latestVersion, current.version) > 0) {
+      showSettingsMessage(`新しいバージョン v${latestVersion} があります`, 'success');
+    } else {
+      showSettingsMessage(`You're up to date (v${current.version}).`, 'success');
+    }
+  } catch (error) {
+    showSettingsMessage(error.message || 'Could not check for updates.', 'error');
+  } finally {
+    button.disabled = false;
+  }
+});
+
 document.getElementById('btn-download-logs').addEventListener('click', () => {
   const lines = Array.from(logsContainer.querySelectorAll('.log-entry')).map(entry => entry.innerText.trim());
   const blob = new Blob([lines.join('\n\n') + '\n'], { type: 'text/plain;charset=utf-8' });
