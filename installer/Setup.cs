@@ -208,9 +208,9 @@ namespace CraftMateSetup
         private ProgressBar _progressBar;
         private PictureBox _picAppIcon;
 
-        private const string CurrentVersion = "1.3.7";
+        private const string CurrentVersion = "1.3.8";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.7/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.8/app_payload.zip";
 
         public InstallerForm(string lang)
         {
@@ -486,6 +486,7 @@ namespace CraftMateSetup
                     Invoke(new Action(delegate { _txtLog.AppendText("Registry error: " + ex.Message + "\r\n"); }));
                 }
 
+                bool launchAfterInstall = false;
                 Invoke(new Action(delegate {
                     _lblStatus.Text = _lang == "ja" ? "インストール完了" : "Installation Complete";
                     _progressBar.Value = 100;
@@ -493,13 +494,33 @@ namespace CraftMateSetup
 
                     if (_chkLaunch.Checked)
                     {
-                        string exe = Path.Combine(target, "CraftMate.exe");
-                        if (File.Exists(exe)) System.Diagnostics.Process.Start(exe);
+                        DialogResult answer = MessageBox.Show(
+                            this,
+                            "CraftMateのインストールが完了しました。OKを押すとアプリを起動します。",
+                            "CraftMate",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+                        launchAfterInstall = answer == DialogResult.OK;
                     }
-                    MessageBox.Show(_lang == "ja" ? "インストールが完了しました。" : "Installation completed.", "Complete");
-                    Application.Exit();
-                    Environment.Exit(0);
+                    else
+                    {
+                        MessageBox.Show(
+                            _lang == "ja" ? "CraftMateのインストールが完了しました。" : "CraftMate installation is complete.",
+                            "CraftMate",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+                    }
                 }));
+
+                if (launchAfterInstall)
+                {
+                    Invoke(new Action(delegate { _txtLog.AppendText(">>> Starting local dashboard server...\r\n"); }));
+                    StartInstalledDashboard(target);
+                    Invoke(new Action(delegate { _txtLog.AppendText(">>> Dashboard opened.\r\n"); }));
+                }
+
+                Invoke(new Action(delegate { Application.Exit(); }));
+                Environment.Exit(0);
             }
             catch (Exception ex)
             {
@@ -508,6 +529,73 @@ namespace CraftMateSetup
             finally
             {
                 Invoke(new Action(delegate { _btnInstall.Enabled = true; }));
+            }
+        }
+
+        private static void StartInstalledDashboard(string targetDirectory)
+        {
+            string nodePath = Path.Combine(targetDirectory, "node.exe");
+            string entryPoint = Path.Combine(targetDirectory, "dist", "index.js");
+            string launcherPath = Path.Combine(targetDirectory, "CraftMate.exe");
+            if (!File.Exists(nodePath) || !File.Exists(entryPoint) || !File.Exists(launcherPath))
+            {
+                throw new FileNotFoundException("The installed dashboard runtime is incomplete.");
+            }
+
+            if (!IsDashboardReady())
+            {
+                System.Diagnostics.ProcessStartInfo serverInfo = new System.Diagnostics.ProcessStartInfo();
+                serverInfo.FileName = nodePath;
+                serverInfo.Arguments = "\"dist\\index.js\"";
+                serverInfo.WorkingDirectory = targetDirectory;
+                serverInfo.UseShellExecute = false;
+                serverInfo.CreateNoWindow = true;
+                serverInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+                using (System.Diagnostics.Process serverProcess = System.Diagnostics.Process.Start(serverInfo))
+                {
+                    if (serverProcess == null)
+                    {
+                        throw new InvalidOperationException("Could not start the local dashboard server.");
+                    }
+                }
+            }
+
+            bool ready = false;
+            for (int attempt = 0; attempt < 24; attempt++)
+            {
+                if (IsDashboardReady())
+                {
+                    ready = true;
+                    break;
+                }
+                Thread.Sleep(500);
+            }
+
+            if (!ready)
+            {
+                throw new InvalidOperationException("The dashboard server did not become ready within 12 seconds.");
+            }
+
+            System.Diagnostics.ProcessStartInfo launcherInfo = new System.Diagnostics.ProcessStartInfo(launcherPath);
+            launcherInfo.WorkingDirectory = targetDirectory;
+            launcherInfo.UseShellExecute = true;
+            System.Diagnostics.Process.Start(launcherInfo);
+        }
+
+        private static bool IsDashboardReady()
+        {
+            try
+            {
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://localhost:3000/api/status");
+                request.Timeout = 500;
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                {
+                    return response.StatusCode == HttpStatusCode.OK;
+                }
+            }
+            catch
+            {
+                return false;
             }
         }
 

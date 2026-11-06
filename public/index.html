@@ -151,6 +151,7 @@
           <label class="settings-field"><span>Bot name</span><input id="setting-username" name="username" type="text" maxlength="16" value="AIMAN" required><small>1–16 letters, numbers, or underscores</small></label>
           <label class="settings-field"><span>Web server port</span><input id="setting-web-port" name="webPort" type="number" min="1" max="65535" value="3000" required><small>Default: 3000</small></label>
           <label class="settings-field"><span>AI provider</span><select id="setting-provider" name="provider"><option value="gemini">Google Gemini</option><option value="groq">Groq</option><option value="ollama">Ollama (local)</option><option value="openai">OpenAI</option></select></label>
+          <label class="settings-field"><span>Model</span><select id="setting-model" name="model" required></select><small>Choose the model used by the selected provider.</small></label>
           <label class="settings-field settings-field-wide"><span>Provider API key <em>(optional)</em></span><input id="setting-api-key" name="aiApiKey" type="password" autocomplete="new-password" placeholder="Leave blank to keep the saved key"><small id="api-key-help">Your key stays on this server and is never displayed.</small></label>
         </div>
         <div id="settings-message" class="settings-message" role="status" aria-live="polite"></div>

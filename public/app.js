@@ -225,7 +225,26 @@ const settingsModal = document.getElementById('settings-modal');
 const settingsForm = document.getElementById('settings-form');
 const settingsMessage = document.getElementById('settings-message');
 const providerSelect = document.getElementById('setting-provider');
+const modelSelect = document.getElementById('setting-model');
 const apiKeyInput = document.getElementById('setting-api-key');
+const modelsByProvider = {
+  gemini: ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'],
+  groq: ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'openai/gpt-oss-120b'],
+  ollama: ['llama3.1', 'qwen3', 'deepseek-r1'],
+  openai: ['gpt-4o', 'gpt-4o-mini'],
+};
+
+function populateModelOptions(provider, selectedModel) {
+  const models = [...(modelsByProvider[provider] || modelsByProvider.gemini)];
+  if (selectedModel && !models.includes(selectedModel)) models.unshift(selectedModel);
+  modelSelect.replaceChildren(...models.map(model => {
+    const option = document.createElement('option');
+    option.value = model;
+    option.textContent = model;
+    return option;
+  }));
+  modelSelect.value = selectedModel && models.includes(selectedModel) ? selectedModel : models[0];
+}
 
 function showSettingsMessage(message, state) {
   settingsMessage.textContent = message || '';
@@ -264,6 +283,7 @@ async function loadSettings() {
     document.getElementById('setting-username').value = data.username || 'AIMAN';
     document.getElementById('setting-web-port').value = data.webPort || 3000;
     providerSelect.value = data.provider || 'gemini';
+    populateModelOptions(providerSelect.value, data.model);
     apiKeyInput.value = '';
     document.getElementById('api-key-help').textContent = data.apiKeyConfigured
       ? 'A key is saved. Enter a new one only if you want to replace it.'
@@ -286,6 +306,7 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !settingsModal.hidden) settingsModal.hidden = true;
 });
 providerSelect.addEventListener('change', () => {
+  populateModelOptions(providerSelect.value);
   const needsKey = providerSelect.value !== 'ollama';
   document.getElementById('api-key-help').textContent = needsKey
     ? 'Leave blank to keep the saved key; enter a key only to add or replace it.'
@@ -302,6 +323,7 @@ settingsForm.addEventListener('submit', async event => {
     username: document.getElementById('setting-username').value.trim(),
     webPort: Number(document.getElementById('setting-web-port').value),
     provider: providerSelect.value,
+    model: modelSelect.value,
     aiApiKey: apiKeyInput.value,
   };
   try {

@@ -12,6 +12,14 @@ import * as fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const MODEL_ENV_KEYS = {
+  gemini: 'GEMINI_MODEL',
+  groq: 'GROQ_MODEL',
+  ollama: 'OLLAMA_MODEL',
+  openai: 'OPENAI_MODEL',
+} as const;
+type AIProvider = keyof typeof MODEL_ENV_KEYS;
+
 export class WebServer {
   private app: express.Express;
   private server: http.Server;
@@ -94,15 +102,16 @@ export class WebServer {
         username: config.mcUsername,
         webPort: this.port,
         provider: config.llmProvider,
+        model: this.getModelName(),
         apiKeyConfigured: this.isProviderConfigured(),
       });
     });
 
     this.app.post('/api/settings', (req, res) => {
-      const { mcPort, username, webPort, provider, aiApiKey } = req.body || {};
+      const { mcPort, username, webPort, provider, model, aiApiKey } = req.body || {};
       const parsedMcPort = Number(mcPort);
       const parsedWebPort = Number(webPort);
-      const providers = ['gemini', 'groq', 'ollama', 'openai'] as const;
+      const providers = Object.keys(MODEL_ENV_KEYS) as AIProvider[];
 
       if (!Number.isInteger(parsedMcPort) || parsedMcPort < 1 || parsedMcPort > 65535) {
         return res.status(400).json({ error: 'Minecraft port must be between 1 and 65535.' });
@@ -113,8 +122,13 @@ export class WebServer {
       if (typeof username !== 'string' || !/^[A-Za-z0-9_]{1,16}$/.test(username.trim())) {
         return res.status(400).json({ error: 'Bot name must be 1–16 letters, numbers, or underscores.' });
       }
-      if (!providers.includes(provider)) {
+      if (typeof provider !== 'string' || !providers.includes(provider as AIProvider)) {
         return res.status(400).json({ error: 'Choose Gemini, Groq, Ollama, or OpenAI.' });
+      }
+      const selectedProvider = provider as AIProvider;
+      const selectedModel = typeof model === 'string' ? model.trim() : '';
+      if (!/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(selectedModel)) {
+        return res.status(400).json({ error: 'Choose a valid model for the selected provider.' });
       }
       if (aiApiKey !== undefined && (typeof aiApiKey !== 'string' || aiApiKey.length > 512 || /[\r\n]/.test(aiApiKey))) {
         return res.status(400).json({ error: 'The API key is invalid.' });
@@ -127,10 +141,11 @@ export class WebServer {
         MC_PORT: String(parsedMcPort),
         MC_USERNAME: username.trim(),
         WEB_PORT: String(parsedWebPort),
-        LLM_PROVIDER: provider,
+        LLM_PROVIDER: selectedProvider,
+        [MODEL_ENV_KEYS[selectedProvider]]: selectedModel,
       };
 
-      const keyName = provider === 'gemini' ? 'GEMINI_API_KEY' : provider === 'groq' ? 'GROQ_API_KEY' : provider === 'openai' ? 'OPENAI_API_KEY' : '';
+      const keyName = selectedProvider === 'gemini' ? 'GEMINI_API_KEY' : selectedProvider === 'groq' ? 'GROQ_API_KEY' : selectedProvider === 'openai' ? 'OPENAI_API_KEY' : '';
       const trimmedKey = typeof aiApiKey === 'string' ? aiApiKey.trim() : '';
       if (keyName && trimmedKey) updates[keyName] = trimmedKey;
 
@@ -144,16 +159,20 @@ export class WebServer {
       config.mcPort = parsedMcPort;
       config.mcUsername = username.trim();
       config.webPort = parsedWebPort;
-      config.llmProvider = provider;
+      config.llmProvider = selectedProvider;
+      if (selectedProvider === 'gemini') config.geminiModel = selectedModel;
+      if (selectedProvider === 'groq') config.groqModel = selectedModel;
+      if (selectedProvider === 'ollama') config.ollamaModel = selectedModel;
+      if (selectedProvider === 'openai') config.openaiModel = selectedModel;
       if (keyName && trimmedKey) {
-        if (provider === 'gemini') config.geminiApiKey = trimmedKey;
-        if (provider === 'groq') config.groqApiKey = trimmedKey;
-        if (provider === 'openai') config.openaiApiKey = trimmedKey;
+        if (selectedProvider === 'gemini') config.geminiApiKey = trimmedKey;
+        if (selectedProvider === 'groq') config.groqApiKey = trimmedKey;
+        if (selectedProvider === 'openai') config.openaiApiKey = trimmedKey;
       }
       this.agent.restartAIClient();
       if (minecraftChanged) this.botWrapper.reconnect();
 
-      res.json({ success: true, reconnecting: minecraftChanged, webPortChanged: portChanged, webPort: parsedWebPort });
+      res.json({ success: true, reconnecting: minecraftChanged, webPortChanged: portChanged, webPort: parsedWebPort, provider: selectedProvider, model: selectedModel });
       if (portChanged) {
         setTimeout(() => this.changePort(parsedWebPort), 300);
       }
