@@ -5,6 +5,8 @@ import pkgPathfinder from 'mineflayer-pathfinder';
 import minecraftData from 'minecraft-data';
 
 const { goals, Movements } = pkgPathfinder;
+const HUNTABLE_ANIMALS = new Set(['cow', 'pig', 'chicken', 'sheep', 'rabbit', 'goat']);
+const HUNTABLE_HOSTILES = new Set(['zombie', 'skeleton', 'spider', 'cave_spider', 'drowned', 'husk', 'stray', 'slime', 'silverfish', 'phantom', 'pillager']);
 
 
 /**
@@ -498,6 +500,127 @@ export class SkillManager {
         message: `"${blockName}" の設置に失敗しました: ${err.message}`,
       };
     }
+  }
+
+  /**
+   * 周囲の食料動物または一般的な敵対Mobを狩り、落としたアイテムを回収
+   */
+  public async huntMob(maxTargets: number = 3, targetType: 'animals' | 'hostiles' | 'any' = 'any'): Promise<ToolCallResult> {
+    this.stopFollowing();
+    if (!this.bot.entity) return { success: false, message: 'Botがワールド内にいないため狩りを開始できません。' };
+
+    const limit = Math.max(1, Math.min(5, Math.floor(Number(maxTargets) || 3)));
+    const allowedType = targetType === 'animals' || targetType === 'hostiles' ? targetType : 'any';
+    const attempted = new Set<number>();
+    const killed: string[] = [];
+    const before = new Map<string, number>();
+    for (const item of this.bot.inventory.items()) before.set(item.name, (before.get(item.name) || 0) + item.count);
+
+    const pvp = (this.bot as any).pvp;
+    if (!pvp || typeof pvp.attack !== 'function') {
+      return { success: false, message: '戦闘スキルが利用できません。' };
+    }
+
+    for (let count = 0; count < limit; count += 1) {
+      if ((this.bot.health ?? 20) <= 5) break;
+      const candidates = Object.values(this.bot.entities).filter((entity: any) => {
+        if (!entity || entity === this.bot.entity || entity.type !== 'mob' || !entity.position || attempted.has(entity.id)) return false;
+        const name = String(entity.name || '').toLowerCase();
+        const isAnimal = HUNTABLE_ANIMALS.has(name);
+        const isHostile = HUNTABLE_HOSTILES.has(name);
+        if (allowedType === 'animals' && !isAnimal) return false;
+        if (allowedType === 'hostiles' && !isHostile) return false;
+        if (allowedType === 'any' && !isAnimal && !isHostile) return false;
+        return this.bot.entity.position.distanceTo(entity.position) <= 24;
+      }) as any[];
+      candidates.sort((left, right) => this.bot.entity.position.distanceTo(left.position) - this.bot.entity.position.distanceTo(right.position));
+      const target = candidates[0];
+      if (!target) break;
+      attempted.add(target.id);
+
+      try {
+        const weaponOrder = ['netherite_sword', 'diamond_sword', 'iron_sword', 'stone_sword', 'wooden_sword', 'netherite_axe', 'diamond_axe', 'iron_axe', 'stone_axe', 'wooden_axe'];
+        const inventory = this.bot.inventory.items();
+        const weapon = weaponOrder.map(name => inventory.find(item => item.name === name)).find(Boolean);
+        if (weapon) await this.bot.equip(weapon, 'hand');
+        this.bot.pathfinder.setMovements(this.getMovements());
+
+        const wasKilled = await new Promise<boolean>(resolve => {
+          let settled = false;
+          const finish = (result: boolean) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            clearInterval(checkTarget);
+            this.bot.removeListener('entityDead', onEntityDead);
+            resolve(result);
+          };
+          const onEntityDead = (entity: any) => {
+            if (entity?.id === target.id) finish(true);
+          };
+          const timeout = setTimeout(() => finish(false), 20000);
+          const checkTarget = setInterval(() => {
+            if (!this.bot.entity || (this.bot.health ?? 20) <= 4) return finish(false);
+            const currentTarget = this.bot.entities[target.id];
+            if (!currentTarget || currentTarget.health === 0) finish(currentTarget?.health === 0);
+            else if (this.bot.entity.position.distanceTo(currentTarget.position) > 32) finish(false);
+          }, 300);
+          this.bot.on('entityDead', onEntityDead);
+          try { Promise.resolve(pvp.attack(target)).catch(() => finish(false)); }
+          catch { finish(false); }
+        });
+
+        try { await pvp.stop(); } catch { }
+        this.bot.pathfinder.stop();
+        if (!wasKilled) break;
+        killed.push(String(target.name || 'mob'));
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await this.collectNearbyHuntDrops();
+      } catch (error) {
+        try { await pvp.stop(); } catch { }
+        this.bot.pathfinder.stop();
+        const message = error instanceof Error ? error.message : String(error);
+        const collected = this.describeInventoryGain(before);
+        return { success: killed.length > 0, message: `狩りを中断しました (${message})。討伐: ${killed.join(', ') || 'なし'}。${collected}` };
+      }
+    }
+
+    const collected = this.describeInventoryGain(before);
+    if (killed.length === 0) {
+      const reason = (this.bot.health ?? 20) <= 5 ? '体力が少ないため安全のため中断しました。' : '近くに狩猟対象がいないか、制限時間内に倒せませんでした。';
+      return { success: false, message: `${reason} ${collected}` };
+    }
+    return { success: true, message: `狩りを完了しました。討伐: ${killed.join(', ')}。${collected}` };
+  }
+
+  private async collectNearbyHuntDrops(): Promise<void> {
+    for (let pass = 0; pass < 6 && this.bot.entity; pass += 1) {
+      const drops = Object.values(this.bot.entities).filter((entity: any) =>
+        entity && entity.name === 'item' && entity.position && this.bot.entity.position.distanceTo(entity.position) <= 12
+      ) as any[];
+      drops.sort((left, right) => this.bot.entity!.position.distanceTo(left.position) - this.bot.entity!.position.distanceTo(right.position));
+      const drop = drops[0];
+      if (!drop) return;
+      try {
+        this.bot.pathfinder.setMovements(this.getMovements());
+        await withTimeout(this.bot.pathfinder.goto(new goals.GoalNear(drop.position.x, drop.position.y, drop.position.z, 1)), 8000, 'ドロップ回収への移動がタイムアウトしました。');
+        await new Promise(resolve => setTimeout(resolve, 900));
+      } catch {
+        this.bot.pathfinder.stop();
+        return;
+      }
+    }
+  }
+
+  private describeInventoryGain(before: Map<string, number>): string {
+    const gained: string[] = [];
+    const current = new Map<string, number>();
+    for (const item of this.bot.inventory.items()) current.set(item.name, (current.get(item.name) || 0) + item.count);
+    for (const [name, count] of current) {
+      const difference = count - (before.get(name) || 0);
+      if (difference > 0) gained.push(`${name} x${difference}`);
+    }
+    return gained.length ? `回収: ${gained.join(', ')}` : '回収できたドロップはありません。';
   }
 
   /**

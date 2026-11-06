@@ -111,16 +111,34 @@ export class MinecraftBot extends EventEmitter {
       this.guard.start();
       console.log('[Bot] 🛡️ Auto-Defense Guard system activated (常時自衛ガード有効)');
 
-      // 自動食事設定
-      if (this.config.autoEat && (this.bot as any).autoEat) {
-        (this.bot as any).autoEat.options = {
-          priority: 'foodPoints',
-          startAt: 14,
-          bannedFood: ['rotten_flesh', 'spider_eye', 'poisonous_potato', 'pufferfish'],
-        };
+      // 空腹度15以下で安全なインベントリ食料を自動で食べる
+      const eater = (this.bot as any).autoEat;
+      if (eater) {
+        if (this.config.autoEat) {
+          eater.options.priority = 'foodPoints';
+          eater.options.startAt = 15;
+          eater.options.bannedFood = ['rotten_flesh', 'spider_eye', 'poisonous_potato', 'pufferfish', 'chicken'];
+          if (typeof eater.enable === 'function') eater.enable();
+          console.log('[Bot] Auto-eat enabled (starts at food level 15).');
+        } else {
+          if (typeof eater.disable === 'function') eater.disable();
+          console.log('[Bot] Auto-eat disabled by configuration.');
+        }
+      } else if (this.config.autoEat) {
+        console.warn('[Bot] Auto-eat plugin is unavailable.');
       }
 
       this.emit('spawned');
+    });
+
+    this.bot.on('autoeat_started', (item: any) => {
+      if (this.bot === connectedBot) console.log(`[Bot] Auto-eating ${item?.name || 'food'} (food level ${this.bot.food}).`);
+    });
+    this.bot.on('autoeat_finished', (item: any) => {
+      if (this.bot === connectedBot) console.log(`[Bot] Finished eating ${item?.name || 'food'} (food level ${this.bot.food}).`);
+    });
+    this.bot.on('autoeat_error', (error: any) => {
+      if (this.bot === connectedBot) console.warn('[Bot] Auto-eat failed:', error?.message || error);
     });
 
     // プレイヤーからのチャット受信

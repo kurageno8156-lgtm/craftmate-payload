@@ -90,6 +90,7 @@ namespace CraftMateUninstall
         private void ConfigureWindow()
         {
             Text = "CraftMate Uninstall";
+            try { Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
             Size = new System.Drawing.Size(550, 155);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;

@@ -29,7 +29,7 @@ $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe'
 if (-not (Test-Path $compiler)) { throw 'The .NET Framework C# compiler was not found.' }
 & $compiler /nologo /target:winexe "/out:$(Join-Path $projectRoot 'CraftMate.exe')" "/win32icon:$iconPath" /r:System.dll /r:System.Windows.Forms.dll $launcherSourcePath
 if ($LASTEXITCODE -ne 0) { throw 'Launcher compilation failed.' }
-& $compiler /nologo /target:winexe "/out:$uninstallPath" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll (Join-Path $PSScriptRoot 'Uninstall.cs')
+& $compiler /nologo /target:winexe "/out:$uninstallPath" "/win32icon:$iconPath" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll (Join-Path $PSScriptRoot 'Uninstall.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Uninstaller compilation failed.' }
 & $compiler /nologo /target:winexe "/out:$setupPath" "/win32icon:$iconPath" "/resource:$iconPath,CraftMate.app.ico" "/resource:$uninstallPath,CraftMate.Uninstall.exe" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll (Join-Path $PSScriptRoot 'Setup.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }

@@ -112,6 +112,21 @@ export const BOT_TOOLS: ToolDefinition[] = [
     },
   },
   {
+    name: 'huntMob',
+    description: '周囲24ブロック以内の牛・豚・鶏・羊・ウサギ・ヤギ、または一般的な敵対Mobを探して武器で倒し、近くに落ちたアイテムを回収します。「狩りをして」「食料用に動物を狩って」などの指示に使います。最大5体まで狩り、体力が少ない場合は安全のため中断します。',
+    parameters: {
+      type: 'object',
+      properties: {
+        targetType: {
+          type: 'string',
+          enum: ['animals', 'hostiles', 'any'],
+          description: '狩る対象。動物だけなら animals、敵対Mobだけなら hostiles、両方なら any。',
+        },
+        maxTargets: { type: 'number', description: '倒す最大数（1〜5、既定値3）' },
+      },
+    },
+  },
+  {
     name: 'attackTarget',
     description: '指定した名前のMob（例: "zombie", "skeleton", "spider"）や対象を攻撃します。',
     parameters: {
@@ -218,6 +233,8 @@ export async function executeBotTool(
         return await skills.placeBlock(args.blockName, args.x, args.y, args.z);
       case 'attackTarget':
         return await skills.attackTarget(args.targetName);
+      case 'huntMob':
+        return await skills.huntMob(args.maxTargets || 3, args.targetType || 'any');
       case 'giveItemsToPlayer':
         return await skills.giveItemsToPlayer(args.playerName, args.itemName, args.count || 1);
       case 'dropItem':
