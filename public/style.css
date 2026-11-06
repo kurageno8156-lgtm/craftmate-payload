@@ -494,6 +494,8 @@ body {
 }
 
 .header-actions { display: flex; align-items: center; gap: 14px; }
+.distribution-link { color: #a1a1aa; font-size: 11px; text-decoration: none; white-space: nowrap; }
+.distribution-link:hover { color: var(--accent-green); }
 .btn-settings, .btn-secondary, .btn-primary, .icon-button {
   color: var(--text-main); border: 1px solid var(--border-color); cursor: pointer;
   font: inherit; transition: border-color .15s ease, background .15s ease, transform .15s ease;
@@ -547,6 +549,7 @@ body {
 .update-result { display: flex; flex-direction: column; gap: 4px; margin-top: 9px; padding: 10px; border: 1px solid rgba(16, 185, 129, .35); border-radius: 8px; color: var(--accent-green); font-size: 12px; }
 @media (max-width: 720px) {
   .header-actions { gap: 8px; }
+  .distribution-link { display: none; }
   .header-status { gap: 8px; }
   .llm-badge { display: none; }
   .settings-dialog { padding: 20px; }
