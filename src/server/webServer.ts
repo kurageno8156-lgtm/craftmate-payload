@@ -2,12 +2,16 @@ import express from 'express';
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import path from 'path';
-import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { MinecraftBot } from '../bot/mcBot.js';
 import { AutonomousAgent } from '../ai/agent.js';
 import { AgentStepLog, ChatMessage } from '../types.js';
 import * as fs from 'fs';
+import os from 'os';
+import { randomBytes, timingSafeEqual } from 'crypto';
+import { spawn } from 'child_process';
+import { Readable, Transform } from 'stream';
+import { pipeline } from 'stream/promises';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,6 +24,101 @@ const MODEL_ENV_KEYS = {
 } as const;
 type AIProvider = keyof typeof MODEL_ENV_KEYS;
 
+const WINDOWS_UPDATE_HELPER = String.raw`param(
+  [int]$ParentPid,
+  [string]$ZipPath,
+  [string]$InstallationPath,
+  [string]$WorkPath,
+  [string]$ExpectedVersion,
+  [int]$Port
+)
+$ErrorActionPreference = 'Stop'
+$statusPath = Join-Path $InstallationPath '.craftmate-update-status.json'
+$changes = New-Object System.Collections.ArrayList
+$newServerPid = 0
+
+function Write-UpdateStatus([string]$State, [int]$Progress, [string]$Message) {
+  $status = @{ status = $State; progress = $Progress; message = $Message; version = $ExpectedVersion } | ConvertTo-Json -Compress
+  [System.IO.File]::WriteAllText($statusPath, $status, [System.Text.UTF8Encoding]::new($false))
+}
+
+function Start-CraftMateServer {
+  $nodePath = Join-Path $InstallationPath 'node.exe'
+  if (-not (Test-Path -LiteralPath $nodePath -PathType Leaf)) { throw 'Updated node.exe is missing.' }
+  $process = Start-Process -FilePath $nodePath -ArgumentList '"dist\index.js"' -WorkingDirectory $InstallationPath -WindowStyle Hidden -PassThru
+  return $process.Id
+}
+
+try {
+  Write-UpdateStatus 'applying' 82 'Waiting for the current server to stop.'
+  $deadline = (Get-Date).AddSeconds(30)
+  while ((Get-Process -Id $ParentPid -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 250 }
+  if (Get-Process -Id $ParentPid -ErrorAction SilentlyContinue) { throw 'The current server did not stop in time.' }
+
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $root = [System.IO.Path]::GetFullPath($InstallationPath).TrimEnd('\') + '\'
+  $archive = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
+  try {
+    foreach ($entry in $archive.Entries) {
+      $entryPath = [System.IO.Path]::GetFullPath((Join-Path $InstallationPath $entry.FullName))
+      if (-not $entryPath.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase)) { throw 'The update archive contains an invalid path.' }
+    }
+  } finally { $archive.Dispose() }
+
+  $stage = Join-Path $WorkPath 'stage'
+  $backupRoot = Join-Path $WorkPath 'backup'
+  New-Item -ItemType Directory -Path $stage -Force | Out-Null
+  Expand-Archive -LiteralPath $ZipPath -DestinationPath $stage -Force
+  $package = Get-Content -LiteralPath (Join-Path $stage 'package.json') -Raw | ConvertFrom-Json
+  if ([string]$package.version -ne $ExpectedVersion) { throw 'The update package version does not match the GitHub release.' }
+  foreach ($required in @('CraftMate.exe', 'node.exe', 'dist\index.js', 'public\app.ico')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $stage $required) -PathType Leaf)) { throw "Required update file is missing: $required" }
+  }
+
+  Write-UpdateStatus 'applying' 90 'Applying the update files.'
+  foreach ($item in @('dist', 'public', 'node_modules', 'CraftMate.exe', 'node.exe', '.env.example', 'package.json', 'package-lock.json', 'README.md', 'Uninstall.exe')) {
+    $source = Join-Path $stage $item
+    if (-not (Test-Path -LiteralPath $source)) { continue }
+    $destination = Join-Path $InstallationPath $item
+    $backup = Join-Path $backupRoot $item
+    $hadBackup = Test-Path -LiteralPath $destination
+    if ($hadBackup) {
+      New-Item -ItemType Directory -Path (Split-Path -Parent $backup) -Force | Out-Null
+      Move-Item -LiteralPath $destination -Destination $backup
+    }
+    [void]$changes.Add(@{ destination = $destination; backup = $backup; hadBackup = $hadBackup })
+    New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+    Move-Item -LiteralPath $source -Destination $destination
+  }
+
+  $newServerPid = Start-CraftMateServer
+  $ready = $false
+  for ($attempt = 0; $attempt -lt 40; $attempt++) {
+    try {
+      $response = Invoke-RestMethod -Uri "http://localhost:$Port/api/version" -TimeoutSec 1
+      if ([string]$response.version -eq $ExpectedVersion) { $ready = $true; break }
+    } catch { }
+    Start-Sleep -Milliseconds 500
+  }
+  if (-not $ready) { throw 'The updated server did not become ready.' }
+
+  Write-UpdateStatus 'completed' 100 'Update completed.'
+  Remove-Item -LiteralPath $WorkPath -Recurse -Force -ErrorAction SilentlyContinue
+} catch {
+  if ($newServerPid -gt 0) { Stop-Process -Id $newServerPid -Force -ErrorAction SilentlyContinue }
+  for ($index = $changes.Count - 1; $index -ge 0; $index--) {
+    $change = $changes[$index]
+    if (Test-Path -LiteralPath $change.destination) { Remove-Item -LiteralPath $change.destination -Recurse -Force -ErrorAction SilentlyContinue }
+    if ($change.hadBackup -and (Test-Path -LiteralPath $change.backup)) {
+      New-Item -ItemType Directory -Path (Split-Path -Parent $change.destination) -Force | Out-Null
+      Move-Item -LiteralPath $change.backup -Destination $change.destination -Force
+    }
+  }
+  Write-UpdateStatus 'failed' 0 $_.Exception.Message
+  try { $null = Start-CraftMateServer } catch { }
+}
+`;
+
 export class WebServer {
   private app: express.Express;
   private server: http.Server;
@@ -29,6 +128,10 @@ export class WebServer {
   private port: number;
   private statusTimer: NodeJS.Timeout | null = null;
   private envPath: string;
+  private updateToken: Buffer;
+  private updateProgress: { status: string; progress: number; message: string; version?: string } = {
+    status: 'idle', progress: 0, message: '',
+  };
 
   constructor(
     botWrapper: MinecraftBot,
@@ -40,6 +143,7 @@ export class WebServer {
     this.agent = agent;
     this.port = port;
     this.envPath = envPath;
+    this.updateToken = this.loadUpdateToken();
 
     this.app = express();
     this.server = http.createServer(this.app);
@@ -54,10 +158,101 @@ export class WebServer {
   }
 
   private setupMiddlewares(): void {
-    this.app.use(cors());
     this.app.use(express.json());
     const publicPath = path.resolve(__dirname, '../../public');
-    this.app.use(express.static(publicPath));
+    this.app.get('/', (_req, res) => {
+      try {
+        const html = fs.readFileSync(path.join(publicPath, 'index.html'), 'utf8');
+        res.setHeader('Cache-Control', 'no-store');
+        res.type('html').send(html.replace('</head>', `<meta name="craftmate-update-token" content="${this.updateToken.toString('hex')}"></head>`));
+      } catch {
+        res.status(500).send('Dashboard could not be loaded.');
+      }
+    });
+    this.app.use(express.static(publicPath, { index: false }));
+  }
+
+  private installationPath(): string {
+    return path.resolve(__dirname, '../..');
+  }
+
+  private loadUpdateToken(): Buffer {
+    const tokenDirectory = path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), '.local', 'share'), 'CraftMate');
+    const tokenPath = path.join(tokenDirectory, 'update-token');
+    try {
+      fs.mkdirSync(tokenDirectory, { recursive: true });
+      const existing = fs.readFileSync(tokenPath, 'utf8').trim();
+      if (/^[a-f0-9]{64}$/i.test(existing)) return Buffer.from(existing, 'hex');
+    } catch { }
+    const token = randomBytes(32);
+    fs.writeFileSync(tokenPath, token.toString('hex'), { mode: 0o600 });
+    return token;
+  }
+
+  private isLocalUpdateRequest(req: express.Request, requireToken: boolean): boolean {
+    const address = (req.socket.remoteAddress || '').toLowerCase().replace(/^::ffff:/, '');
+    if (address !== '127.0.0.1' && address !== '::1') return false;
+    const host = String(req.headers.host || '').toLowerCase();
+    if (!/^(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host)) return false;
+    const originHeader = req.headers.origin;
+    if (typeof originHeader !== 'string') return false;
+    try {
+      const origin = new URL(originHeader);
+      if (origin.protocol !== 'http:' || origin.host.toLowerCase() !== host) return false;
+      if (!['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname.toLowerCase())) return false;
+    } catch { return false; }
+    if (!requireToken) return true;
+    const authorization = req.headers.authorization || '';
+    const supplied = authorization.startsWith('Bearer ') ? Buffer.from(authorization.slice(7), 'hex') : Buffer.alloc(0);
+    return supplied.length === this.updateToken.length && timingSafeEqual(supplied, this.updateToken);
+  }
+
+  private async downloadLatestUpdate(): Promise<{ zipPath: string; workPath: string; version: string }> {
+    const repository = 'kurageno8156-lgtm/craftmate-payload';
+    const releaseResponse = await fetch(`https://api.github.com/repos/${repository}/releases/latest`, {
+      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'CraftMate-Updater' },
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!releaseResponse.ok) throw new Error(`GitHub release lookup failed (${releaseResponse.status}).`);
+    const release = await releaseResponse.json() as { tag_name?: string; assets?: Array<{ name?: string; browser_download_url?: string }> };
+    const version = String(release.tag_name || '').replace(/^v/i, '');
+    if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) throw new Error('The latest release has an invalid version tag.');
+    const packageInfo = JSON.parse(fs.readFileSync(path.join(this.installationPath(), 'package.json'), 'utf8')) as { version?: string };
+    const current = String(packageInfo.version || '');
+    const toParts = (value: string) => value.split('-')[0].split('.').map(Number);
+    const latestParts = toParts(version);
+    const currentParts = toParts(current);
+    let comparison = 0;
+    for (let index = 0; index < 3; index += 1) {
+      if (latestParts[index] !== currentParts[index]) { comparison = latestParts[index] > currentParts[index] ? 1 : -1; break; }
+    }
+    if (comparison === 0 && version !== current) comparison = current.includes('-') && !version.includes('-') ? 1 : version.includes('-') && !current.includes('-') ? -1 : 0;
+    const newer = comparison > 0;
+    if (!newer) throw new Error(`No newer release is available (installed: v${current}, latest: v${version}).`);
+    const asset = (release.assets || []).find(item => item.name === 'app_payload.zip');
+    const url = String(asset?.browser_download_url || '');
+    if (!url.startsWith(`https://github.com/${repository}/releases/download/`)) throw new Error('The GitHub release does not contain a trusted app_payload.zip asset.');
+    const download = await fetch(url, { headers: { 'User-Agent': 'CraftMate-Updater' }, signal: AbortSignal.timeout(120000) });
+    if (!download.ok || !download.body) throw new Error(`Update download failed (${download.status}).`);
+    const length = Number(download.headers.get('content-length') || 0);
+    if (length > 512 * 1024 * 1024) throw new Error('The update package exceeds the 512 MiB limit.');
+    const workPath = fs.mkdtempSync(path.join(os.tmpdir(), 'craftmate-update-'));
+    const zipPath = path.join(workPath, 'app_payload.zip');
+    let received = 0;
+    const limiter = new Transform({ transform(chunk: Buffer, _encoding, callback) {
+      received += chunk.length;
+      if (received > 512 * 1024 * 1024) callback(new Error('The update package exceeds the 512 MiB limit.'));
+      else { this.push(chunk); callback(); }
+    } });
+    await pipeline(Readable.fromWeb(download.body as import('stream/web').ReadableStream), limiter, fs.createWriteStream(zipPath, { flags: 'wx' }));
+    const signature = Buffer.alloc(4);
+    const fd = fs.openSync(zipPath, 'r');
+    try { fs.readSync(fd, signature, 0, 4, 0); } finally { fs.closeSync(fd); }
+    if (signature.toString('hex') !== '504b0304' && signature.toString('hex') !== '504b0506') {
+      fs.rmSync(workPath, { recursive: true, force: true });
+      throw new Error('The downloaded update is not a valid ZIP archive.');
+    }
+    return { zipPath, workPath, version };
   }
 
   private setupRoutes(): void {
@@ -68,6 +263,55 @@ export class WebServer {
         res.json({ version: String(packageInfo.version || '0.0.0') });
       } catch {
         res.status(500).json({ error: 'Could not read the application version.' });
+      }
+    });
+
+    this.app.get('/api/update/status', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Update status is available only to the authenticated local dashboard.' });
+      const markerPath = path.join(this.installationPath(), '.craftmate-update-status.json');
+      try {
+        if (fs.existsSync(markerPath)) {
+          this.updateProgress = JSON.parse(fs.readFileSync(markerPath, 'utf8'));
+          if (this.updateProgress.status === 'completed' || this.updateProgress.status === 'failed') {
+            fs.rmSync(markerPath, { force: true });
+          }
+        }
+      } catch { }
+      res.setHeader('Cache-Control', 'no-store');
+      res.json(this.updateProgress);
+    });
+
+    this.app.post('/api/update', async (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Updates are allowed only from the authenticated local dashboard.' });
+      if (this.updateProgress.status === 'downloading' || this.updateProgress.status === 'applying') {
+        return res.status(409).json({ error: 'An update is already in progress.' });
+      }
+      let workPath = '';
+      try {
+        this.updateProgress = { status: 'downloading', progress: 5, message: 'Contacting GitHub Releases…' };
+        const update = await this.downloadLatestUpdate();
+        workPath = update.workPath;
+        this.updateProgress = { status: 'applying', progress: 75, message: 'Preparing the update…', version: update.version };
+        const helperPath = path.join(workPath, 'Apply-Update.ps1');
+        fs.writeFileSync(helperPath, WINDOWS_UPDATE_HELPER, 'utf8');
+        const powershell = path.join(process.env.WINDIR || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+        const child = spawn(powershell, [
+          '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', helperPath,
+          '-ParentPid', String(process.pid), '-ZipPath', update.zipPath,
+          '-InstallationPath', this.installationPath(), '-WorkPath', workPath, '-ExpectedVersion', update.version,
+          '-Port', String(this.port),
+        ], { detached: true, stdio: 'ignore', windowsHide: true });
+        child.on('error', error => {
+          this.updateProgress = { status: 'failed', progress: 0, message: `Could not start the update helper: ${error.message}` };
+        });
+        child.unref();
+        res.status(202).json({ success: true, version: update.version });
+        res.once('finish', () => setTimeout(() => process.exit(0), 500));
+      } catch (error) {
+        if (workPath) fs.rmSync(workPath, { recursive: true, force: true });
+        const message = error instanceof Error ? error.message : 'Update failed.';
+        this.updateProgress = { status: 'failed', progress: 0, message };
+        res.status(500).json({ error: message });
       }
     });
 

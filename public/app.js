@@ -414,7 +414,11 @@ document.getElementById('btn-check-updates').addEventListener('click', async eve
     const latestVersion = String(latest.tag_name || '').replace(/^v/i, '');
     if (!latestVersion) throw new Error('The latest GitHub release has no version tag.');
     if (compareVersions(latestVersion, current.version) > 0) {
-      showSettingsMessage(`新しいバージョン v${latestVersion} があります`, 'success');
+      if (!window.confirm(`新しいバージョン v${latestVersion} があります。今すぐアップデートしますか？`)) {
+        showSettingsMessage(`Update v${latestVersion} is available.`);
+        return;
+      }
+      await beginDashboardUpdate(button, latestVersion);
     } else {
       showSettingsMessage(`You're up to date (v${current.version}).`, 'success');
     }
@@ -424,6 +428,50 @@ document.getElementById('btn-check-updates').addEventListener('click', async eve
     button.disabled = false;
   }
 });
+
+async function beginDashboardUpdate(button, version) {
+  const token = document.querySelector('meta[name="craftmate-update-token"]')?.content;
+  if (!token) throw new Error('The local update authentication token is missing. Reload the dashboard and try again.');
+  const progressWrap = document.getElementById('update-progress-wrap');
+  const progressBar = document.getElementById('update-progress');
+  const progressLabel = document.getElementById('update-progress-label');
+  progressWrap.hidden = false;
+  progressBar.removeAttribute('value');
+  progressLabel.textContent = 'Downloading update…';
+  showSettingsMessage('Starting update…');
+  const response = await fetch('/api/update', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: '{}',
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || 'Could not start the update.');
+  button.disabled = true;
+  const deadline = Date.now() + 180000;
+  while (Date.now() < deadline) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const statusResponse = await fetch('/api/update/status', {
+        cache: 'no-store', headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!statusResponse.ok) continue;
+      const status = await statusResponse.json();
+      progressLabel.textContent = status.message || 'Applying update…';
+      if (Number.isFinite(status.progress)) progressBar.value = status.progress;
+      else progressBar.removeAttribute('value');
+      if (status.status === 'completed') {
+        progressBar.value = 100;
+        progressLabel.textContent = 'アップデートが完了しました。アプリを再起動してください';
+        showSettingsMessage('アップデートが完了しました。アプリを再起動してください', 'success');
+        return;
+      }
+      if (status.status === 'failed') throw new Error(status.message || 'Update failed.');
+    } catch (error) {
+      if (error instanceof Error && error.message !== 'Failed to fetch') throw error;
+    }
+  }
+  throw new Error(`Update v${version} is taking longer than expected. Check the dashboard again shortly.`);
+}
 
 document.getElementById('btn-download-logs').addEventListener('click', () => {
   const lines = Array.from(logsContainer.querySelectorAll('.log-entry')).map(entry => entry.innerText.trim());
