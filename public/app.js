@@ -136,29 +136,53 @@ function renderStatus(status) {
   armorLegs.innerHTML = `👖 <span>${status.equippedArmor?.leggings || '-'}</span>`;
   armorBoots.innerHTML = `👢 <span>${status.equippedArmor?.boots || '-'}</span>`;
 
-  // Inventory
-  invCount.textContent = status.inventory ? status.inventory.length : 0;
-  if (status.inventory && status.inventory.length > 0) {
-    invContainer.innerHTML = status.inventory.map(item => `
-      <div class="inv-item" title="${item.name}">
-        <span>${item.displayName || item.name}</span>
-        <span class="inv-count">x${item.count}</span>
-      </div>
-    `).join('');
+  // Always replace both grids, including when the server sends missing or empty arrays.
+  const inventory = Array.isArray(status.inventory) ? status.inventory.filter(item => item && Number(item.count) > 0) : [];
+  const entityList = Array.isArray(status.nearbyEntities) ? status.nearbyEntities.filter(entity => entity && entity.name) : [];
+  invCount.textContent = inventory.reduce((sum, item) => sum + Number(item.count || 0), 0);
+  invContainer.replaceChildren();
+  if (inventory.length === 0) {
+    invContainer.appendChild(createGridEmptyState(translate('emptyInventory')));
   } else {
-    invContainer.innerHTML = `<div class="empty-hint">${translate('emptyInventory')}</div>`;
+    inventory.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'inv-item';
+      card.title = String(item.displayName || item.name || '');
+      const icon = document.createElement('span');
+      icon.className = 'inv-item-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = getItemIcon(item.name);
+      const name = document.createElement('span');
+      name.className = 'inv-item-name';
+      name.textContent = String(item.displayName || item.name || translate('unknownItem'));
+      const count = document.createElement('span');
+      count.className = 'inv-count';
+      count.textContent = `×${Number(item.count) || 0}`;
+      card.append(icon, name, count);
+      invContainer.appendChild(card);
+    });
   }
 
-  // Entities
-  if (status.nearbyEntities && status.nearbyEntities.length > 0) {
-    entitiesContainer.innerHTML = status.nearbyEntities.map(e => `
-      <div class="entity-item ${e.isHostile ? 'hostile' : (e.isPlayer ? 'player' : '')}">
-        <span>${e.isPlayer ? '👤 ' : (e.isHostile ? '👾 ' : '🐾 ')}${e.name}</span>
-        <span>${e.distance}m</span>
-      </div>
-    `).join('');
+  entitiesContainer.replaceChildren();
+  if (entityList.length === 0) {
+    entitiesContainer.appendChild(createGridEmptyState(translate('noEntities')));
   } else {
-    entitiesContainer.innerHTML = `<div class="empty-hint">${translate('noEntities')}</div>`;
+    entityList.forEach(entity => {
+      const card = document.createElement('div');
+      card.className = `entity-item${entity.isHostile ? ' hostile' : ''}${entity.isPlayer ? ' player' : ''}`;
+      const icon = document.createElement('span');
+      icon.className = 'entity-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = getEntityIcon(entity);
+      const name = document.createElement('span');
+      name.className = 'entity-name';
+      name.textContent = String(entity.name);
+      const distance = document.createElement('span');
+      distance.className = 'entity-distance';
+      distance.textContent = `${Number(entity.distance || 0)}m`;
+      card.append(icon, name, distance);
+      entitiesContainer.appendChild(card);
+    });
   }
 
   // Task Status
@@ -169,6 +193,41 @@ function renderStatus(status) {
     taskText.textContent = translate('emptyTask');
     btnCancel.style.display = 'none';
   }
+}
+
+function createGridEmptyState(message) {
+  const empty = document.createElement('div');
+  empty.className = 'empty-hint';
+  empty.setAttribute('role', 'status');
+  empty.textContent = message;
+  return empty;
+}
+
+function getItemIcon(name) {
+  const item = String(name || '').toLowerCase();
+  if (/pickaxe|axe|sword|shovel|hoe|bow|shield|crossbow|trident/.test(item)) return '⚒️';
+  if (/bread|beef|pork|chicken|mutton|rabbit|potato|carrot|apple|fish|stew|food/.test(item)) return '🍖';
+  if (/log|wood|plank|stick|sapling/.test(item)) return '🪵';
+  if (/stone|cobble|deepslate|dirt|sand|gravel|ore/.test(item)) return '🪨';
+  if (/torch|lantern|glowstone/.test(item)) return '🔦';
+  if (/armor|helmet|chestplate|leggings|boots/.test(item)) return '🛡️';
+  if (/diamond|emerald|gold|iron|ingot|coal|gem/.test(item)) return '💎';
+  return '📦';
+}
+
+function getEntityIcon(entity) {
+  if (entity.isPlayer) return '👤';
+  if (entity.isHostile) return '👾';
+  const name = String(entity.name || '').toLowerCase();
+  if (/cow|mooshroom/.test(name)) return '🐄';
+  if (/pig/.test(name)) return '🐖';
+  if (/sheep/.test(name)) return '🐑';
+  if (/chicken/.test(name)) return '🐔';
+  if (/horse|donkey|mule/.test(name)) return '🐴';
+  if (/wolf|dog/.test(name)) return '🐺';
+  if (/cat|ocelot/.test(name)) return '🐈';
+  if (/villager/.test(name)) return '🧑';
+  return '🐾';
 }
 
 function appendLog(log) {

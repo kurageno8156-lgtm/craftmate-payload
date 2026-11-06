@@ -3,7 +3,7 @@
     en: {
       pageTitle: 'Minecraft AI Agent Dashboard', connecting: 'Connecting...', settingsButton: '⚙️ Settings',
       botStatus: '📊 Bot Status', aiBrain: '🧠 AI Brain: {provider} ({model})', health: 'Health', food: 'Food', coordinates: '📍 Coordinates', dimension: '🌍 Dimension', biome: '🌲 Biome', time: '☀️ Time', heldItem: '🗡️ Held Item',
-      equipment: '🛡️ Equipment', inventory: 'Inventory', items: 'items', emptyInventory: 'Inventory is empty', nearbyEntities: '👀 Nearby Entities', noEntities: 'No nearby entities',
+      equipment: '🛡️ Equipment', inventory: 'Inventory', items: 'items', emptyInventory: 'No items in inventory', unknownItem: 'Unknown item', nearbyEntities: '👀 Nearby Entities', noEntities: 'No nearby entities',
       currentGoal: '🎯 Current Goal', stopTask: 'Stop task', waitingForTask: 'Waiting for instructions', aiLogTitle: '🧠 AI Activity Log (Thoughts & Actions)', systemReady: 'AI bot is ready. Send an instruction below or through Minecraft chat.',
       quickFollow: 'Follow me', quickChop: 'Collect 3 logs', quickPickaxe: 'Craft a wooden pickaxe', quickDefend: 'Defend against monsters', quickGive: 'Give me your wood', quickStop: 'Stop',
       commandPlaceholder: 'Enter an instruction... (e.g. Mine 5 logs and craft a crafting table)', sendInstruction: 'Send instruction 🚀', controlPanel: 'CRAFTMATE CONTROL', settingsTitle: '⚙️ Settings', closeSettings: 'Close settings',
@@ -23,7 +23,7 @@
     ja: {
       pageTitle: 'Minecraft AI Agent ダッシュボード', connecting: '接続中...', settingsButton: '⚙️ 設定',
       botStatus: '📊 ボットの状態', aiBrain: '🧠 AI 脳: {provider} ({model})', health: '体力', food: '満腹度', coordinates: '📍 座標', dimension: '🌍 ディメンション', biome: '🌲 バイオーム', time: '☀️ 時刻', heldItem: '🗡️ 手持ちアイテム',
-      equipment: '🛡️ 装備', inventory: 'インベントリ', items: '個', emptyInventory: 'インベントリは空です', nearbyEntities: '👀 周囲のエンティティ', noEntities: '周囲にエンティティはいません',
+      equipment: '🛡️ 装備', inventory: 'インベントリ', items: '個', emptyInventory: 'アイテムを持っていません', unknownItem: '不明なアイテム', nearbyEntities: '👀 周囲のエンティティ', noEntities: '周囲にエンティティはいません',
       currentGoal: '🎯 現在の目標', stopTask: 'タスクを中断', waitingForTask: '待機中（指示を待っています）', aiLogTitle: '🧠 AIの思考・行動ログ', systemReady: 'AIボットは待機中です。下のフォームまたはMinecraftチャットから指示してください。',
       quickFollow: 'ついてきて', quickChop: '原木を3個集める', quickPickaxe: '木のツルハシを作る', quickDefend: 'モンスターから身を守る', quickGive: '木材を渡して', quickStop: '停止',
       commandPlaceholder: 'AIへの指示を入力...（例: 原木を5個集めて作業台を作る）', sendInstruction: '指示を送信 🚀', controlPanel: 'CRAFTMATE コントロール', settingsTitle: '⚙️ 設定', closeSettings: '設定を閉じる',
