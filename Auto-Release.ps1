@@ -3,7 +3,8 @@ param(
     [string]$Version,
     [ValidateSet('patch', 'minor', 'major')]
     [string]$Bump = 'patch',
-    [string]$OutputDirectory
+    [string]$OutputDirectory,
+    [string]$Notes
 )
 
 $ErrorActionPreference = 'Stop'
@@ -151,7 +152,10 @@ if ($LASTEXITCODE -eq 1) {
 git push origin $defaultBranch
 if ($LASTEXITCODE -ne 0) { throw 'git push failed. The local release commit was kept.' }
 
-$notes = "CraftMate $tag release`n`n- Built the Windows setup and application payload.`n- Includes the current dashboard and installer updates.`n"
+if ([string]::IsNullOrWhiteSpace($Notes)) {
+    $Notes = "CraftMate $tag`n`nBug fixes and improvements"
+}
+$notes = $Notes
 gh release create $tag $setupPath $payloadPath --repo $repo --target $defaultBranch --title "CraftMate Setup $tag" --notes $notes
 if ($LASTEXITCODE -ne 0) { throw "GitHub release creation failed. The version commit was pushed; retry with -Version $Version after resolving the release error." }
 

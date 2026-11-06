@@ -31,9 +31,21 @@ namespace CraftMateSetup
             using (Stream iconStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CraftMate.app.ico"))
             {
                 if (iconStream == null) return null;
-                using (Icon appIcon = new Icon(iconStream))
+                using (Icon appIcon = new Icon(iconStream, 64, 64))
                 {
-                    return appIcon.ToBitmap();
+                    using (Bitmap source = appIcon.ToBitmap())
+                    {
+                        Bitmap resized = new Bitmap(64, 64, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                        using (System.Drawing.Graphics graphics = System.Drawing.Graphics.FromImage(resized))
+                        {
+                            graphics.Clear(Color.Transparent);
+                            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                            graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                            graphics.DrawImage(source, new Rectangle(0, 0, 64, 64));
+                        }
+                        return resized;
+                    }
                 }
             }
         }
@@ -152,9 +164,9 @@ namespace CraftMateSetup
         private ProgressBar _progressBar;
         private PictureBox _picAppIcon;
 
-        private const string CurrentVersion = "1.3.4";
+        private const string CurrentVersion = "1.3.5";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.4/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.5/app_payload.zip";
 
         public InstallerForm(string lang)
         {
