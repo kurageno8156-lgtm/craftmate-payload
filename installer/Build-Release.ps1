@@ -11,9 +11,10 @@ $setupPath = Join-Path $OutputDirectory 'CraftMate_Setup.exe'
 $uninstallPath = Join-Path $OutputDirectory 'Uninstall.exe'
 $updaterPath = Join-Path $OutputDirectory 'CraftMate_Updater.exe'
 $iconPath = Join-Path $projectRoot 'public\app.ico'
+$manifestPath = Join-Path $PSScriptRoot 'app.manifest'
 $launcherSourcePath = Join-Path $projectRoot 'Launcher.cs'
 
-foreach ($required in @('node.exe', 'Launcher.cs', 'installer\Updater.cs')) {
+foreach ($required in @('node.exe', 'Launcher.cs', 'installer\Updater.cs', 'installer\app.manifest')) {
   if (-not (Test-Path (Join-Path $projectRoot $required))) {
     throw "Required release file is missing: $required"
   }
@@ -35,7 +36,7 @@ if (-not (Test-Path -LiteralPath $updaterPath -PathType Leaf)) { throw 'Updater 
 if ($LASTEXITCODE -ne 0) { throw 'Launcher compilation failed.' }
 & $compiler /nologo /target:winexe "/out:$uninstallPath" "/win32icon:$iconPath" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll (Join-Path $PSScriptRoot 'Uninstall.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Uninstaller compilation failed.' }
-& $compiler /nologo /target:winexe "/out:$setupPath" "/win32icon:$iconPath" "/resource:$iconPath,CraftMate.app.ico" "/resource:$uninstallPath,CraftMate.Uninstall.exe" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll (Join-Path $PSScriptRoot 'Setup.cs')
+& $compiler /nologo /target:winexe "/out:$setupPath" "/win32icon:$iconPath" "/win32manifest:$manifestPath" "/resource:$iconPath,CraftMate.app.ico" "/resource:$uninstallPath,CraftMate.Uninstall.exe" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll (Join-Path $PSScriptRoot 'Setup.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
 
 Add-Type -AssemblyName System.IO.Compression
