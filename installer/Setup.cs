@@ -12,6 +12,33 @@ using Microsoft.Win32;
 
 namespace CraftMateSetup
 {
+    internal static class InstallerIcon
+    {
+        public static void Apply(Form form)
+        {
+            using (Stream iconStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CraftMate.app.ico"))
+            {
+                if (iconStream == null) return;
+                using (Icon appIcon = new Icon(iconStream))
+                {
+                    form.Icon = (Icon)appIcon.Clone();
+                }
+            }
+        }
+
+        public static Bitmap CreateBitmap()
+        {
+            using (Stream iconStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CraftMate.app.ico"))
+            {
+                if (iconStream == null) return null;
+                using (Icon appIcon = new Icon(iconStream))
+                {
+                    return appIcon.ToBitmap();
+                }
+            }
+        }
+    }
+
     // =================================================================
     // 言語選択ダイアログ
     // =================================================================
@@ -26,6 +53,8 @@ namespace CraftMateSetup
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false; MinimizeBox = false;
             BackColor = Color.FromArgb(245, 245, 245);
+            ShowInTaskbar = true;
+            InstallerIcon.Apply(this);
 
             Label lbl = new Label();
             lbl.Text = "Please select a language:";
@@ -55,6 +84,62 @@ namespace CraftMateSetup
     }
 
     // =================================================================
+    // 利用規約・プライバシーポリシー
+    // =================================================================
+    public class TermsForm : Form
+    {
+        public TermsForm(string lang)
+        {
+            Text = lang == "ja" ? "利用規約とプライバシーポリシー" : "Terms and Privacy Policy";
+            Size = new Size(560, 480);
+            StartPosition = FormStartPosition.CenterScreen;
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
+            BackColor = Color.FromArgb(245, 245, 245);
+            ShowInTaskbar = true;
+            InstallerIcon.Apply(this);
+
+            Label heading = new Label();
+            heading.Text = lang == "ja" ? "利用規約・プライバシーポリシー" : "Terms of Use and Privacy Policy";
+            heading.Font = new Font("Segoe UI", 14, FontStyle.Bold);
+            heading.Location = new Point(20, 16);
+            heading.AutoSize = true;
+
+            TextBox policy = new TextBox();
+            policy.Location = new Point(20, 55);
+            policy.Size = new Size(500, 285);
+            policy.Multiline = true;
+            policy.ReadOnly = true;
+            policy.ScrollBars = ScrollBars.Vertical;
+            policy.WordWrap = true;
+            policy.BackColor = Color.White;
+            policy.Text = lang == "ja"
+                ? "【利用規約】\r\nCraftMateはMinecraftの操作を支援するソフトウェアです。本ソフトウェアは現状有姿で提供され、利用者は自身の責任で使用するものとします。ゲーム、アカウント、サーバーの利用規約を守り、他の利用者に迷惑をかけないでください。作者は、本ソフトウェアの利用または利用不能によって生じた損害について、法令で認められる範囲で責任を負いません。\r\n\r\n【プライバシーポリシー】\r\n本インストーラーは、インストールのために必要なファイルをGitHubからダウンロードします。アプリは、利用者が設定したAIサービスの接続先にプロンプトやゲーム状態を送信する場合があります。送信される情報の取扱いは、利用するサービスのポリシーに従います。開発者が独自に個人情報を収集・販売することを目的とした機能はありません。APIキーなどの秘密情報を共有しないでください。"
+                : "TERMS OF USE\r\nCraftMate is software that assists with Minecraft gameplay. It is provided as is, and you use it at your own risk. Follow the terms of the game, your account, and each server, and do not disrupt other players. To the extent permitted by law, the authors are not liable for damage arising from use or inability to use this software.\r\n\r\nPRIVACY POLICY\r\nThis installer downloads required files from GitHub. The application may send prompts and game state to the AI service you configure. Handling of that information is governed by the service provider's policies. The developers do not intend to collect or sell personal information through a dedicated feature. Do not share API keys or other secrets. ";
+
+            CheckBox agree = new CheckBox();
+            agree.Text = lang == "ja" ? "利用規約とプライバシーポリシーに同意する" : "I agree to the Terms and Privacy Policy";
+            agree.Location = new Point(20, 352);
+            agree.AutoSize = true;
+
+            Button next = new Button();
+            next.Text = lang == "ja" ? "次へ" : "Next";
+            next.Location = new Point(420, 395);
+            next.Size = new Size(100, 32);
+            next.Enabled = false;
+            next.DialogResult = DialogResult.OK;
+            agree.CheckedChanged += delegate { next.Enabled = agree.Checked; };
+
+            Controls.Add(heading);
+            Controls.Add(policy);
+            Controls.Add(agree);
+            Controls.Add(next);
+            AcceptButton = next;
+        }
+    }
+
+    // =================================================================
     // メインインストーラー画面
     // =================================================================
     public class InstallerForm : Form
@@ -63,13 +148,13 @@ namespace CraftMateSetup
         private Label _lblTitle, _lblPath, _lblStatus, _lblUpdate;
         private TextBox _txtPath, _txtLog;
         private Button _btnBrowse, _btnInstall;
-        private CheckBox _chkAgree, _chkLaunch;
+        private CheckBox _chkLaunch;
         private ProgressBar _progressBar;
         private PictureBox _picAppIcon;
 
-        private const string CurrentVersion = "1.3.3";
+        private const string CurrentVersion = "1.3.4";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.3/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.4/app_payload.zip";
 
         public InstallerForm(string lang)
         {
@@ -81,23 +166,17 @@ namespace CraftMateSetup
             BackColor = Color.FromArgb(245, 245, 245);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false; MinimizeBox = false;
+            ShowInTaskbar = true;
+            InstallerIcon.Apply(this);
 
-            // The icon is embedded into the setup executable at build time.
-            using (Stream iconStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CraftMate.app.ico"))
+            _picAppIcon = new PictureBox();
+            _picAppIcon.Image = InstallerIcon.CreateBitmap();
+            if (_picAppIcon.Image != null)
             {
-                if (iconStream != null)
-                {
-                    using (Icon appIcon = new Icon(iconStream))
-                    {
-                        Icon = (Icon)appIcon.Clone();
-                        _picAppIcon = new PictureBox();
-                        _picAppIcon.Image = appIcon.ToBitmap();
-                    }
-                    _picAppIcon.Location = new Point(20, 18);
-                    _picAppIcon.Size = new Size(64, 64);
-                    _picAppIcon.SizeMode = PictureBoxSizeMode.Zoom;
-                    Controls.Add(_picAppIcon);
-                }
+                _picAppIcon.Location = new Point(20, 18);
+                _picAppIcon.Size = new Size(64, 64);
+                _picAppIcon.SizeMode = PictureBoxSizeMode.Zoom;
+                Controls.Add(_picAppIcon);
             }
 
             // タイトル（エメラルドグリーン）
@@ -137,26 +216,10 @@ namespace CraftMateSetup
                 }
             };
 
-            // 同意チェックボックス
-            _chkAgree = new CheckBox();
-            _chkAgree.Text = _lang == "ja" ? "利用規約とプライバシーポリシーに同意します" : "I agree to the Terms and Privacy Policy";
-            _chkAgree.Location = new Point(20, 150);
-            _chkAgree.AutoSize = true;
-            _chkAgree.CheckedChanged += delegate { _btnInstall.Enabled = _chkAgree.Checked; };
-
-            // 利用規約リンク（簡易ダイアログ）
-            LinkLabel lnkTerms = new LinkLabel();
-            lnkTerms.Text = _lang == "ja" ? "規約を読む" : "Read Terms";
-            lnkTerms.Location = new Point(280, 150);
-            lnkTerms.AutoSize = true;
-            lnkTerms.Click += delegate {
-                MessageBox.Show("利用規約:\n本ソフトウェアは自己責任でご利用ください。\n\nプライバシーポリシー:\n個人情報は収集しません。", "Terms & Privacy");
-            };
-
             // 起動チェックボックス
             _chkLaunch = new CheckBox();
             _chkLaunch.Text = _lang == "ja" ? "インストール後にCraftMateを起動する" : "Launch CraftMate after installation";
-            _chkLaunch.Location = new Point(20, 180);
+            _chkLaunch.Location = new Point(20, 155);
             _chkLaunch.AutoSize = true;
             _chkLaunch.Checked = true;
 
@@ -170,7 +233,6 @@ namespace CraftMateSetup
             _btnInstall.ForeColor = Color.White;
             _btnInstall.FlatStyle = FlatStyle.Flat;
             _btnInstall.FlatAppearance.BorderSize = 0;
-            _btnInstall.Enabled = false; // 同意するまで無効
             _btnInstall.Click += delegate { StartInstall(); };
 
             // ステータス
@@ -201,7 +263,6 @@ namespace CraftMateSetup
             Controls.Add(_lblTitle);
             Controls.Add(_lblUpdate);
             Controls.Add(_lblPath); Controls.Add(_txtPath); Controls.Add(_btnBrowse);
-            Controls.Add(_chkAgree); Controls.Add(lnkTerms);
             Controls.Add(_chkLaunch);
             Controls.Add(_btnInstall);
             Controls.Add(_lblStatus);
@@ -246,7 +307,6 @@ namespace CraftMateSetup
         private void StartInstall()
         {
             _btnInstall.Enabled = false;
-            _chkAgree.Enabled = false;
             _lblStatus.Text = _lang == "ja" ? "インストール中..." : "Installing...";
             ThreadPool.QueueUserWorkItem(delegate { DoInstall(); });
         }
@@ -391,7 +451,7 @@ namespace CraftMateSetup
             }
             finally
             {
-                Invoke(new Action(delegate { _btnInstall.Enabled = true; _chkAgree.Enabled = true; }));
+                Invoke(new Action(delegate { _btnInstall.Enabled = true; }));
             }
         }
 
@@ -465,10 +525,13 @@ namespace CraftMateSetup
             string lang = "en";
             using (LanguageForm lf = new LanguageForm())
             {
-                if (lf.ShowDialog() == DialogResult.OK)
-                {
-                    lang = lf.SelectedLanguage;
-                }
+                if (lf.ShowDialog() != DialogResult.OK) return;
+                lang = lf.SelectedLanguage;
+            }
+
+            using (TermsForm terms = new TermsForm(lang))
+            {
+                if (terms.ShowDialog() != DialogResult.OK) return;
             }
 
             Application.Run(new InstallerForm(lang));
