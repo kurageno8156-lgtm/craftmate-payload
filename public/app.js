@@ -1,5 +1,15 @@
 ﻿const socket = io();
 
+const translate = (key, values) => window.craftMateI18n.t(key, values);
+function updateLlmLabel(provider, model) {
+  llmInfo.textContent = translate('aiBrain', { provider: String(provider || '').toUpperCase(), model: model || '' });
+}
+
+document.addEventListener('craftmate-language-changed', () => {
+  const match = llmInfo.textContent.match(/(?:AI Brain|AI 脳):\s*([^ (]+)\s*\((.*)\)$/);
+  if (match) updateLlmLabel(match[1], match[2]);
+});
+
 // DOM要素
 const connStatus = document.getElementById('connection-status');
 const llmInfo = document.getElementById('llm-info');
@@ -34,7 +44,7 @@ fetch('/api/status')
   .then(data => {
     updateConnectionUI(data.connected);
     if (data.config) {
-      llmInfo.textContent = `🧠 AI Brain: ${data.config.provider.toUpperCase()} (${data.config.model})`;
+      updateLlmLabel(data.config.provider, data.config.model);
     }
     if (data.status) {
       renderStatus(data.status);
@@ -62,17 +72,17 @@ socket.on('disconnect', () => {
 });
 
 socket.on('taskStarted', (data) => {
-  taskText.textContent = `[${data.requester}より]: "${data.task}"`;
+  taskText.textContent = translate('taskFrom', { requester: data.requester, task: data.task });
   btnCancel.style.display = 'block';
   appendLog({
     status: 'acting',
     timestamp: new Date().toLocaleTimeString(),
-    thought: `新しいタスクを開始します: "${data.task}" (依頼者: ${data.requester})`,
+    thought: translate('newTask', { task: data.task, requester: data.requester }),
   });
 });
 
 socket.on('taskFinished', (data) => {
-  taskText.textContent = '待機中 (指示を待っています)';
+  taskText.textContent = translate('emptyTask');
   btnCancel.style.display = 'none';
 });
 
@@ -94,10 +104,10 @@ function updateConnectionUI(connected) {
   const text = connStatus.querySelector('.text');
   if (connected) {
     dot.className = 'dot online';
-    text.textContent = 'Minecraft Online';
+    text.textContent = translate('online');
   } else {
     dot.className = 'dot offline';
-    text.textContent = 'Minecraft Disconnected';
+    text.textContent = translate('offline');
   }
 }
 
@@ -113,10 +123,12 @@ function renderStatus(status) {
 
   // Info
   posVal.textContent = `X: ${status.position.x}, Y: ${status.position.y}, Z: ${status.position.z}`;
-  dimVal.textContent = status.dimension;
+  const dimension = String(status.dimension || '');
+  dimVal.textContent = ({ overworld: translate('overworld'), nether: translate('nether'), the_nether: translate('nether'), end: translate('theEnd'), the_end: translate('theEnd') })[dimension.toLowerCase()] || dimension;
   biomeVal.textContent = status.biome;
-  timeVal.textContent = status.gameTime;
-  heldVal.textContent = status.heldItem || '素手';
+  const gameTime = String(status.gameTime || '');
+  timeVal.textContent = /day|昼/i.test(gameTime) ? translate('daytime') : /night|夜/i.test(gameTime) ? translate('nighttime') : gameTime;
+  heldVal.textContent = !status.heldItem || status.heldItem === '素手' ? translate('bareHands') : status.heldItem;
 
   // Armor
   armorHelmet.innerHTML = `🪖 <span>${status.equippedArmor?.helmet || '-'}</span>`;
@@ -134,7 +146,7 @@ function renderStatus(status) {
       </div>
     `).join('');
   } else {
-    invContainer.innerHTML = '<div class="empty-hint">インベントリは空です</div>';
+    invContainer.innerHTML = `<div class="empty-hint">${translate('emptyInventory')}</div>`;
   }
 
   // Entities
@@ -146,15 +158,15 @@ function renderStatus(status) {
       </div>
     `).join('');
   } else {
-    entitiesContainer.innerHTML = '<div class="empty-hint">周囲にエンティティはいません</div>';
+    entitiesContainer.innerHTML = `<div class="empty-hint">${translate('noEntities')}</div>`;
   }
 
   // Task Status
   if (status.currentTask) {
-    taskText.textContent = `実行中: "${status.currentTask}"`;
+    taskText.textContent = translate('activeTask', { task: status.currentTask });
     btnCancel.style.display = 'block';
   } else if (!status.isExecuting) {
-    taskText.textContent = '待機中 (指示を待っています)';
+    taskText.textContent = translate('emptyTask');
     btnCancel.style.display = 'none';
   }
 }
@@ -164,7 +176,7 @@ function appendLog(log) {
   entry.className = `log-entry ${log.status || 'acting'}`;
 
   let html = `<div class="log-meta">
-    <span>Step ${log.stepNumber || 0} [${log.status.toUpperCase()}]</span>
+    <span>${translate('logStep', { step: log.stepNumber || 0, status: translate(`status${String(log.status || 'unknown').replace(/(^|_)([a-z])/g, (_, __, letter) => letter.toUpperCase())}`) })}</span>
     <span>${log.timestamp || new Date().toLocaleTimeString()}</span>
   </div>`;
 
@@ -173,10 +185,10 @@ function appendLog(log) {
   }
   if (log.actionName) {
     const paramsStr = log.actionParams ? JSON.stringify(log.actionParams) : '';
-    html += `<div class="log-action">⚡ Action: ${log.actionName}(${escapeHtml(paramsStr)})</div>`;
+    html += `<div class="log-action">${translate('logAction', { action: escapeHtml(log.actionName), params: escapeHtml(paramsStr) })}</div>`;
   }
   if (log.observation) {
-    html += `<div class="log-obs">📋 Observation: ${escapeHtml(log.observation)}</div>`;
+    html += `<div class="log-obs">${translate('logObservation', { text: escapeHtml(log.observation) })}</div>`;
   }
 
   entry.innerHTML = html;
@@ -212,7 +224,7 @@ document.querySelectorAll('.quick-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const cmd = btn.getAttribute('data-cmd');
     if (cmd) {
-      if (cmd === 'ストップ') {
+      if (cmd === 'ストップ' || cmd === translate('stopInMinecraft')) {
         socket.emit('cancelTask');
       } else {
         socket.emit('sendInstruction', { instruction: cmd, sender: 'WebDashboard' });
@@ -226,7 +238,10 @@ const settingsForm = document.getElementById('settings-form');
 const settingsMessage = document.getElementById('settings-message');
 const providerSelect = document.getElementById('setting-provider');
 const modelSelect = document.getElementById('setting-model');
+const languageSelect = document.getElementById('setting-language');
 const apiKeyInput = document.getElementById('setting-api-key');
+languageSelect.value = window.craftMateI18n.language;
+languageSelect.addEventListener('change', () => window.craftMateI18n.setLanguage(languageSelect.value));
 const modelsByProvider = {
   gemini: ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'],
   groq: ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'openai/gpt-oss-120b'],
@@ -255,22 +270,22 @@ function setConnectionState(name, connected) {
   const dot = document.getElementById(`${name}-health-dot`);
   const label = document.getElementById(`${name}-health-label`);
   dot.className = `connection-dot ${connected ? 'online' : 'offline'}`;
-  label.textContent = connected ? 'Connected' : 'Disconnected';
+  label.textContent = connected ? translate('connected') : translate('disconnected');
   label.style.color = connected ? 'var(--accent-green)' : 'var(--accent-red)';
 }
 
 async function refreshHealth() {
   try {
     const response = await fetch('/api/health', { cache: 'no-store' });
-    if (!response.ok) throw new Error('Health check failed');
+    if (!response.ok) throw new Error(translate('healthCheckFailed'));
     const health = await response.json();
     setConnectionState('minecraft', health.minecraftConnected);
     setConnectionState('ai', health.aiConnected);
-    document.getElementById('health-checked').textContent = `Checked ${new Date().toLocaleTimeString()}`;
+    document.getElementById('health-checked').textContent = translate('checked', { time: new Date().toLocaleTimeString() });
   } catch {
     setConnectionState('minecraft', false);
     setConnectionState('ai', false);
-    document.getElementById('health-checked').textContent = 'Status unavailable';
+    document.getElementById('health-checked').textContent = translate('healthUnavailable');
   }
 }
 
@@ -278,7 +293,7 @@ async function loadSettings() {
   try {
     const response = await fetch('/api/settings', { cache: 'no-store' });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Could not load settings');
+    if (!response.ok) throw new Error(data.error || translate('settingsLoadFailed'));
     document.getElementById('setting-mc-port').value = data.mcPort || 25565;
     document.getElementById('setting-username').value = data.username || 'AIMAN';
     document.getElementById('setting-web-port').value = data.webPort || 3000;
@@ -286,12 +301,12 @@ async function loadSettings() {
     populateModelOptions(providerSelect.value, data.model);
     apiKeyInput.value = '';
     document.getElementById('api-key-help').textContent = data.apiKeyConfigured
-      ? 'A key is saved. Enter a new one only if you want to replace it.'
-      : 'No key is saved for this provider. Ollama does not need an API key.';
+      ? translate('keySaved')
+      : translate('noKeySaved');
     showSettingsMessage('', '');
     await refreshHealth();
   } catch (error) {
-    showSettingsMessage(error.message || 'Could not load settings.', 'error');
+    showSettingsMessage(error.message || translate('settingsLoadFailed'), 'error');
   }
 }
 
@@ -309,15 +324,15 @@ providerSelect.addEventListener('change', () => {
   populateModelOptions(providerSelect.value);
   const needsKey = providerSelect.value !== 'ollama';
   document.getElementById('api-key-help').textContent = needsKey
-    ? 'Leave blank to keep the saved key; enter a key only to add or replace it.'
-    : 'Ollama runs locally and does not need an API key.';
+    ? translate('keepKey')
+    : translate('ollamaNoKey');
 });
 
 settingsForm.addEventListener('submit', async event => {
   event.preventDefault();
   const saveButton = document.getElementById('btn-save-settings');
   saveButton.disabled = true;
-  showSettingsMessage('Saving settings…');
+  showSettingsMessage(translate('saving'));
   const payload = {
     mcPort: Number(document.getElementById('setting-mc-port').value),
     username: document.getElementById('setting-username').value.trim(),
@@ -333,19 +348,19 @@ settingsForm.addEventListener('submit', async event => {
       body: JSON.stringify(payload),
     });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Could not save settings');
+    if (!response.ok) throw new Error(result.error || translate('settingsSaveFailed'));
     apiKeyInput.value = '';
-    showSettingsMessage(result.reconnecting ? 'Saved. Minecraft is reconnecting with the new settings.' : 'Settings saved.', 'success');
+    showSettingsMessage(result.reconnecting ? translate('reconnecting') : translate('settingsSaved'), 'success');
     if (result.webPortChanged) {
-      showSettingsMessage('Saved. Reopening the dashboard on its new port…', 'success');
+      showSettingsMessage(translate('reopeningPort'), 'success');
       setTimeout(() => { window.location.href = `${window.location.protocol}//${window.location.hostname}:${result.webPort}`; }, 1200);
     }
     refreshHealth();
     fetch('/api/status').then(response => response.json()).then(data => {
-      if (data.config) llmInfo.textContent = `🧠 AI Brain: ${data.config.provider.toUpperCase()} (${data.config.model})`;
+    if (data.config) updateLlmLabel(data.config.provider, data.config.model);
     }).catch(() => {});
   } catch (error) {
-    showSettingsMessage(error.message || 'Could not save settings.', 'error');
+    showSettingsMessage(error.message || translate('settingsSaveFailed'), 'error');
   } finally {
     saveButton.disabled = false;
   }
@@ -356,8 +371,8 @@ document.getElementById('btn-reconnect').addEventListener('click', async event =
   button.disabled = true;
   try {
     const response = await fetch('/api/reconnect', { method: 'POST' });
-    if (!response.ok) throw new Error('Minecraft reconnect failed');
-    showSettingsMessage('Minecraft reconnect started.', 'success');
+    if (!response.ok) throw new Error(translate('reconnectFailed'));
+    showSettingsMessage(translate('reconnectStarted'), 'success');
   } catch (error) {
     showSettingsMessage(error.message, 'error');
   } finally {
@@ -371,8 +386,8 @@ document.getElementById('btn-ai-restart').addEventListener('click', async event 
   button.disabled = true;
   try {
     const response = await fetch('/api/ai/restart', { method: 'POST' });
-    if (!response.ok) throw new Error('AI client restart failed');
-    showSettingsMessage('AI client reloaded with the saved provider settings.', 'success');
+    if (!response.ok) throw new Error(translate('aiRestartFailed'));
+    showSettingsMessage(translate('aiRestarted'), 'success');
     refreshHealth();
   } catch (error) {
     showSettingsMessage(error.message, 'error');
@@ -399,7 +414,7 @@ function compareVersions(left, right) {
 document.getElementById('btn-check-updates').addEventListener('click', async event => {
   const button = event.currentTarget;
   button.disabled = true;
-  showSettingsMessage('Checking for updates…');
+  showSettingsMessage(translate('checkingUpdates'));
   try {
     const [versionResponse, releaseResponse] = await Promise.all([
       fetch('/api/version', { cache: 'no-store' }),
@@ -408,22 +423,22 @@ document.getElementById('btn-check-updates').addEventListener('click', async eve
         cache: 'no-store',
       }),
     ]);
-    if (!versionResponse.ok) throw new Error('Could not determine the current version.');
-    if (!releaseResponse.ok) throw new Error('Could not check GitHub releases.');
+    if (!versionResponse.ok) throw new Error(translate('determineVersionFailed'));
+    if (!releaseResponse.ok) throw new Error(translate('githubCheckFailed'));
     const [current, latest] = await Promise.all([versionResponse.json(), releaseResponse.json()]);
     const latestVersion = String(latest.tag_name || '').replace(/^v/i, '');
-    if (!latestVersion) throw new Error('The latest GitHub release has no version tag.');
+    if (!latestVersion) throw new Error(translate('noReleaseVersion'));
     if (compareVersions(latestVersion, current.version) > 0) {
-      if (!window.confirm(`新しいバージョン v${latestVersion} があります。今すぐアップデートしますか？`)) {
-        showSettingsMessage(`Update v${latestVersion} is available.`);
+      if (!window.confirm(translate('updateAvailable', { version: latestVersion }))) {
+        showSettingsMessage(translate('updateDeclined', { version: latestVersion }));
         return;
       }
       await beginDashboardUpdate(button, latestVersion);
     } else {
-      showSettingsMessage(`You're up to date (v${current.version}).`, 'success');
+      showSettingsMessage(translate('currentVersion', { version: current.version }), 'success');
     }
   } catch (error) {
-    showSettingsMessage(error.message || 'Could not check for updates.', 'error');
+    showSettingsMessage(error.message || translate('githubCheckFailed'), 'error');
   } finally {
     button.disabled = false;
   }
@@ -431,21 +446,21 @@ document.getElementById('btn-check-updates').addEventListener('click', async eve
 
 async function beginDashboardUpdate(button, version) {
   const token = document.querySelector('meta[name="craftmate-update-token"]')?.content;
-  if (!token) throw new Error('The local update authentication token is missing. Reload the dashboard and try again.');
+  if (!token) throw new Error(translate('updateAuthMissing'));
   const progressWrap = document.getElementById('update-progress-wrap');
   const progressBar = document.getElementById('update-progress');
   const progressLabel = document.getElementById('update-progress-label');
   progressWrap.hidden = false;
   progressBar.removeAttribute('value');
-  progressLabel.textContent = 'Downloading update…';
-  showSettingsMessage('Starting update…');
+  progressLabel.textContent = translate('updateDownloading');
+  showSettingsMessage(translate('updateStarting'));
   const response = await fetch('/api/update', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: '{}',
   });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.error || 'Could not start the update.');
+  if (!response.ok) throw new Error(result.error || translate('updateStartFailed'));
   button.disabled = true;
   const deadline = Date.now() + 180000;
   while (Date.now() < deadline) {
@@ -456,21 +471,25 @@ async function beginDashboardUpdate(button, version) {
       });
       if (!statusResponse.ok) continue;
       const status = await statusResponse.json();
-      progressLabel.textContent = status.message || 'Applying update…';
+      progressLabel.textContent = status.status === 'downloading'
+        ? translate('updateDownloading')
+        : status.status === 'applying'
+          ? translate('updateApplying')
+          : status.message || translate('updateApplying');
       if (Number.isFinite(status.progress)) progressBar.value = status.progress;
       else progressBar.removeAttribute('value');
       if (status.status === 'completed') {
         progressBar.value = 100;
-        progressLabel.textContent = 'アップデートが完了しました。アプリを再起動してください';
-        showSettingsMessage('アップデートが完了しました。アプリを再起動してください', 'success');
+        progressLabel.textContent = translate('updateCompleted');
+        showSettingsMessage(translate('updateCompleted'), 'success');
         return;
       }
-      if (status.status === 'failed') throw new Error(status.message || 'Update failed.');
+      if (status.status === 'failed') throw new Error(status.message || translate('updateFailed'));
     } catch (error) {
       if (error instanceof Error && error.message !== 'Failed to fetch') throw error;
     }
   }
-  throw new Error(`Update v${version} is taking longer than expected. Check the dashboard again shortly.`);
+  throw new Error(translate('updateTimeout', { version }));
 }
 
 document.getElementById('btn-download-logs').addEventListener('click', () => {

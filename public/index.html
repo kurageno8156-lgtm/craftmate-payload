@@ -9,7 +9,7 @@
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Minecraft AI Agent Dashboard</title>
+  <title data-i18n="pageTitle">Minecraft AI Agent Dashboard</title>
   <link rel="stylesheet" href="style.css">
   <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -25,11 +25,11 @@
         <div class="header-status">
           <div class="status-indicator" id="connection-status">
             <span class="dot offline"></span>
-            <span class="text">Connecting...</span>
+            <span class="text" data-i18n="connecting">Connecting...</span>
           </div>
           <div class="llm-badge" id="llm-info">🧠 AI Brain: Loading...</div>
         </div>
-        <button id="btn-settings" class="btn-settings" type="button" aria-haspopup="dialog">⚙️ Settings</button>
+        <button id="btn-settings" class="btn-settings" type="button" aria-haspopup="dialog" data-i18n="settingsButton">⚙️ Settings</button>
       </div>
     </header>
 
@@ -37,45 +37,45 @@
     <main class="dashboard-grid">
       <!-- 左カラム: ステータス & インベントリ -->
       <section class="panel status-panel">
-        <h2>📊 Bot Status</h2>
+        <h2 data-i18n="botStatus">📊 Bot Status</h2>
         
         <div class="stats-cards">
           <!-- HP & Food -->
           <div class="stat-card">
-            <div class="stat-label">❤️ Health (<span id="hp-val">20</span>/20)</div>
+            <div class="stat-label">❤️ <span data-i18n="health">Health</span> (<span id="hp-val">20</span>/20)</div>
             <div class="progress-bar hp"><div class="progress-fill" id="hp-bar" style="width: 100%;"></div></div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">🍗 Food (<span id="food-val">20</span>/20)</div>
+            <div class="stat-label">🍗 <span data-i18n="food">Food</span> (<span id="food-val">20</span>/20)</div>
             <div class="progress-bar food"><div class="progress-fill" id="food-bar" style="width: 100%;"></div></div>
           </div>
         </div>
 
         <div class="info-list">
           <div class="info-item">
-            <span class="info-key">📍 Coordinates</span>
+            <span class="info-key" data-i18n="coordinates">📍 Coordinates</span>
             <span class="info-value" id="pos-val">X: 0, Y: 0, Z: 0</span>
           </div>
           <div class="info-item">
-            <span class="info-key">🌍 Dimension</span>
+            <span class="info-key" data-i18n="dimension">🌍 Dimension</span>
             <span class="info-value" id="dimension-val">overworld</span>
           </div>
           <div class="info-item">
-            <span class="info-key">🌲 Biome</span>
+            <span class="info-key" data-i18n="biome">🌲 Biome</span>
             <span class="info-value" id="biome-val">unknown</span>
           </div>
           <div class="info-item">
-            <span class="info-key">☀️ Time</span>
+            <span class="info-key" data-i18n="time">☀️ Time</span>
             <span class="info-value" id="time-val">昼間</span>
           </div>
           <div class="info-item">
-            <span class="info-key">🗡️ Held Item</span>
+            <span class="info-key" data-i18n="heldItem">🗡️ Held Item</span>
             <span class="info-value" id="held-val">素手</span>
           </div>
         </div>
 
         <!-- 装備 -->
-        <h3>🛡️ Equipment</h3>
+        <h3 data-i18n="equipment">🛡️ Equipment</h3>
         <div class="armor-grid">
           <div class="armor-slot" id="armor-helmet">🪖 <span>-</span></div>
           <div class="armor-slot" id="armor-chest">🦺 <span>-</span></div>
@@ -84,15 +84,15 @@
         </div>
 
         <!-- インベントリ -->
-        <h3>🎒 Inventory (<span id="inv-count">0</span> items)</h3>
+        <h3>🎒 <span data-i18n="inventory">Inventory</span> (<span id="inv-count">0</span> <span data-i18n="items">items</span>)</h3>
         <div class="inventory-grid" id="inventory-container">
-          <div class="empty-hint">インベントリは空です</div>
+          <div class="empty-hint" data-i18n="emptyInventory">Inventory is empty</div>
         </div>
 
         <!-- 周囲のMob・プレイヤー -->
-        <h3>👀 Nearby Entities</h3>
+        <h3 data-i18n="nearbyEntities">👀 Nearby Entities</h3>
         <div class="entities-list" id="entities-container">
-          <div class="empty-hint">周囲にエンティティはいません</div>
+          <div class="empty-hint" data-i18n="noEntities">No nearby entities</div>
         </div>
       </section>
 
@@ -101,34 +101,34 @@
         <!-- 現在のタスク表示 -->
         <div class="current-task-box" id="task-box">
           <div class="task-header">
-            <span class="task-title">🎯 Current Goal</span>
-            <button id="btn-cancel" class="btn-cancel" style="display: none;">タスク中断 (Stop)</button>
+            <span class="task-title" data-i18n="currentGoal">🎯 Current Goal</span>
+            <button id="btn-cancel" class="btn-cancel" style="display: none;" data-i18n="stopTask">Stop task</button>
           </div>
-          <div class="task-content" id="current-task-text">待機中 (指示を待っています)</div>
+          <div class="task-content" id="current-task-text" data-i18n="waitingForTask">Waiting for instructions</div>
         </div>
 
         <!-- AI思考・行動ログ (ReAct Timeline) -->
-        <h2>🧠 AI ReAct Loop (Thought & Actions)</h2>
+        <h2 data-i18n="aiLogTitle">🧠 AI Activity Log (Thoughts & Actions)</h2>
         <div class="logs-container" id="logs-container">
           <div class="log-entry system">
             <span class="log-time">System</span>
-            <span class="log-text">AI Bot システムが待機しています。下のフォームまたはマイクラチャットから指示してください。</span>
+            <span class="log-text" data-i18n="systemReady">AI bot is ready. Send an instruction below or through Minecraft chat.</span>
           </div>
         </div>
 
         <!-- 指示送信フォーム -->
         <div class="command-input-container">
           <div class="quick-commands">
-            <button class="quick-btn" data-cmd="私についてきて">🚶 私についてきて</button>
-            <button class="quick-btn" data-cmd="木を3つ切って集めて">🌲 木を3つ切って</button>
-            <button class="quick-btn" data-cmd="木のツルハシを1個作って">⛏️ 木のツルハシ作って</button>
-            <button class="quick-btn" data-cmd="周囲のモンスターから身を守って">⚔️ モンスターを迎撃</button>
-            <button class="quick-btn" data-cmd="手持ちの木材を私に渡して">🎁 木材を渡して</button>
-            <button class="quick-btn" data-cmd="ストップ">🛑 ストップ</button>
+            <button class="quick-btn" data-cmd="私についてきて" data-cmd-ja="私についてきて" data-cmd-en="Follow me">🚶 <span data-i18n="quickFollow">Follow me</span></button>
+            <button class="quick-btn" data-cmd="木を3つ切って集めて" data-cmd-ja="木を3つ切って集めて" data-cmd-en="Chop and collect 3 logs">🌲 <span data-i18n="quickChop">Collect 3 logs</span></button>
+            <button class="quick-btn" data-cmd="木のツルハシを1個作って" data-cmd-ja="木のツルハシを1個作って" data-cmd-en="Craft a wooden pickaxe">⛏️ <span data-i18n="quickPickaxe">Craft a wooden pickaxe</span></button>
+            <button class="quick-btn" data-cmd="周囲のモンスターから身を守って" data-cmd-ja="周囲のモンスターから身を守って" data-cmd-en="Defend yourself from nearby monsters">⚔️ <span data-i18n="quickDefend">Defend against monsters</span></button>
+            <button class="quick-btn" data-cmd="手持ちの木材を私に渡して" data-cmd-ja="手持ちの木材を私に渡して" data-cmd-en="Give me the wood you are carrying">🎁 <span data-i18n="quickGive">Give me your wood</span></button>
+            <button class="quick-btn" data-cmd="ストップ" data-cmd-ja="ストップ" data-cmd-en="Stop">🛑 <span data-i18n="quickStop">Stop</span></button>
           </div>
           <form id="command-form" class="command-form">
-            <input type="text" id="command-input" placeholder="AIへの指示を入力... (例: 原木を5個掘って作業台を作って)" autocomplete="off" required>
-            <button type="submit" id="btn-submit" class="btn-send">指示送信 🚀</button>
+            <input type="text" id="command-input" data-i18n-placeholder="commandPlaceholder" placeholder="Enter an instruction..." autocomplete="off" required>
+            <button type="submit" id="btn-submit" class="btn-send" data-i18n="sendInstruction">Send instruction 🚀</button>
           </form>
         </div>
       </section>
@@ -140,42 +140,44 @@
     <section class="settings-dialog">
       <div class="settings-heading">
         <div>
-          <p class="eyebrow">CRAFTMATE CONTROL</p>
-          <h2 id="settings-title">⚙️ Settings</h2>
+          <p class="eyebrow" data-i18n="controlPanel">CRAFTMATE CONTROL</p>
+          <h2 id="settings-title" data-i18n="settingsTitle">⚙️ Settings</h2>
         </div>
-        <button id="btn-close-settings" class="icon-button" type="button" aria-label="Close settings">×</button>
+        <button id="btn-close-settings" class="icon-button" type="button" aria-label="Close settings" data-i18n-aria="closeSettings">×</button>
       </div>
       <form id="settings-form">
         <div class="settings-fields">
-          <label class="settings-field"><span>Minecraft LAN port</span><input id="setting-mc-port" name="mcPort" type="number" min="1" max="65535" value="25565" required><small>Default: 25565</small></label>
-          <label class="settings-field"><span>Bot name</span><input id="setting-username" name="username" type="text" maxlength="16" value="AIMAN" required><small>1–16 letters, numbers, or underscores</small></label>
-          <label class="settings-field"><span>Web server port</span><input id="setting-web-port" name="webPort" type="number" min="1" max="65535" value="3000" required><small>Default: 3000</small></label>
-          <label class="settings-field"><span>AI provider</span><select id="setting-provider" name="provider"><option value="gemini">Google Gemini</option><option value="groq">Groq</option><option value="ollama">Ollama (local)</option><option value="openai">OpenAI</option></select></label>
-          <label class="settings-field"><span>Model</span><select id="setting-model" name="model" required></select><small>Choose the model used by the selected provider.</small></label>
-          <label class="settings-field settings-field-wide"><span>Provider API key <em>(optional)</em></span><input id="setting-api-key" name="aiApiKey" type="password" autocomplete="new-password" placeholder="Leave blank to keep the saved key"><small id="api-key-help">Your key stays on this server and is never displayed.</small></label>
+          <label class="settings-field"><span data-i18n="languageLabel">Language / 言語</span><select id="setting-language" name="language" aria-label="Language / 言語"><option value="ja">日本語 (ja)</option><option value="en">English (en)</option></select></label>
+          <label class="settings-field"><span data-i18n="mcPortLabel">Minecraft LAN port</span><input id="setting-mc-port" name="mcPort" type="number" min="1" max="65535" value="25565" required><small data-i18n="mcPortHelp">Default: 25565</small></label>
+          <label class="settings-field"><span data-i18n="botNameLabel">Bot name</span><input id="setting-username" name="username" type="text" maxlength="16" value="AIMAN" required><small data-i18n="botNameHelp">1–16 letters, numbers, or underscores</small></label>
+          <label class="settings-field"><span data-i18n="webPortLabel">Web server port</span><input id="setting-web-port" name="webPort" type="number" min="1" max="65535" value="3000" required><small data-i18n="webPortHelp">Default: 3000</small></label>
+          <label class="settings-field"><span data-i18n="providerLabel">AI provider</span><select id="setting-provider" name="provider"><option value="gemini">Google Gemini</option><option value="groq">Groq</option><option value="ollama">Ollama (local)</option><option value="openai">OpenAI</option></select></label>
+          <label class="settings-field"><span data-i18n="modelLabel">Model</span><select id="setting-model" name="model" required></select><small data-i18n="modelHelp">Choose the model used by the selected provider.</small></label>
+          <label class="settings-field settings-field-wide"><span data-i18n="apiKeyLabel">Provider API key <em>(optional)</em></span><input id="setting-api-key" name="aiApiKey" type="password" autocomplete="new-password" placeholder="Leave blank to keep the saved key" data-i18n-placeholder="apiKeyPlaceholder"><small id="api-key-help" data-i18n="apiKeyHelp">Your key stays on this server and is never displayed.</small></label>
         </div>
         <div id="settings-message" class="settings-message" role="status" aria-live="polite"></div>
-        <div class="settings-footer"><span class="settings-note">Changes save to the local .env file.</span><button id="btn-save-settings" class="btn-primary" type="submit">Save settings</button></div>
+        <div class="settings-footer"><span class="settings-note" data-i18n="settingsNote">Changes save to the local .env file.</span><button id="btn-save-settings" class="btn-primary" type="submit" data-i18n="saveSettings">Save settings</button></div>
       </form>
       <div class="settings-divider"></div>
-      <div class="connection-heading"><h3>Connections</h3><span id="health-checked">Checking…</span></div>
+      <div class="connection-heading"><h3 data-i18n="connections">Connections</h3><span id="health-checked" data-i18n="checking">Checking…</span></div>
       <div class="connection-cards">
-        <div class="connection-card"><span class="connection-dot offline" id="minecraft-health-dot"></span><span>Minecraft</span><strong id="minecraft-health-label">Checking</strong></div>
-        <div class="connection-card"><span class="connection-dot offline" id="ai-health-dot"></span><span>AI provider</span><strong id="ai-health-label">Checking</strong></div>
+        <div class="connection-card"><span class="connection-dot offline" id="minecraft-health-dot"></span><span data-i18n="minecraft">Minecraft</span><strong id="minecraft-health-label" data-i18n="checking">Checking</strong></div>
+        <div class="connection-card"><span class="connection-dot offline" id="ai-health-dot"></span><span data-i18n="aiProvider">AI provider</span><strong id="ai-health-label" data-i18n="checking">Checking</strong></div>
       </div>
       <div class="settings-tools">
-        <button id="btn-reconnect" class="btn-secondary" type="button">↻ Reconnect Minecraft</button>
-        <button id="btn-ai-restart" class="btn-secondary" type="button">⟳ Restart AI client</button>
-        <button id="btn-check-updates" class="btn-secondary" type="button">↻ Check for updates</button>
-        <button id="btn-download-logs" class="btn-secondary" type="button">↓ Download logs</button>
+        <button id="btn-reconnect" class="btn-secondary" type="button" data-i18n="reconnect">↻ Reconnect Minecraft</button>
+        <button id="btn-ai-restart" class="btn-secondary" type="button" data-i18n="restartAI">⟳ Restart AI client</button>
+        <button id="btn-check-updates" class="btn-secondary" type="button" data-i18n="checkUpdates">↻ Check for updates</button>
+        <button id="btn-download-logs" class="btn-secondary" type="button" data-i18n="downloadLogs">↓ Download logs</button>
       </div>
       <div id="update-progress-wrap" class="update-progress-wrap" hidden>
-        <progress id="update-progress" max="100" value="0" aria-label="Update progress"></progress>
+        <progress id="update-progress" max="100" value="0" aria-label="Update progress" data-i18n-aria="updateProgress"></progress>
         <span id="update-progress-label" role="status" aria-live="polite"></span>
       </div>
     </section>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
