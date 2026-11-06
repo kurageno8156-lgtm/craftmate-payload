@@ -367,6 +367,81 @@ settingsForm.addEventListener('submit', async event => {
   }
 });
 
+function getLocalSettingsToken() {
+  const token = document.querySelector('meta[name="craftmate-update-token"]')?.content;
+  if (!token) throw new Error(translate('updateAuthMissing'));
+  return token;
+}
+
+document.getElementById('btn-create-backup').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    const token = getLocalSettingsToken();
+    const response = await fetch('/api/backup', { cache: 'no-store', headers: { Authorization: `Bearer ${token}` } });
+    const backup = await response.json();
+    if (!response.ok) throw new Error(backup.error || translate('backupFailed'));
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const now = new Date();
+    const pad = value => String(value).padStart(2, '0');
+    const fallbackName = `craftmate_backup_${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.json`;
+    link.download = /^craftmate_backup_\d{8}_\d{6}\.json$/.test(backup.fileName || '')
+      ? backup.fileName
+      : fallbackName;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showSettingsMessage(translate('backupCreated', { fileName: link.download }), 'success');
+  } catch (error) {
+    showSettingsMessage(error.message || translate('backupFailed'), 'error');
+  } finally {
+    button.disabled = false;
+  }
+});
+
+const backupFileInput = document.getElementById('settings-backup-file');
+document.getElementById('btn-restore-backup').addEventListener('click', () => backupFileInput.click());
+backupFileInput.addEventListener('change', async () => {
+  const file = backupFileInput.files?.[0];
+  backupFileInput.value = '';
+  if (!file) return;
+  const button = document.getElementById('btn-restore-backup');
+  try {
+    if (file.size > 256 * 1024) throw new Error(translate('invalidBackup'));
+    const backup = JSON.parse(await file.text());
+    if (!backup || backup.format !== 'craftmate-settings-backup' || backup.version !== 1 || typeof backup.env !== 'string') {
+      throw new Error(translate('invalidBackup'));
+    }
+    if (!window.confirm(translate('restoreConfirm'))) return;
+    button.disabled = true;
+    showSettingsMessage(translate('restoringBackup'));
+    const token = getLocalSettingsToken();
+    const response = await fetch('/api/restore', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(backup),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || translate('restoreFailed'));
+    showSettingsMessage(translate('restoreSuccess'), 'success');
+    setTimeout(() => {
+      if (result.webPortChanged) {
+        const dashboardUrl = new URL(window.location.href);
+        dashboardUrl.port = String(result.webPort);
+        window.location.assign(dashboardUrl.toString());
+      } else {
+        window.location.reload();
+      }
+    }, 900);
+  } catch (error) {
+    showSettingsMessage(error.message || translate('restoreFailed'), 'error');
+  } finally {
+    button.disabled = false;
+  }
+});
+
 document.getElementById('btn-reconnect').addEventListener('click', async event => {
   const button = event.currentTarget;
   button.disabled = true;

@@ -12,6 +12,7 @@ import { randomBytes, timingSafeEqual } from 'crypto';
 import { spawn } from 'child_process';
 import { Readable, Transform } from 'stream';
 import { pipeline } from 'stream/promises';
+import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -225,7 +226,7 @@ export class WebServer {
   }
 
   private setupMiddlewares(): void {
-    this.app.use(express.json());
+    this.app.use(express.json({ limit: '256kb' }));
     const publicPath = path.resolve(__dirname, '../../public');
     this.app.get('/', (_req, res) => {
       try {
@@ -461,6 +462,102 @@ export class WebServer {
       this.appendUpdateLog('アップデートを開始しました。');
       res.status(202).json({ success: true });
       void this.startUpdate();
+    });
+
+    this.app.get('/api/backup', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Backups are available only to the authenticated local dashboard.' });
+      try {
+        let env = '';
+        try { env = fs.readFileSync(this.envPath, 'utf8'); }
+        catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+        }
+        const now = new Date();
+        const pad = (value: number) => String(value).padStart(2, '0');
+        const fileName = `craftmate_backup_${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.json`;
+        res.setHeader('Cache-Control', 'no-store');
+        res.json({ format: 'craftmate-settings-backup', version: 1, createdAt: now.toISOString(), fileName, env });
+      } catch (error) {
+        console.error('[Backup] Could not read .env:', error);
+        res.status(500).json({ error: 'Could not create a settings backup.' });
+      }
+    });
+
+    this.app.post('/api/restore', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Restore is available only to the authenticated local dashboard.' });
+      const backup = req.body as { format?: unknown; version?: unknown; env?: unknown };
+      if (!backup || backup.format !== 'craftmate-settings-backup' || backup.version !== 1 || typeof backup.env !== 'string') {
+        return res.status(400).json({ error: 'This is not a supported CraftMate settings backup.' });
+      }
+      if (Buffer.byteLength(backup.env, 'utf8') > 128 * 1024 || backup.env.includes('\0')) {
+        return res.status(413).json({ error: 'The backup file is too large or contains invalid data.' });
+      }
+
+      const values = dotenv.parse(backup.env);
+      const providers = ['gemini', 'groq', 'openai', 'ollama'];
+      const provider = values.LLM_PROVIDER || 'gemini';
+      const mcPort = Number(values.MC_PORT || 25565);
+      const webPort = Number(values.WEB_PORT || 3000);
+      const username = values.MC_USERNAME || 'AIMAN';
+      const auth = values.MC_AUTH || 'offline';
+      if (!providers.includes(provider)) return res.status(400).json({ error: 'The backup contains an unsupported AI provider.' });
+      if (!Number.isInteger(mcPort) || mcPort < 1 || mcPort > 65535 || !Number.isInteger(webPort) || webPort < 1 || webPort > 65535) {
+        return res.status(400).json({ error: 'The backup contains an invalid port number.' });
+      }
+      if (!/^[A-Za-z0-9_]{1,16}$/.test(username) || (auth !== 'offline' && auth !== 'microsoft')) {
+        return res.status(400).json({ error: 'The backup contains invalid Minecraft settings.' });
+      }
+      for (const key of Object.values(MODEL_ENV_KEYS)) {
+        if (values[key] && !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(values[key])) {
+          return res.status(400).json({ error: `The backup contains an invalid model value (${key}).` });
+        }
+      }
+
+      const config = this.botWrapper.config;
+      const previousEnv = (() => {
+        try { return dotenv.parse(fs.readFileSync(this.envPath, 'utf8')); } catch { return {}; }
+      })();
+      const portChanged = webPort !== this.port;
+      const minecraftChanged = mcPort !== config.mcPort || username !== config.mcUsername ||
+        (values.MC_HOST || 'localhost') !== config.mcHost || (values.MC_VERSION || undefined) !== config.mcVersion || auth !== config.mcAuth;
+      const temporaryPath = `${this.envPath}.restore-${randomBytes(8).toString('hex')}`;
+      try {
+        fs.writeFileSync(temporaryPath, backup.env, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+        fs.renameSync(temporaryPath, this.envPath);
+      } catch (error) {
+        try { fs.rmSync(temporaryPath, { force: true }); } catch { }
+        console.error('[Restore] Could not replace .env:', error);
+        return res.status(500).json({ error: 'Could not restore the settings file.' });
+      }
+
+      for (const key of Object.keys(previousEnv)) {
+        if (!Object.prototype.hasOwnProperty.call(values, key)) delete process.env[key];
+      }
+      for (const [key, value] of Object.entries(values)) process.env[key] = value;
+
+      config.mcHost = values.MC_HOST || 'localhost';
+      config.mcPort = mcPort;
+      config.mcUsername = username;
+      config.mcVersion = values.MC_VERSION || undefined;
+      config.mcAuth = auth as 'offline' | 'microsoft';
+      config.llmProvider = provider as AIProvider;
+      config.geminiApiKey = values.GEMINI_API_KEY || '';
+      config.geminiModel = values.GEMINI_MODEL || 'gemini-3.1-flash-lite';
+      config.openaiApiKey = values.OPENAI_API_KEY || '';
+      config.openaiModel = values.OPENAI_MODEL || 'gpt-4o';
+      config.groqApiKey = values.GROQ_API_KEY || '';
+      config.groqModel = values.GROQ_MODEL || 'openai/gpt-oss-120b';
+      config.ollamaBaseUrl = values.OLLAMA_BASE_URL || 'http://localhost:11434/v1';
+      config.ollamaModel = values.OLLAMA_MODEL || 'llama3.1';
+      config.webPort = webPort;
+      config.autoEat = values.AUTO_EAT !== 'false';
+      config.autoArmor = values.AUTO_ARMOR !== 'false';
+      config.maxAgentSteps = 100;
+      this.agent.restartAIClient();
+      if (minecraftChanged) this.botWrapper.reconnect();
+
+      res.json({ success: true, reconnecting: minecraftChanged, webPortChanged: portChanged, webPort });
+      if (portChanged) setTimeout(() => this.changePort(webPort), 300);
     });
 
     this.app.get('/api/status', (req, res) => {

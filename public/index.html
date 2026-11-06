@@ -158,6 +158,11 @@
         <div id="settings-message" class="settings-message" role="status" aria-live="polite"></div>
         <div class="settings-footer"><span class="settings-note" data-i18n="settingsNote">Changes save to the local .env file.</span><button id="btn-save-settings" class="btn-primary" type="submit" data-i18n="saveSettings">Save settings</button></div>
       </form>
+      <div class="backup-tools" aria-label="Settings backup" data-i18n-aria="backupTools">
+        <button id="btn-create-backup" class="btn-secondary" type="button" data-i18n="createBackup">Create backup</button>
+        <button id="btn-restore-backup" class="btn-secondary" type="button" data-i18n="restoreBackup">Restore from backup</button>
+        <input id="settings-backup-file" type="file" accept=".json,application/json" hidden>
+      </div>
       <div class="settings-divider"></div>
       <div class="connection-heading"><h3 data-i18n="connections">Connections</h3><span id="health-checked" data-i18n="checking">Checking…</span></div>
       <div class="connection-cards">

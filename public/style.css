@@ -537,6 +537,7 @@ body {
 .settings-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 14px; }
 .btn-secondary { min-height: 39px; padding: 8px 10px; border-radius: 9px; background: #263449; font-size: 11px; font-weight: 600; }
 .settings-tools #btn-download-logs { grid-column: 1 / -1; }
+.backup-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 14px; }
 .update-progress-wrap { margin-top: 12px; color: var(--text-muted); font-size: 12px; }
 .update-progress-wrap progress { display: block; width: 100%; height: 10px; margin-bottom: 6px; accent-color: var(--accent-green); }
 .update-log-panel { margin-top: 14px; }
@@ -554,5 +555,6 @@ body {
   .settings-field-wide { grid-column: auto; }
   .settings-tools { grid-template-columns: 1fr; }
   .settings-tools #btn-download-logs { grid-column: auto; }
+  .backup-tools { grid-template-columns: 1fr; }
   .settings-footer { align-items: flex-start; flex-direction: column; }
 }
