@@ -151,8 +151,8 @@ namespace CraftMateUninstall
                 WaitForParentProcess(_parentProcessId);
                 SetStatus("関連プロセスを終了しています...");
                 StopApplicationProcesses();
-                AppendLog("プロセス終了後、2秒待機しています...");
-                WaitWithUi(2000);
+                AppendLog("プロセス終了後、3秒待機しています...");
+                WaitWithUi(3000);
                 AppendLog("インストール先: " + _installLocation);
 
                 List<string> files = new List<string>();

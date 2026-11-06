@@ -27,6 +27,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Uninstaller compilation failed.' }
 & $compiler /nologo /target:winexe "/out:$setupPath" "/resource:$uninstallPath,CraftMate.Uninstall.exe" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll (Join-Path $PSScriptRoot 'Setup.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
 
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $fileStream = [System.IO.File]::Open($payloadPath, [System.IO.FileMode]::Create)
 try {

@@ -66,9 +66,9 @@ namespace CraftMateSetup
         private CheckBox _chkAgree, _chkLaunch;
         private ProgressBar _progressBar;
 
-        private const string CurrentVersion = "1.3.0";
+        private const string CurrentVersion = "1.3.1";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.0/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.1/app_payload.zip";
 
         public InstallerForm(string lang)
         {
@@ -362,6 +362,8 @@ namespace CraftMateSetup
                         if (File.Exists(exe)) System.Diagnostics.Process.Start(exe);
                     }
                     MessageBox.Show(_lang == "ja" ? "インストールが完了しました。" : "Installation completed.", "Complete");
+                    Application.Exit();
+                    Environment.Exit(0);
                 }));
             }
             catch (Exception ex)
@@ -376,6 +378,17 @@ namespace CraftMateSetup
 
         private static void CreateShortcut(string shortcutPath, string targetPath, string workingDirectory)
         {
+            targetPath = Path.GetFullPath(targetPath);
+            workingDirectory = Path.GetFullPath(workingDirectory);
+            if (!File.Exists(targetPath))
+            {
+                throw new FileNotFoundException("CraftMate.exe was not found for the shortcut.", targetPath);
+            }
+            if (!Directory.Exists(workingDirectory))
+            {
+                throw new DirectoryNotFoundException("The CraftMate installation folder was not found.");
+            }
+
             Type shellType = Type.GetTypeFromProgID("WScript.Shell");
             if (shellType == null)
             {
