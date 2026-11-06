@@ -31,9 +31,48 @@ namespace CraftMateSetup
             using (Stream iconStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CraftMate.app.ico"))
             {
                 if (iconStream == null) return null;
-                using (Icon appIcon = new Icon(iconStream, 64, 64))
+                using (MemoryStream iconBuffer = new MemoryStream())
                 {
-                    using (Bitmap source = appIcon.ToBitmap())
+                    iconStream.CopyTo(iconBuffer);
+                    byte[] iconData = iconBuffer.ToArray();
+                    if (iconData.Length < 6 || BitConverter.ToUInt16(iconData, 0) != 0 || BitConverter.ToUInt16(iconData, 2) != 1)
+                    {
+                        return null;
+                    }
+
+                    int imageCount = BitConverter.ToUInt16(iconData, 4);
+                    int selectedOffset = -1;
+                    int selectedSize = 0;
+                    int largestDimension = 0;
+                    for (int i = 0; i < imageCount; i++)
+                    {
+                        int entryOffset = 6 + (i * 16);
+                        if (entryOffset + 16 > iconData.Length) break;
+                        int width = iconData[entryOffset] == 0 ? 256 : iconData[entryOffset];
+                        int height = iconData[entryOffset + 1] == 0 ? 256 : iconData[entryOffset + 1];
+                        int dimension = Math.Max(width, height);
+                        int imageSize = (int)BitConverter.ToUInt32(iconData, entryOffset + 8);
+                        int imageOffset = (int)BitConverter.ToUInt32(iconData, entryOffset + 12);
+                        if (imageSize <= 0 || imageOffset < 0 || imageOffset + imageSize > iconData.Length) continue;
+                        if (dimension > largestDimension)
+                        {
+                            largestDimension = dimension;
+                            selectedOffset = imageOffset;
+                            selectedSize = imageSize;
+                        }
+                    }
+
+                    if (selectedOffset < 0) return null;
+                    byte[] pngSignature = new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 };
+                    bool isPng = selectedSize >= pngSignature.Length;
+                    for (int i = 0; isPng && i < pngSignature.Length; i++)
+                    {
+                        if (iconData[selectedOffset + i] != pngSignature[i]) isPng = false;
+                    }
+                    if (!isPng) return null;
+
+                    using (MemoryStream pngStream = new MemoryStream(iconData, selectedOffset, selectedSize))
+                    using (Image source = Image.FromStream(pngStream))
                     {
                         Bitmap resized = new Bitmap(64, 64, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
                         using (System.Drawing.Graphics graphics = System.Drawing.Graphics.FromImage(resized))
@@ -89,6 +128,7 @@ namespace CraftMateSetup
             btn.DialogResult = DialogResult.OK;
             btn.Click += delegate {
                 SelectedLanguage = combo.SelectedIndex == 1 ? "ja" : "en";
+                DialogResult = System.Windows.Forms.DialogResult.OK;
                 Close();
             };
             Controls.Add(btn);
@@ -142,6 +182,10 @@ namespace CraftMateSetup
             next.Enabled = false;
             next.DialogResult = DialogResult.OK;
             agree.CheckedChanged += delegate { next.Enabled = agree.Checked; };
+            next.Click += delegate {
+                DialogResult = System.Windows.Forms.DialogResult.OK;
+                Close();
+            };
 
             Controls.Add(heading);
             Controls.Add(policy);
@@ -164,9 +208,9 @@ namespace CraftMateSetup
         private ProgressBar _progressBar;
         private PictureBox _picAppIcon;
 
-        private const string CurrentVersion = "1.3.5";
+        private const string CurrentVersion = "1.3.6";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.5/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.6/app_payload.zip";
 
         public InstallerForm(string lang)
         {
@@ -534,19 +578,68 @@ namespace CraftMateSetup
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            string lang = "en";
-            using (LanguageForm lf = new LanguageForm())
-            {
-                if (lf.ShowDialog() != DialogResult.OK) return;
-                lang = lf.SelectedLanguage;
-            }
+            Application.Run(new InstallerApplicationContext());
+        }
+    }
 
-            using (TermsForm terms = new TermsForm(lang))
-            {
-                if (terms.ShowDialog() != DialogResult.OK) return;
-            }
+    internal sealed class InstallerApplicationContext : ApplicationContext
+    {
+        private string _language = "en";
 
-            Application.Run(new InstallerForm(lang));
+        public InstallerApplicationContext()
+        {
+            ShowLanguageForm();
+        }
+
+        private void ShowLanguageForm()
+        {
+            LanguageForm form = new LanguageForm();
+            form.FormClosed += delegate
+            {
+                DialogResult result = form.DialogResult;
+                if (result == DialogResult.OK)
+                {
+                    _language = form.SelectedLanguage;
+                }
+                form.Dispose();
+
+                if (result == DialogResult.OK)
+                {
+                    ShowTermsForm();
+                }
+                else
+                {
+                    ExitThread();
+                }
+            };
+            form.Show();
+        }
+
+        private void ShowTermsForm()
+        {
+            TermsForm form = new TermsForm(_language);
+            form.FormClosed += delegate
+            {
+                DialogResult result = form.DialogResult;
+                form.Dispose();
+
+                if (result == DialogResult.OK)
+                {
+                    ShowInstallerForm();
+                }
+                else
+                {
+                    ExitThread();
+                }
+            };
+            form.Show();
+        }
+
+        private void ShowInstallerForm()
+        {
+            InstallerForm form = new InstallerForm(_language);
+            MainForm = form;
+            form.Show();
         }
     }
 }
