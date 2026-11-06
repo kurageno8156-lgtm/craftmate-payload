@@ -176,7 +176,7 @@ export const BOT_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'finishTask',
-    description: '指示されたタスクがすべて完了した、またはこれ以上のアクションが不要な場合に呼び出します。',
+    description: '最新の環境・インベントリで指示された目標全体の達成を確認できた場合だけ呼び出します。資材不足、道具不足、失敗、進捗報告、または一時的に行動できないことを理由に呼び出してはいけません。必要な素材を採掘・収集し、クラフトや別の手段を続けてください。',
     parameters: {
       type: 'object',
       properties: {

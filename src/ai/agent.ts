@@ -85,8 +85,14 @@ export class AutonomousAgent extends EventEmitter {
    - 3x3のレシピ（ツルハシ、剣、防具、かまど等）は作業台（crafting_table）が必要です。インベントリに作業台があれば自動で設置してクラフトを試みます。
 3. **失敗時の自己修復**:
    - アクションが失敗した（ツールが足りない、ブロックが見つからない）という観察結果（Observation）が返ってきたら、即座に指摘された素材集めや下位ツールの作成に切り替えてください。
-4. **完了報告**:
-   - 目標が完了したら、必ず 'finishTask' ツールを呼んで完了を報告してください。
+4. **目標達成まで継続（最重要）**:
+   - 資材不足、道具不足、採掘やクラフトの失敗、目標の一部だけができた状態は、タスク完了ではありません。これらを理由に 'finishTask' を呼んではいけません。
+   - 不足素材が分かったら、必要数を計算し、'mineAndCollect' で集める、原木を板材や棒に加工する、下位ツールをクラフトする、作業台を設置するなど、依存関係に沿った代替手段を実行してください。
+   - 探した場所に素材がなければ周囲を探索・移動して再度探してください。行動結果を毎回確認し、失敗したら方法や場所を変えて再試行してください。
+   - 進捗を報告する場合は 'chat' を使い、報告だけでタスクを終了しないでください。
+   - 'finishTask' は、最新の環境・インベントリ情報で指示された目標全体の達成を確認できた場合に限って呼び出してください。達成したと推測しただけでは完了にしないでください。
+5. **完了報告**:
+   - 目標全体の達成を確認したら、'finishTask' ツールで結果を報告してください。最大100ステップに到達した場合のみ、未達成のまま強制停止します。
 `.trim();
 
     // 初期メッセージ
@@ -94,6 +100,10 @@ export class AutonomousAgent extends EventEmitter {
       role: 'user',
       content: `【プレイヤー (${requester}) からの指示】\n"${goal}"\n\n【初期環境状況】\n${this.botWrapper.perception.generateEnvironmentPrompt(goal)}\n\n目標達成のために最初のアクションを実行してください。`,
     });
+
+    let lastActionFailed = false;
+    let lastFailureMessage = '';
+    let taskCompleted = false;
 
     for (let step = 1; step <= maxSteps; step++) {
       if (this.abortController?.signal.aborted) {
@@ -140,10 +150,17 @@ export class AutonomousAgent extends EventEmitter {
         const text = llmRes.textResponse || '了解しました。';
         console.log(`[Agent Chat]: ${text}`);
         await this.botWrapper.skills.chat(text);
-        stepLog.status = 'finished';
-        stepLog.observation = `発言: ${text}`;
+        stepLog.status = 'success';
+        stepLog.observation = `進捗発言: ${text}。目標の完了はまだ確認されていないため、実行可能な次のアクションを選びます。`;
         this.emit('stepLog', stepLog);
-        break;
+        history.push({ role: 'model', content: text });
+        history.push({
+          role: 'user',
+          content: `進捗の発言だけでは目標は完了していません。最新の所持品と環境を再確認し、目標達成に必要なツールアクションを実行してください。資材が不足していれば採掘・収集・クラフトを続けてください。`,
+        });
+        if (history.length > 21) history.splice(1, history.length - 21);
+        await new Promise(r => setTimeout(r, 1500));
+        continue;
       }
 
       const { name: toolName, args: toolArgs } = llmRes.toolCall;
@@ -151,14 +168,29 @@ export class AutonomousAgent extends EventEmitter {
 
       // finishTask ツールが呼ばれた場合
       if (toolName === 'finishTask') {
-        const summary = toolArgs.resultSummary || '目標を完了しました！';
-        await this.botWrapper.skills.chat(`完了報告: ${summary}`);
+        const summary = String(toolArgs.resultSummary || '');
+        const summaryClaimsBlocker = /(資材|素材|材料|不足|足りない|見つからない|できません|できなかった|未完了|unable|cannot|can't|not enough|insufficient|missing|not completed|unfinished)/i.test(summary);
+        if (lastActionFailed || summaryClaimsBlocker) {
+          const reason = lastActionFailed
+            ? `直前のアクションが失敗しています: ${lastFailureMessage}`
+            : `完了理由に未解決の不足または未達成が含まれています: ${summary}`;
+          stepLog.status = 'failure';
+          stepLog.observation = `完了宣言を拒否しました。${reason}。素材を集める、クラフトする、経路を変えるなど次の行動を続けてください。`;
+          this.emit('stepLog', stepLog);
+          history.push({ role: 'model', content: `Action: finishTask(${JSON.stringify(toolArgs)})` });
+          history.push({ role: 'user', content: `目標は未達成です。${reason}。finishTask は受理されません。環境とインベントリを確認し、必要な素材の採掘・収集、クラフト、移動などのツールを実行してください。` });
+          await new Promise(r => setTimeout(r, 1500));
+          continue;
+        }
+        const completedSummary = summary || '目標を完了しました。';
+        await this.botWrapper.skills.chat(`完了報告: ${completedSummary}`);
         stepLog.status = 'finished';
-        stepLog.observation = summary;
+        stepLog.observation = completedSummary;
         this.emit('stepLog', stepLog);
         console.log(`\n========================================`);
-        console.log(`[Agent Goal Achieved]: ${summary}`);
+        console.log(`[Agent Goal Achieved]: ${completedSummary}`);
         console.log(`========================================\n`);
+        taskCompleted = true;
         break;
       }
 
@@ -169,6 +201,13 @@ export class AutonomousAgent extends EventEmitter {
       stepLog.status = execResult.success ? 'success' : 'failure';
       stepLog.observation = execResult.message;
       this.emit('stepLog', stepLog);
+      if (!execResult.success) {
+        lastActionFailed = true;
+        lastFailureMessage = execResult.message;
+      } else if (toolName !== 'chat') {
+        lastActionFailed = false;
+        lastFailureMessage = '';
+      }
 
       // 3. 環境フィードバックを履歴に追加
       const currentEnv = this.botWrapper.perception.generateEnvironmentPrompt(this.currentTask);
@@ -200,6 +239,17 @@ ${currentEnv}
 
       // 各ステップ間に待機（レート制限保護）
       await new Promise(r => setTimeout(r, 1500));
+    }
+
+    if (!taskCompleted && !this.abortController?.signal.aborted) {
+      const message = `最大${maxSteps}ステップに到達したため停止しました。目標は未完了です。タスクを続けるには新しい指示を送ってください。`;
+      await this.botWrapper.skills.chat(message);
+      this.emit('stepLog', {
+        timestamp: new Date().toLocaleTimeString(),
+        stepNumber: maxSteps,
+        observation: message,
+        status: 'failure',
+      } as AgentStepLog);
     }
   }
 

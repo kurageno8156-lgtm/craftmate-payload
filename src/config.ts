@@ -51,7 +51,8 @@ export const config: BotConfig = {
   ollamaModel: process.env.OLLAMA_MODEL || 'llama3.1',
 
   webPort: parseInt(process.env.WEB_PORT || '3000', 10),
-  maxAgentSteps: process.env.MAX_AGENT_STEPS ? parseInt(process.env.MAX_AGENT_STEPS, 10) : Number.MAX_SAFE_INTEGER,
+  // Enforce a bounded but substantial action budget even when an older .env has a smaller value.
+  maxAgentSteps: 100,
   autoEat: process.env.AUTO_EAT !== 'false',
   autoArmor: process.env.AUTO_ARMOR !== 'false',
 };
