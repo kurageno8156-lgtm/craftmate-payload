@@ -130,8 +130,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Release build failed.' }
 
 $setupPath = Join-Path $OutputDirectory 'CraftMate_Setup.exe'
 $uninstallerPath = Join-Path $OutputDirectory 'Uninstall.exe'
+$updaterPath = Join-Path $OutputDirectory 'CraftMate_Updater.exe'
 $payloadPath = Join-Path $OutputDirectory 'app_payload.zip'
-foreach ($artifact in @($setupPath, $uninstallerPath, $payloadPath)) {
+foreach ($artifact in @($setupPath, $uninstallerPath, $updaterPath, $payloadPath)) {
     if (-not (Test-Path -LiteralPath $artifact -PathType Leaf) -or (Get-Item -LiteralPath $artifact).Length -eq 0) {
         throw "Release artifact is missing or empty: $artifact"
     }
@@ -139,8 +140,9 @@ foreach ($artifact in @($setupPath, $uninstallerPath, $payloadPath)) {
 
 Copy-Item -LiteralPath $setupPath -Destination (Join-Path $projectRoot 'CraftMate_Setup.exe') -Force
 Copy-Item -LiteralPath $uninstallerPath -Destination (Join-Path $projectRoot 'Uninstall.exe') -Force
+Copy-Item -LiteralPath $updaterPath -Destination (Join-Path $projectRoot 'CraftMate_Updater.exe') -Force
 
-git add -- Auto-Release.ps1 Launcher.cs CraftMate.exe package.json package-lock.json installer\Build-Release.ps1 installer\Setup.cs installer\Uninstall.cs Uninstall.exe src public
+git add -- Auto-Release.ps1 Launcher.cs CraftMate.exe CraftMate_Updater.exe package.json package-lock.json installer\Build-Release.ps1 installer\Setup.cs installer\Updater.cs installer\Uninstall.cs Uninstall.exe src public
 if ($LASTEXITCODE -ne 0) { throw 'git add failed.' }
 git diff --cached --quiet
 if ($LASTEXITCODE -eq 1) {
@@ -156,9 +158,10 @@ if ([string]::IsNullOrWhiteSpace($Notes)) {
     $Notes = "CraftMate $tag`n`nBug fixes and improvements"
 }
 $notes = $Notes
-gh release create $tag $setupPath $payloadPath --repo $repo --target $defaultBranch --title "CraftMate Setup $tag" --notes $notes
+gh release create $tag $setupPath $updaterPath $payloadPath --repo $repo --target $defaultBranch --title "CraftMate Setup $tag" --notes $notes
 if ($LASTEXITCODE -ne 0) { throw "GitHub release creation failed. The version commit was pushed; retry with -Version $Version after resolving the release error." }
 
 Write-Output "Released $tag to $repo"
 Write-Output "Setup: $setupPath"
+Write-Output "Updater: $updaterPath"
 Write-Output "Payload: $payloadPath"

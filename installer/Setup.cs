@@ -208,9 +208,9 @@ namespace CraftMateSetup
         private ProgressBar _progressBar;
         private PictureBox _picAppIcon;
 
-        private const string CurrentVersion = "1.3.18";
+        private const string CurrentVersion = "1.3.19";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.18/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.19/app_payload.zip";
 
         public InstallerForm(string lang)
         {
@@ -421,6 +421,11 @@ namespace CraftMateSetup
                 }
                 File.Delete(tempZip);
                 InstallEmbeddedUninstaller(target);
+                string updaterExecutable = Path.Combine(target, "CraftMate_Updater.exe");
+                if (!File.Exists(updaterExecutable))
+                {
+                    throw new FileNotFoundException("The updater was not included in the installation package.", updaterExecutable);
+                }
 
                 try
                 {
@@ -431,6 +436,7 @@ namespace CraftMateSetup
                     string executable = Path.Combine(target, "CraftMate.exe");
                     CreateShortcut(Path.Combine(desktopDirectory, "CraftMate.lnk"), executable, target);
                     CreateShortcut(Path.Combine(startMenuFolder, "CraftMate.lnk"), executable, target);
+                    CreateShortcut(Path.Combine(startMenuFolder, "CraftMate Updater.lnk"), updaterExecutable, target);
                 }
                 catch (Exception shortcutError)
                 {

@@ -9,10 +9,11 @@ $version = $package.version
 $payloadPath = Join-Path $OutputDirectory 'app_payload.zip'
 $setupPath = Join-Path $OutputDirectory 'CraftMate_Setup.exe'
 $uninstallPath = Join-Path $OutputDirectory 'Uninstall.exe'
+$updaterPath = Join-Path $OutputDirectory 'CraftMate_Updater.exe'
 $iconPath = Join-Path $projectRoot 'public\app.ico'
 $launcherSourcePath = Join-Path $projectRoot 'Launcher.cs'
 
-foreach ($required in @('node.exe', 'Launcher.cs')) {
+foreach ($required in @('node.exe', 'Launcher.cs', 'installer\Updater.cs')) {
   if (-not (Test-Path (Join-Path $projectRoot $required))) {
     throw "Required release file is missing: $required"
   }
@@ -27,6 +28,9 @@ if ($LASTEXITCODE -ne 0) { throw 'TypeScript build failed.' }
 
 $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe'
 if (-not (Test-Path $compiler)) { throw 'The .NET Framework C# compiler was not found.' }
+& $compiler /nologo /target:winexe "/out:$updaterPath" "/win32icon:$iconPath" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll /r:System.Web.Extensions.dll (Join-Path $projectRoot 'installer\Updater.cs')
+if ($LASTEXITCODE -ne 0) { throw 'Updater compilation failed.' }
+if (-not (Test-Path -LiteralPath $updaterPath -PathType Leaf)) { throw 'Updater compilation did not create CraftMate_Updater.exe.' }
 & $compiler /nologo /target:winexe "/out:$(Join-Path $projectRoot 'CraftMate.exe')" "/win32icon:$iconPath" /r:System.dll /r:System.Windows.Forms.dll $launcherSourcePath
 if ($LASTEXITCODE -ne 0) { throw 'Launcher compilation failed.' }
 & $compiler /nologo /target:winexe "/out:$uninstallPath" "/win32icon:$iconPath" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll (Join-Path $PSScriptRoot 'Uninstall.cs')
@@ -62,6 +66,7 @@ try {
       & $addFile (Join-Path $projectRoot $file) $file
     }
     & $addFile $uninstallPath 'Uninstall.exe'
+    & $addFile $updaterPath 'CraftMate_Updater.exe'
   } finally {
     $archive.Dispose()
   }
