@@ -32,13 +32,15 @@ const WINDOWS_UPDATE_HELPER = String.raw`param(
   [string]$InstallationPath,
   [string]$WorkPath,
   [string]$ExpectedVersion,
-  [int]$Port
+  [int]$Port,
+  [string]$LogPath
 )
 $ErrorActionPreference = 'Stop'
 $statusPath = Join-Path $InstallationPath '.craftmate-update-status.json'
 $resultPath = Join-Path $InstallationPath '.craftmate-update-result.json'
 $workStatusPath = Join-Path $WorkPath 'status.json'
 $logPath = Join-Path $InstallationPath '.craftmate-update-logs.json'
+$installTextLogPath = Join-Path $InstallationPath 'update.log'
 $workLogPath = Join-Path $WorkPath 'logs.json'
 $changes = New-Object System.Collections.ArrayList
 $updateLogs = New-Object System.Collections.ArrayList
@@ -58,6 +60,9 @@ function Add-UpdateLog([string]$Message, [string]$Level = 'info') {
   $json = ConvertTo-Json -InputObject @($script:updateLogs.ToArray()) -Depth 4
   [System.IO.File]::WriteAllText($workLogPath, $json, [System.Text.UTF8Encoding]::new($false))
   try { [System.IO.File]::WriteAllText($logPath, $json, [System.Text.UTF8Encoding]::new($false)) } catch { }
+  $line = "{0} [{1}] {2}{3}" -f (Get-Date).ToString('o'), $Level.ToUpperInvariant(), $Message, [Environment]::NewLine
+  try { [System.IO.File]::AppendAllText($LogPath, $line, [System.Text.UTF8Encoding]::new($false)) } catch { }
+  try { [System.IO.File]::AppendAllText($installTextLogPath, $line, [System.Text.UTF8Encoding]::new($false)) } catch { }
 }
 
 function Write-UpdateStatus([string]$State, [int]$Progress, [string]$Message) {
@@ -88,7 +93,7 @@ try {
     $quotedWork = '"' + $WorkPath + '"'
     $arguments = @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', $quotedScript,
       '-ParentPid', "$ParentPid", '-ZipPath', $quotedZip, '-InstallationPath', $quotedInstall,
-      '-WorkPath', $quotedWork, '-ExpectedVersion', $ExpectedVersion, '-Port', "$Port")
+      '-WorkPath', $quotedWork, '-ExpectedVersion', $ExpectedVersion, '-Port', "$Port", '-LogPath', ('"' + $LogPath + '"'))
     Start-Process -FilePath $ps -ArgumentList $arguments -Verb RunAs -WindowStyle Hidden | Out-Null
     exit 0
   }
@@ -277,11 +282,24 @@ export class WebServer {
 
   private updateLogs: UpdateLogEntry[] = [];
 
+  private updateLogFilePath(): string {
+    const appData = process.env.LOCALAPPDATA || path.join(os.homedir(), '.local', 'share');
+    return path.join(appData, 'CraftMate', 'update.log');
+  }
+
   private appendUpdateLog(message: string, level: 'info' | 'error' = 'info'): void {
     const entry: UpdateLogEntry = { time: new Date().toISOString(), message, level };
     this.updateLogs.push(entry);
     if (this.updateLogs.length > 1000) this.updateLogs.shift();
     console.log(`[Update] ${message}`);
+    const line = `${entry.time} [${level.toUpperCase()}] ${message}${os.EOL}`;
+    try {
+      fs.mkdirSync(path.dirname(this.updateLogFilePath()), { recursive: true });
+      fs.appendFileSync(this.updateLogFilePath(), line, 'utf8');
+    } catch (error) {
+      console.error('[Update] Could not write the user update.log:', error);
+    }
+    try { fs.appendFileSync(path.join(this.installationPath(), 'update.log'), line, 'utf8'); } catch { }
     if (this.activeUpdateWorkPath) {
       try {
         fs.writeFileSync(path.join(this.activeUpdateWorkPath, 'logs.json'), JSON.stringify(this.updateLogs, null, 2), 'utf8');
@@ -317,7 +335,7 @@ export class WebServer {
     const url = String(asset?.browser_download_url || '');
     if (!url.startsWith(`https://github.com/${repository}/releases/download/`)) throw new Error('The GitHub release does not contain a trusted app_payload.zip asset.');
     onLog('app_payload.zip をダウンロードしています。');
-    const download = await fetch(url, { headers: { 'User-Agent': 'CraftMate-Updater' }, signal: AbortSignal.timeout(120000) });
+    const download = await fetch(url, { headers: { 'User-Agent': 'CraftMate-Updater' }, signal: AbortSignal.timeout(600000) });
     if (!download.ok || !download.body) throw new Error(`Update download failed (${download.status}).`);
     const length = Number(download.headers.get('content-length') || 0);
     if (length > 512 * 1024 * 1024) throw new Error('The update package exceeds the 512 MiB limit.');
@@ -332,6 +350,9 @@ export class WebServer {
         if (length > 0) {
           const percent = Math.min(100, Math.floor((received / length) * 10) * 10);
           if (percent >= lastLoggedPercent + 10) { lastLoggedPercent = percent; onLog(`ダウンロード中... ${percent}%`); }
+        } else if (received >= (lastLoggedPercent + 1) * 10 * 1024 * 1024) {
+          lastLoggedPercent += 1;
+          onLog(`ダウンロード中... ${(received / 1024 / 1024).toFixed(0)} MiB`);
         }
         this.push(chunk);
         callback();
@@ -370,12 +391,20 @@ export class WebServer {
         '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', helperPath,
         '-ParentPid', String(process.pid), '-ZipPath', update.zipPath,
         '-InstallationPath', this.installationPath(), '-WorkPath', workPath, '-ExpectedVersion', update.version,
-        '-Port', String(this.port),
+        '-Port', String(this.port), '-LogPath', this.updateLogFilePath(),
       ], { detached: true, stdio: 'ignore', windowsHide: true });
       child.on('error', error => {
         const message = `Could not start the update helper: ${error.message}`;
         this.updateProgress = { status: 'failed', progress: 0, message, version: update.version };
         this.appendUpdateLog(message, 'error');
+      });
+      child.on('close', (code, signal) => {
+        if (code !== 0 && this.updateProgress.status !== 'completed' && this.updateProgress.status !== 'failed') {
+          const message = `Update helper exited unexpectedly (code ${code ?? 'unknown'}, signal ${signal || 'none'}).`;
+          this.updateProgress = { status: 'failed', progress: 0, message, version: update.version };
+          try { fs.writeFileSync(path.join(workPath, 'status.json'), JSON.stringify(this.updateProgress), 'utf8'); } catch { }
+          this.appendUpdateLog(message, 'error');
+        }
       });
       child.unref();
     } catch (error) {
@@ -419,6 +448,8 @@ export class WebServer {
       if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Update logs are available only to the authenticated local dashboard.' });
       const workLogPath = this.activeUpdateWorkPath ? path.join(this.activeUpdateWorkPath, 'logs.json') : '';
       const installLogPath = path.join(this.installationPath(), '.craftmate-update-logs.json');
+      const userTextLogPath = this.updateLogFilePath();
+      const installTextLogPath = path.join(this.installationPath(), 'update.log');
       let logs = this.updateLogs;
       try {
         const selectedPath = this.updateProgress.status === 'downloading' || (this.updateProgress.status === 'failed' && this.updateLogs.length > 0 && !workLogPath)
@@ -427,6 +458,18 @@ export class WebServer {
         if (fs.existsSync(selectedPath)) {
           const savedLogs = JSON.parse(fs.readFileSync(selectedPath, 'utf8'));
           if (Array.isArray(savedLogs)) logs = savedLogs;
+        }
+      } catch { }
+      let logText = '';
+      let logFilePath = userTextLogPath;
+      try {
+        const userLogExists = fs.existsSync(userTextLogPath);
+        const installLogExists = fs.existsSync(installTextLogPath);
+        if (installLogExists && (!userLogExists || fs.statSync(installTextLogPath).mtimeMs > fs.statSync(userTextLogPath).mtimeMs)) {
+          logText = fs.readFileSync(installTextLogPath, 'utf8');
+          logFilePath = installTextLogPath;
+        } else if (userLogExists) {
+          logText = fs.readFileSync(userTextLogPath, 'utf8');
         }
       } catch { }
       let result: { currentVersion?: string; lastModified?: string; filesUpdated?: number } = {};
@@ -439,6 +482,8 @@ export class WebServer {
       res.setHeader('Cache-Control', 'no-store');
       res.json({
         logs,
+        logText,
+        logFilePath,
         status: this.updateProgress.status,
         currentVersion: this.updateProgress.currentVersion || result.currentVersion || currentVersion,
         lastModified: this.updateProgress.lastModified || result.lastModified || null,
@@ -453,6 +498,14 @@ export class WebServer {
       }
       this.updateLogs = [];
       this.activeUpdateWorkPath = '';
+      try {
+        fs.mkdirSync(path.dirname(this.updateLogFilePath()), { recursive: true });
+        fs.writeFileSync(this.updateLogFilePath(), '', { encoding: 'utf8', mode: 0o600 });
+      } catch (error) {
+        const message = `Could not create update.log: ${error instanceof Error ? error.message : String(error)}`;
+        return res.status(500).json({ error: message });
+      }
+      try { fs.writeFileSync(path.join(this.installationPath(), 'update.log'), '', 'utf8'); } catch { }
       try {
         fs.rmSync(path.join(this.installationPath(), '.craftmate-update-status.json'), { force: true });
         fs.rmSync(path.join(this.installationPath(), '.craftmate-update-result.json'), { force: true });

@@ -541,7 +541,7 @@ async function beginDashboardUpdate(button, version) {
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(result.error || translate('updateStartFailed'));
   button.disabled = true;
-  const deadline = Date.now() + 180000;
+  const deadline = Date.now() + 900000;
   while (Date.now() < deadline) {
     await new Promise(resolve => setTimeout(resolve, 1000));
     try {
@@ -576,7 +576,8 @@ async function beginDashboardUpdate(button, version) {
       if (error instanceof Error && error.message !== 'Failed to fetch') throw error;
     }
   }
-  throw new Error(translate('updateTimeout', { version }));
+  const logPath = document.getElementById('update-log-file-path').textContent || 'CraftMate update.log';
+  throw new Error(translate('updateTimeout', { version, logPath }));
 }
 
 function formatUpdateTimestamp(value) {
@@ -603,7 +604,10 @@ function showUpdateVerification(data) {
 
 function renderUpdateLogData(data) {
   const output = document.getElementById('update-log-output');
-  if (Array.isArray(data.logs)) {
+  if (typeof data.logText === 'string' && data.logText) {
+    output.value = data.logText;
+    output.scrollTop = output.scrollHeight;
+  } else if (Array.isArray(data.logs)) {
     output.value = data.logs.map(entry => {
       const time = entry.time ? new Date(entry.time).toLocaleTimeString() : '';
       const marker = entry.level === 'error' ? '[ERROR]' : '[INFO]';
@@ -611,6 +615,7 @@ function renderUpdateLogData(data) {
     }).join('\n');
     output.scrollTop = output.scrollHeight;
   }
+  if (data.logFilePath) document.getElementById('update-log-file-path').textContent = data.logFilePath;
   showUpdateVerification(data);
 }
 
