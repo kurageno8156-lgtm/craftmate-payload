@@ -66,9 +66,9 @@ namespace CraftMateSetup
         private CheckBox _chkAgree, _chkLaunch;
         private ProgressBar _progressBar;
 
-        private const string CurrentVersion = "1.3.1";
+        private const string CurrentVersion = "1.3.2";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.1/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.2/app_payload.zip";
 
         public InstallerForm(string lang)
         {
