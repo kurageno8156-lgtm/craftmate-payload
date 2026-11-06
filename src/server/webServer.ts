@@ -96,12 +96,21 @@ export class WebServer {
     const host = String(req.headers.host || '').toLowerCase();
     if (!/^(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host)) return false;
     const originHeader = req.headers.origin;
-    if (typeof originHeader !== 'string') return false;
-    try {
-      const origin = new URL(originHeader);
-      if (origin.protocol !== 'http:' || origin.host.toLowerCase() !== host) return false;
-      if (!['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname.toLowerCase())) return false;
-    } catch { return false; }
+    let originValue = typeof originHeader === 'string' ? originHeader : '';
+    if (!originValue && typeof req.headers.referer === 'string') {
+      try { originValue = new URL(req.headers.referer).origin; } catch { return false; }
+    }
+    // Same-origin GET fetches may omit Origin. Require the browser's fetch metadata
+    // or a same-origin Referer in that case; the bearer token remains mandatory.
+    if (!originValue) {
+      if (req.headers['sec-fetch-site'] !== 'same-origin') return false;
+    } else {
+      try {
+        const origin = new URL(originValue);
+        if (origin.protocol !== 'http:' || origin.host.toLowerCase() !== host) return false;
+        if (!['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname.toLowerCase())) return false;
+      } catch { return false; }
+    }
     if (!requireToken) return true;
     const authorization = req.headers.authorization || '';
     const supplied = authorization.startsWith('Bearer ') ? Buffer.from(authorization.slice(7), 'hex') : Buffer.alloc(0);

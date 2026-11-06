@@ -366,18 +366,37 @@ settingsForm.addEventListener('submit', async event => {
   }
 });
 
-function getLocalSettingsToken() {
-  const token = document.querySelector('meta[name="craftmate-update-token"]')?.content;
-  if (!token) throw new Error(translate('updateAuthMissing'));
+async function getLocalSettingsToken(refresh = false) {
+  const meta = document.querySelector('meta[name="craftmate-update-token"]');
+  let token = !refresh && meta ? meta.content : '';
+  if (!token) {
+    const response = await fetch('/', { cache: 'no-store', credentials: 'same-origin' });
+    if (!response.ok) throw new Error(translate('updateAuthMissing'));
+    const html = await response.text();
+    const documentCopy = new DOMParser().parseFromString(html, 'text/html');
+    token = documentCopy.querySelector('meta[name="craftmate-update-token"]')?.content || '';
+    if (!token) throw new Error(translate('updateAuthMissing'));
+    if (meta) meta.content = token;
+  }
   return token;
+}
+
+async function fetchWithLocalSettingsAuth(url, options = {}) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const token = await getLocalSettingsToken(attempt > 0);
+    const headers = new Headers(options.headers || {});
+    headers.set('Authorization', `Bearer ${token}`);
+    const response = await fetch(url, { ...options, headers, cache: options.cache || 'no-store' });
+    if (response.status !== 403 || attempt > 0) return response;
+  }
+  throw new Error(translate('updateAuthMissing'));
 }
 
 document.getElementById('btn-create-backup').addEventListener('click', async event => {
   const button = event.currentTarget;
   button.disabled = true;
   try {
-    const token = getLocalSettingsToken();
-    const response = await fetch('/api/backup', { cache: 'no-store', headers: { Authorization: `Bearer ${token}` } });
+    const response = await fetchWithLocalSettingsAuth('/api/backup');
     const backup = await response.json();
     if (!response.ok) throw new Error(backup.error || translate('backupFailed'));
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -416,10 +435,9 @@ backupFileInput.addEventListener('change', async () => {
     if (!window.confirm(translate('restoreConfirm'))) return;
     button.disabled = true;
     showSettingsMessage(translate('restoringBackup'));
-    const token = getLocalSettingsToken();
-    const response = await fetch('/api/restore', {
+    const response = await fetchWithLocalSettingsAuth('/api/restore', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(backup),
     });
     const result = await response.json().catch(() => ({}));
@@ -473,17 +491,12 @@ document.getElementById('btn-ai-restart').addEventListener('click', async event 
 
 document.getElementById('btn-check-updates').addEventListener('click', async event => {
   const button = event.currentTarget;
-  const token = document.querySelector('meta[name="craftmate-update-token"]')?.content;
-  if (!token) {
-    showSettingsMessage(translate('updateAuthMissing'), 'error');
-    return;
-  }
   button.disabled = true;
   showSettingsMessage(translate('launchingUpdater'));
   try {
-    const response = await fetch('/api/launch-updater', {
+    const response = await fetchWithLocalSettingsAuth('/api/launch-updater', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: '{}',
     });
     const result = await response.json().catch(() => ({}));
