@@ -314,6 +314,7 @@ document.getElementById('btn-settings').addEventListener('click', () => {
   settingsModal.hidden = false;
   document.getElementById('setting-mc-port').focus();
   loadSettings();
+  loadUpdateLogHistory();
 });
 document.getElementById('btn-close-settings').addEventListener('click', () => { settingsModal.hidden = true; });
 settingsModal.querySelector('[data-close-settings]').addEventListener('click', () => { settingsModal.hidden = true; });
@@ -450,6 +451,9 @@ async function beginDashboardUpdate(button, version) {
   const progressWrap = document.getElementById('update-progress-wrap');
   const progressBar = document.getElementById('update-progress');
   const progressLabel = document.getElementById('update-progress-label');
+  const logOutput = document.getElementById('update-log-output');
+  document.getElementById('update-result').hidden = true;
+  logOutput.value = '';
   progressWrap.hidden = false;
   progressBar.removeAttribute('value');
   progressLabel.textContent = translate('updateDownloading');
@@ -466,9 +470,12 @@ async function beginDashboardUpdate(button, version) {
   while (Date.now() < deadline) {
     await new Promise(resolve => setTimeout(resolve, 1000));
     try {
-      const statusResponse = await fetch('/api/update/status', {
-        cache: 'no-store', headers: { Authorization: `Bearer ${token}` },
-      });
+      const headers = { Authorization: `Bearer ${token}` };
+      const [statusResponse, logsResponse] = await Promise.all([
+        fetch('/api/update/status', { cache: 'no-store', headers }),
+        fetch('/api/update-logs', { cache: 'no-store', headers }),
+      ]);
+      if (logsResponse.ok) renderUpdateLogData(await logsResponse.json());
       if (!statusResponse.ok) continue;
       const status = await statusResponse.json();
       progressLabel.textContent = status.status === 'downloading'
@@ -482,6 +489,11 @@ async function beginDashboardUpdate(button, version) {
         progressBar.value = 100;
         progressLabel.textContent = translate('updateCompleted');
         showSettingsMessage(translate('updateCompleted'), 'success');
+        showUpdateVerification({
+          currentVersion: status.currentVersion || status.version,
+          lastModified: status.lastModified,
+          filesUpdated: status.filesUpdated,
+        });
         return;
       }
       if (status.status === 'failed') throw new Error(status.message || translate('updateFailed'));
@@ -490,6 +502,52 @@ async function beginDashboardUpdate(button, version) {
     }
   }
   throw new Error(translate('updateTimeout', { version }));
+}
+
+function formatUpdateTimestamp(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const parts = Object.fromEntries(new Intl.DateTimeFormat(window.craftMateI18n.language === 'ja' ? 'ja-JP' : 'en-US', {
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(date).map(part => [part.type, part.value]));
+  return `${parts.year}/${parts.month}/${parts.day} ${parts.hour}:${parts.minute}`;
+}
+
+function showUpdateVerification(data) {
+  if (!data || !data.currentVersion || !data.lastModified) return;
+  document.getElementById('update-result').hidden = false;
+  document.getElementById('update-version-result').textContent = translate('updateVerified', {
+    version: data.currentVersion,
+    date: formatUpdateTimestamp(data.lastModified),
+  });
+  document.getElementById('update-files-result').textContent = data.filesUpdated
+    ? translate('updateVerifiedFiles', { count: data.filesUpdated.toLocaleString() })
+    : '';
+}
+
+function renderUpdateLogData(data) {
+  const output = document.getElementById('update-log-output');
+  if (Array.isArray(data.logs)) {
+    output.value = data.logs.map(entry => {
+      const time = entry.time ? new Date(entry.time).toLocaleTimeString() : '';
+      const marker = entry.level === 'error' ? '[ERROR]' : '[INFO]';
+      return `${time} ${marker} ${entry.message}`.trim();
+    }).join('\n');
+    output.scrollTop = output.scrollHeight;
+  }
+  showUpdateVerification(data);
+}
+
+async function loadUpdateLogHistory() {
+  const token = document.querySelector('meta[name="craftmate-update-token"]')?.content;
+  if (!token) return;
+  try {
+    const response = await fetch('/api/update-logs', {
+      cache: 'no-store', headers: { Authorization: `Bearer ${token}` },
+    });
+    if (response.ok) renderUpdateLogData(await response.json());
+  } catch { }
 }
 
 document.getElementById('btn-download-logs').addEventListener('click', () => {

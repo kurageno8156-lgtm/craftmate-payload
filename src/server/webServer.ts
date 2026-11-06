@@ -23,6 +23,7 @@ const MODEL_ENV_KEYS = {
   openai: 'OPENAI_MODEL',
 } as const;
 type AIProvider = keyof typeof MODEL_ENV_KEYS;
+type UpdateLogEntry = { time: string; message: string; level: 'info' | 'error' };
 
 const WINDOWS_UPDATE_HELPER = String.raw`param(
   [int]$ParentPid,
@@ -34,12 +35,32 @@ const WINDOWS_UPDATE_HELPER = String.raw`param(
 )
 $ErrorActionPreference = 'Stop'
 $statusPath = Join-Path $InstallationPath '.craftmate-update-status.json'
+$resultPath = Join-Path $InstallationPath '.craftmate-update-result.json'
 $workStatusPath = Join-Path $WorkPath 'status.json'
+$logPath = Join-Path $InstallationPath '.craftmate-update-logs.json'
+$workLogPath = Join-Path $WorkPath 'logs.json'
 $changes = New-Object System.Collections.ArrayList
+$updateLogs = New-Object System.Collections.ArrayList
 $newServerPid = 0
+$currentVersion = ''
+$lastModified = ''
+$filesUpdated = 0
+if (Test-Path -LiteralPath $workLogPath) {
+  try {
+    foreach ($entry in (Get-Content -LiteralPath $workLogPath -Raw | ConvertFrom-Json)) { [void]$updateLogs.Add($entry) }
+  } catch { }
+}
+
+function Add-UpdateLog([string]$Message, [string]$Level = 'info') {
+  $entry = @{ time = (Get-Date).ToString('o'); message = $Message; level = $Level }
+  [void]$script:updateLogs.Add($entry)
+  $json = ConvertTo-Json -InputObject @($script:updateLogs.ToArray()) -Depth 4
+  [System.IO.File]::WriteAllText($workLogPath, $json, [System.Text.UTF8Encoding]::new($false))
+  try { [System.IO.File]::WriteAllText($logPath, $json, [System.Text.UTF8Encoding]::new($false)) } catch { }
+}
 
 function Write-UpdateStatus([string]$State, [int]$Progress, [string]$Message) {
-  $status = @{ status = $State; progress = $Progress; message = $Message; version = $ExpectedVersion } | ConvertTo-Json -Compress
+  $status = @{ status = $State; progress = $Progress; message = $Message; version = $ExpectedVersion; currentVersion = $script:currentVersion; lastModified = $script:lastModified; filesUpdated = $script:filesUpdated } | ConvertTo-Json -Compress
   [System.IO.File]::WriteAllText($workStatusPath, $status, [System.Text.UTF8Encoding]::new($false))
   try { [System.IO.File]::WriteAllText($statusPath, $status, [System.Text.UTF8Encoding]::new($false)) } catch { }
 }
@@ -52,6 +73,7 @@ function Start-CraftMateServer {
 }
 
 try {
+  Add-UpdateLog '更新ヘルパーを開始しました。'
   $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
   $principal = New-Object Security.Principal.WindowsPrincipal($identity)
   $probePath = Join-Path $InstallationPath ('.craftmate-update-write-test-' + [guid]::NewGuid().ToString('N'))
@@ -71,12 +93,14 @@ try {
   }
 
   Write-UpdateStatus 'applying' 82 'Waiting for Windows permission to apply the update.'
+  Add-UpdateLog '既存サーバーの終了を待機しています。'
   Start-Sleep -Seconds 2
   if (Get-Process -Id $ParentPid -ErrorAction SilentlyContinue) { Stop-Process -Id $ParentPid -Force -ErrorAction SilentlyContinue }
   $deadline = (Get-Date).AddSeconds(30)
   while ((Get-Process -Id $ParentPid -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 250 }
   if (Get-Process -Id $ParentPid -ErrorAction SilentlyContinue) { throw 'The current server did not stop in time.' }
 
+  Add-UpdateLog 'ダウンロードした ZIP の展開先と内容を検証しています。'
   Add-Type -AssemblyName System.IO.Compression.FileSystem
   $root = [System.IO.Path]::GetFullPath($InstallationPath).TrimEnd('\') + '\'
   $archive = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
@@ -90,6 +114,7 @@ try {
   $stage = Join-Path $WorkPath 'stage'
   $backupRoot = Join-Path $WorkPath 'backup'
   New-Item -ItemType Directory -Path $stage -Force | Out-Null
+  Add-UpdateLog 'ZIP を解凍しています。'
   Expand-Archive -LiteralPath $ZipPath -DestinationPath $stage -Force
   $package = Get-Content -LiteralPath (Join-Path $stage 'package.json') -Raw | ConvertFrom-Json
   if ([string]$package.version -ne $ExpectedVersion) { throw 'The update package version does not match the GitHub release.' }
@@ -98,6 +123,7 @@ try {
   }
 
   Write-UpdateStatus 'applying' 90 'Applying the update files.'
+  Add-UpdateLog 'インストール先ファイルをバックアップして上書きしています。'
   foreach ($item in @('dist', 'public', 'node_modules', 'CraftMate.exe', 'node.exe', '.env.example', 'package.json', 'package-lock.json', 'README.md', 'Uninstall.exe')) {
     $source = Join-Path $stage $item
     if (-not (Test-Path -LiteralPath $source)) { continue }
@@ -111,8 +137,14 @@ try {
     [void]$changes.Add(@{ destination = $destination; backup = $backup; hadBackup = $hadBackup })
     New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
     Move-Item -LiteralPath $source -Destination $destination
+    if (Test-Path -LiteralPath $destination -PathType Container) {
+      $itemFileCount = @(Get-ChildItem -LiteralPath $destination -File -Recurse -Force).Count
+    } else { $itemFileCount = 1 }
+    $script:filesUpdated += $itemFileCount
+    Add-UpdateLog "上書き完了: $item ($itemFileCount files)"
   }
 
+  Add-UpdateLog '更新後のサーバーを起動し、バージョンを確認しています。'
   $newServerPid = Start-CraftMateServer
   $ready = $false
   for ($attempt = 0; $attempt -lt 40; $attempt++) {
@@ -124,9 +156,19 @@ try {
   }
   if (-not $ready) { throw 'The updated server did not become ready.' }
 
+  $script:currentVersion = [string]$response.version
+  if ($script:currentVersion -ne $ExpectedVersion) { throw 'The running application version does not match the update package.' }
+  $packagePath = Join-Path $InstallationPath 'package.json'
+  $completedAt = Get-Date
+  [System.IO.File]::SetLastWriteTime($packagePath, $completedAt)
+  $script:lastModified = (Get-Item -LiteralPath $packagePath).LastWriteTime.ToString('o')
+  Add-UpdateLog "上書きとバージョン確認が完了しました: v$($script:currentVersion)、更新ファイル $($script:filesUpdated) 件。"
+  $result = @{ currentVersion = $script:currentVersion; lastModified = $script:lastModified; filesUpdated = $script:filesUpdated; completedAt = (Get-Date).ToString('o') } | ConvertTo-Json -Compress
+  [System.IO.File]::WriteAllText($resultPath, $result, [System.Text.UTF8Encoding]::new($false))
   Write-UpdateStatus 'completed' 100 'Update completed.'
   Remove-Item -LiteralPath $WorkPath -Recurse -Force -ErrorAction SilentlyContinue
 } catch {
+  Add-UpdateLog ("更新に失敗しました: " + $_.Exception.Message) 'error'
   if ($newServerPid -gt 0) { Stop-Process -Id $newServerPid -Force -ErrorAction SilentlyContinue }
   for ($index = $changes.Count - 1; $index -ge 0; $index--) {
     $change = $changes[$index]
@@ -154,7 +196,7 @@ export class WebServer {
   private envPath: string;
   private updateToken: Buffer;
   private activeUpdateWorkPath = '';
-  private updateProgress: { status: string; progress: number; message: string; version?: string } = {
+  private updateProgress: { status: string; progress: number; message: string; version?: string; currentVersion?: string; lastModified?: string; filesUpdated?: number } = {
     status: 'idle', progress: 0, message: '',
   };
 
@@ -232,8 +274,23 @@ export class WebServer {
     return supplied.length === this.updateToken.length && timingSafeEqual(supplied, this.updateToken);
   }
 
-  private async downloadLatestUpdate(): Promise<{ zipPath: string; workPath: string; version: string }> {
+  private updateLogs: UpdateLogEntry[] = [];
+
+  private appendUpdateLog(message: string, level: 'info' | 'error' = 'info'): void {
+    const entry: UpdateLogEntry = { time: new Date().toISOString(), message, level };
+    this.updateLogs.push(entry);
+    if (this.updateLogs.length > 1000) this.updateLogs.shift();
+    console.log(`[Update] ${message}`);
+    if (this.activeUpdateWorkPath) {
+      try {
+        fs.writeFileSync(path.join(this.activeUpdateWorkPath, 'logs.json'), JSON.stringify(this.updateLogs, null, 2), 'utf8');
+      } catch { }
+    }
+  }
+
+  private async downloadLatestUpdate(onLog: (message: string) => void): Promise<{ zipPath: string; workPath: string; version: string }> {
     const repository = 'kurageno8156-lgtm/craftmate-payload';
+    onLog('GitHub Releases の最新バージョンを確認しています。');
     const releaseResponse = await fetch(`https://api.github.com/repos/${repository}/releases/latest`, {
       headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'CraftMate-Updater' },
       signal: AbortSignal.timeout(30000),
@@ -254,9 +311,11 @@ export class WebServer {
     if (comparison === 0 && version !== current) comparison = current.includes('-') && !version.includes('-') ? 1 : version.includes('-') && !current.includes('-') ? -1 : 0;
     const newer = comparison > 0;
     if (!newer) throw new Error(`No newer release is available (installed: v${current}, latest: v${version}).`);
+    onLog(`最新リリース v${version} を確認しました。`);
     const asset = (release.assets || []).find(item => item.name === 'app_payload.zip');
     const url = String(asset?.browser_download_url || '');
     if (!url.startsWith(`https://github.com/${repository}/releases/download/`)) throw new Error('The GitHub release does not contain a trusted app_payload.zip asset.');
+    onLog('app_payload.zip をダウンロードしています。');
     const download = await fetch(url, { headers: { 'User-Agent': 'CraftMate-Updater' }, signal: AbortSignal.timeout(120000) });
     if (!download.ok || !download.body) throw new Error(`Update download failed (${download.status}).`);
     const length = Number(download.headers.get('content-length') || 0);
@@ -264,10 +323,18 @@ export class WebServer {
     const workPath = fs.mkdtempSync(path.join(os.tmpdir(), 'craftmate-update-'));
     const zipPath = path.join(workPath, 'app_payload.zip');
     let received = 0;
+    let lastLoggedPercent = 0;
     const limiter = new Transform({ transform(chunk: Buffer, _encoding, callback) {
       received += chunk.length;
       if (received > 512 * 1024 * 1024) callback(new Error('The update package exceeds the 512 MiB limit.'));
-      else { this.push(chunk); callback(); }
+      else {
+        if (length > 0) {
+          const percent = Math.min(100, Math.floor((received / length) * 10) * 10);
+          if (percent >= lastLoggedPercent + 10) { lastLoggedPercent = percent; onLog(`ダウンロード中... ${percent}%`); }
+        }
+        this.push(chunk);
+        callback();
+      }
     } });
     await pipeline(Readable.fromWeb(download.body as import('stream/web').ReadableStream), limiter, fs.createWriteStream(zipPath, { flags: 'wx' }));
     const signature = Buffer.alloc(4);
@@ -277,7 +344,45 @@ export class WebServer {
       fs.rmSync(workPath, { recursive: true, force: true });
       throw new Error('The downloaded update is not a valid ZIP archive.');
     }
+    onLog(`ZIP のダウンロードが完了しました (${(received / 1024 / 1024).toFixed(1)} MiB)。`);
     return { zipPath, workPath, version };
+  }
+
+  private async startUpdate(): Promise<void> {
+    let workPath = '';
+    try {
+      const update = await this.downloadLatestUpdate(message => {
+        this.appendUpdateLog(message);
+        this.updateProgress.message = message;
+        const percent = Number(message.match(/(\d+)%/)?.[1]);
+        if (Number.isFinite(percent)) this.updateProgress.progress = Math.min(60, 5 + Math.round(percent * 0.55));
+      });
+      workPath = update.workPath;
+      this.activeUpdateWorkPath = workPath;
+      fs.writeFileSync(path.join(workPath, 'logs.json'), JSON.stringify(this.updateLogs, null, 2), 'utf8');
+      this.updateProgress = { status: 'applying', progress: 75, message: 'Preparing the update…', version: update.version };
+      this.appendUpdateLog('更新ヘルパーを準備しています。');
+      const helperPath = path.join(workPath, 'Apply-Update.ps1');
+      fs.writeFileSync(helperPath, WINDOWS_UPDATE_HELPER, 'utf8');
+      const powershell = path.join(process.env.WINDIR || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+      const child = spawn(powershell, [
+        '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', helperPath,
+        '-ParentPid', String(process.pid), '-ZipPath', update.zipPath,
+        '-InstallationPath', this.installationPath(), '-WorkPath', workPath, '-ExpectedVersion', update.version,
+        '-Port', String(this.port),
+      ], { detached: true, stdio: 'ignore', windowsHide: true });
+      child.on('error', error => {
+        const message = `Could not start the update helper: ${error.message}`;
+        this.updateProgress = { status: 'failed', progress: 0, message, version: update.version };
+        this.appendUpdateLog(message, 'error');
+      });
+      child.unref();
+    } catch (error) {
+      if (workPath) fs.rmSync(workPath, { recursive: true, force: true });
+      const message = error instanceof Error ? error.message : 'Update failed.';
+      this.updateProgress = { status: 'failed', progress: 0, message };
+      this.appendUpdateLog(message, 'error');
+    }
   }
 
   private setupRoutes(): void {
@@ -297,7 +402,10 @@ export class WebServer {
       const workStatusPath = this.activeUpdateWorkPath ? path.join(this.activeUpdateWorkPath, 'status.json') : '';
       const statusPath = workStatusPath && fs.existsSync(workStatusPath) ? workStatusPath : markerPath;
       try {
-        if (fs.existsSync(statusPath)) this.updateProgress = JSON.parse(fs.readFileSync(statusPath, 'utf8'));
+        const activeWithoutHelperStatus = (this.updateProgress.status === 'downloading' || this.updateProgress.status === 'applying'
+          || (this.updateProgress.status === 'failed' && this.updateLogs.length > 0))
+          && (!workStatusPath || !fs.existsSync(workStatusPath));
+        if (!activeWithoutHelperStatus && fs.existsSync(statusPath)) this.updateProgress = JSON.parse(fs.readFileSync(statusPath, 'utf8'));
       } catch { }
       if (this.updateProgress.status === 'completed' || this.updateProgress.status === 'failed') {
         try { fs.rmSync(markerPath, { force: true }); } catch { }
@@ -306,38 +414,53 @@ export class WebServer {
       res.json(this.updateProgress);
     });
 
+    this.app.get('/api/update-logs', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Update logs are available only to the authenticated local dashboard.' });
+      const workLogPath = this.activeUpdateWorkPath ? path.join(this.activeUpdateWorkPath, 'logs.json') : '';
+      const installLogPath = path.join(this.installationPath(), '.craftmate-update-logs.json');
+      let logs = this.updateLogs;
+      try {
+        const selectedPath = this.updateProgress.status === 'downloading' || (this.updateProgress.status === 'failed' && this.updateLogs.length > 0 && !workLogPath)
+          ? ''
+          : workLogPath && fs.existsSync(workLogPath) ? workLogPath : installLogPath;
+        if (fs.existsSync(selectedPath)) {
+          const savedLogs = JSON.parse(fs.readFileSync(selectedPath, 'utf8'));
+          if (Array.isArray(savedLogs)) logs = savedLogs;
+        }
+      } catch { }
+      let result: { currentVersion?: string; lastModified?: string; filesUpdated?: number } = {};
+      try { result = JSON.parse(fs.readFileSync(path.join(this.installationPath(), '.craftmate-update-result.json'), 'utf8')); } catch { }
+      if (this.updateProgress.status === 'downloading' || this.updateProgress.status === 'applying') result = {};
+      let currentVersion = this.updateProgress.currentVersion || '';
+      if (!currentVersion) {
+        try { currentVersion = String(JSON.parse(fs.readFileSync(path.join(this.installationPath(), 'package.json'), 'utf8')).version || ''); } catch { }
+      }
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({
+        logs,
+        status: this.updateProgress.status,
+        currentVersion: this.updateProgress.currentVersion || result.currentVersion || currentVersion,
+        lastModified: this.updateProgress.lastModified || result.lastModified || null,
+        filesUpdated: this.updateProgress.filesUpdated || result.filesUpdated || null,
+      });
+    });
+
     this.app.post('/api/update', async (req, res) => {
       if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Updates are allowed only from the authenticated local dashboard.' });
       if (this.updateProgress.status === 'downloading' || this.updateProgress.status === 'applying') {
         return res.status(409).json({ error: 'An update is already in progress.' });
       }
-      let workPath = '';
+      this.updateLogs = [];
+      this.activeUpdateWorkPath = '';
       try {
-        this.updateProgress = { status: 'downloading', progress: 5, message: 'Contacting GitHub Releases…' };
-        const update = await this.downloadLatestUpdate();
-        workPath = update.workPath;
-        this.activeUpdateWorkPath = workPath;
-        this.updateProgress = { status: 'applying', progress: 75, message: 'Preparing the update…', version: update.version };
-        const helperPath = path.join(workPath, 'Apply-Update.ps1');
-        fs.writeFileSync(helperPath, WINDOWS_UPDATE_HELPER, 'utf8');
-        const powershell = path.join(process.env.WINDIR || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
-        const child = spawn(powershell, [
-          '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', helperPath,
-          '-ParentPid', String(process.pid), '-ZipPath', update.zipPath,
-          '-InstallationPath', this.installationPath(), '-WorkPath', workPath, '-ExpectedVersion', update.version,
-          '-Port', String(this.port),
-        ], { detached: true, stdio: 'ignore', windowsHide: true });
-        child.on('error', error => {
-          this.updateProgress = { status: 'failed', progress: 0, message: `Could not start the update helper: ${error.message}` };
-        });
-        child.unref();
-        res.status(202).json({ success: true, version: update.version });
-      } catch (error) {
-        if (workPath) fs.rmSync(workPath, { recursive: true, force: true });
-        const message = error instanceof Error ? error.message : 'Update failed.';
-        this.updateProgress = { status: 'failed', progress: 0, message };
-        res.status(500).json({ error: message });
-      }
+        fs.rmSync(path.join(this.installationPath(), '.craftmate-update-status.json'), { force: true });
+        fs.rmSync(path.join(this.installationPath(), '.craftmate-update-result.json'), { force: true });
+        fs.rmSync(path.join(this.installationPath(), '.craftmate-update-logs.json'), { force: true });
+      } catch { }
+      this.updateProgress = { status: 'downloading', progress: 5, message: 'Contacting GitHub Releases…' };
+      this.appendUpdateLog('アップデートを開始しました。');
+      res.status(202).json({ success: true });
+      void this.startUpdate();
     });
 
     this.app.get('/api/status', (req, res) => {
