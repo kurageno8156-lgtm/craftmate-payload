@@ -34,12 +34,14 @@ const WINDOWS_UPDATE_HELPER = String.raw`param(
 )
 $ErrorActionPreference = 'Stop'
 $statusPath = Join-Path $InstallationPath '.craftmate-update-status.json'
+$workStatusPath = Join-Path $WorkPath 'status.json'
 $changes = New-Object System.Collections.ArrayList
 $newServerPid = 0
 
 function Write-UpdateStatus([string]$State, [int]$Progress, [string]$Message) {
   $status = @{ status = $State; progress = $Progress; message = $Message; version = $ExpectedVersion } | ConvertTo-Json -Compress
-  [System.IO.File]::WriteAllText($statusPath, $status, [System.Text.UTF8Encoding]::new($false))
+  [System.IO.File]::WriteAllText($workStatusPath, $status, [System.Text.UTF8Encoding]::new($false))
+  try { [System.IO.File]::WriteAllText($statusPath, $status, [System.Text.UTF8Encoding]::new($false)) } catch { }
 }
 
 function Start-CraftMateServer {
@@ -50,7 +52,27 @@ function Start-CraftMateServer {
 }
 
 try {
-  Write-UpdateStatus 'applying' 82 'Waiting for the current server to stop.'
+  $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+  $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+  $probePath = Join-Path $InstallationPath ('.craftmate-update-write-test-' + [guid]::NewGuid().ToString('N'))
+  $needsElevation = $false
+  try { [System.IO.File]::WriteAllText($probePath, ''); Remove-Item -LiteralPath $probePath -Force } catch { $needsElevation = $true }
+  if ($needsElevation -and -not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    $ps = Join-Path $PSHOME 'powershell.exe'
+    $quotedScript = '"' + $PSCommandPath + '"'
+    $quotedZip = '"' + $ZipPath + '"'
+    $quotedInstall = '"' + $InstallationPath + '"'
+    $quotedWork = '"' + $WorkPath + '"'
+    $arguments = @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', $quotedScript,
+      '-ParentPid', "$ParentPid", '-ZipPath', $quotedZip, '-InstallationPath', $quotedInstall,
+      '-WorkPath', $quotedWork, '-ExpectedVersion', $ExpectedVersion, '-Port', "$Port")
+    Start-Process -FilePath $ps -ArgumentList $arguments -Verb RunAs -WindowStyle Hidden | Out-Null
+    exit 0
+  }
+
+  Write-UpdateStatus 'applying' 82 'Waiting for Windows permission to apply the update.'
+  Start-Sleep -Seconds 2
+  if (Get-Process -Id $ParentPid -ErrorAction SilentlyContinue) { Stop-Process -Id $ParentPid -Force -ErrorAction SilentlyContinue }
   $deadline = (Get-Date).AddSeconds(30)
   while ((Get-Process -Id $ParentPid -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 250 }
   if (Get-Process -Id $ParentPid -ErrorAction SilentlyContinue) { throw 'The current server did not stop in time.' }
@@ -115,7 +137,9 @@ try {
     }
   }
   Write-UpdateStatus 'failed' 0 $_.Exception.Message
-  try { $null = Start-CraftMateServer } catch { }
+  if (-not (Get-Process -Id $ParentPid -ErrorAction SilentlyContinue)) {
+    try { $null = Start-CraftMateServer } catch { }
+  }
 }
 `;
 
@@ -129,6 +153,7 @@ export class WebServer {
   private statusTimer: NodeJS.Timeout | null = null;
   private envPath: string;
   private updateToken: Buffer;
+  private activeUpdateWorkPath = '';
   private updateProgress: { status: string; progress: number; message: string; version?: string } = {
     status: 'idle', progress: 0, message: '',
   };
@@ -269,14 +294,14 @@ export class WebServer {
     this.app.get('/api/update/status', (req, res) => {
       if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Update status is available only to the authenticated local dashboard.' });
       const markerPath = path.join(this.installationPath(), '.craftmate-update-status.json');
+      const workStatusPath = this.activeUpdateWorkPath ? path.join(this.activeUpdateWorkPath, 'status.json') : '';
+      const statusPath = workStatusPath && fs.existsSync(workStatusPath) ? workStatusPath : markerPath;
       try {
-        if (fs.existsSync(markerPath)) {
-          this.updateProgress = JSON.parse(fs.readFileSync(markerPath, 'utf8'));
-          if (this.updateProgress.status === 'completed' || this.updateProgress.status === 'failed') {
-            fs.rmSync(markerPath, { force: true });
-          }
-        }
+        if (fs.existsSync(statusPath)) this.updateProgress = JSON.parse(fs.readFileSync(statusPath, 'utf8'));
       } catch { }
+      if (this.updateProgress.status === 'completed' || this.updateProgress.status === 'failed') {
+        try { fs.rmSync(markerPath, { force: true }); } catch { }
+      }
       res.setHeader('Cache-Control', 'no-store');
       res.json(this.updateProgress);
     });
@@ -291,6 +316,7 @@ export class WebServer {
         this.updateProgress = { status: 'downloading', progress: 5, message: 'Contacting GitHub Releases…' };
         const update = await this.downloadLatestUpdate();
         workPath = update.workPath;
+        this.activeUpdateWorkPath = workPath;
         this.updateProgress = { status: 'applying', progress: 75, message: 'Preparing the update…', version: update.version };
         const helperPath = path.join(workPath, 'Apply-Update.ps1');
         fs.writeFileSync(helperPath, WINDOWS_UPDATE_HELPER, 'utf8');
@@ -306,7 +332,6 @@ export class WebServer {
         });
         child.unref();
         res.status(202).json({ success: true, version: update.version });
-        res.once('finish', () => setTimeout(() => process.exit(0), 500));
       } catch (error) {
         if (workPath) fs.rmSync(workPath, { recursive: true, force: true });
         const message = error instanceof Error ? error.message : 'Update failed.';
