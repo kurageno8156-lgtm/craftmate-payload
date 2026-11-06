@@ -65,10 +65,11 @@ namespace CraftMateSetup
         private Button _btnBrowse, _btnInstall;
         private CheckBox _chkAgree, _chkLaunch;
         private ProgressBar _progressBar;
+        private PictureBox _picAppIcon;
 
-        private const string CurrentVersion = "1.3.2";
+        private const string CurrentVersion = "1.3.3";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.2/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.3/app_payload.zip";
 
         public InstallerForm(string lang)
         {
@@ -81,19 +82,37 @@ namespace CraftMateSetup
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false; MinimizeBox = false;
 
+            // The icon is embedded into the setup executable at build time.
+            using (Stream iconStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CraftMate.app.ico"))
+            {
+                if (iconStream != null)
+                {
+                    using (Icon appIcon = new Icon(iconStream))
+                    {
+                        Icon = (Icon)appIcon.Clone();
+                        _picAppIcon = new PictureBox();
+                        _picAppIcon.Image = appIcon.ToBitmap();
+                    }
+                    _picAppIcon.Location = new Point(20, 18);
+                    _picAppIcon.Size = new Size(64, 64);
+                    _picAppIcon.SizeMode = PictureBoxSizeMode.Zoom;
+                    Controls.Add(_picAppIcon);
+                }
+            }
+
             // タイトル（エメラルドグリーン）
             _lblTitle = new Label();
             _lblTitle.Text = "CraftMate Setup";
             _lblTitle.Font = new Font("Segoe UI", 18, FontStyle.Bold);
             _lblTitle.ForeColor = Color.FromArgb(16, 185, 129); // 緑
-            _lblTitle.Location = new Point(20, 20);
+            _lblTitle.Location = new Point(100, 30);
             _lblTitle.AutoSize = true;
 
             // アップデート通知ラベル
             _lblUpdate = new Label();
             _lblUpdate.Text = "";
             _lblUpdate.ForeColor = Color.Red;
-            _lblUpdate.Location = new Point(20, 60);
+            _lblUpdate.Location = new Point(100, 65);
             _lblUpdate.AutoSize = true;
             _lblUpdate.Visible = false;
 
