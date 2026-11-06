@@ -16,6 +16,10 @@ export interface BotStatus {
   nearbyEntities: Array<{
     name: string;
     type: string;
+    displayName: string;
+    customName?: string;
+    category: 'player' | 'hostile' | 'animal' | 'item' | 'other';
+    itemCount?: number;
     distance: number;
     position: { x: number; y: number; z: number };
     isHostile: boolean;

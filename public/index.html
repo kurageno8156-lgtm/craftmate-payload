@@ -89,6 +89,7 @@
         <div class="inventory-grid" id="inventory-container">
           <div class="empty-hint" data-i18n="emptyInventory">Inventory is empty</div>
         </div>
+        <button class="inventory-view-all" id="btn-show-all-inventory" type="button" data-i18n="showAllItems" hidden>Show all ({count})</button>
 
         <!-- 周囲のMob・プレイヤー -->
         <h3 data-i18n="nearbyEntities">👀 Nearby Entities</h3>
@@ -176,6 +177,17 @@
         <button id="btn-check-updates" class="btn-secondary" type="button" data-i18n="checkUpdates">↻ Check for updates</button>
         <button id="btn-download-logs" class="btn-secondary" type="button" data-i18n="downloadLogs">↓ Download logs</button>
       </div>
+    </section>
+  </div>
+
+  <div class="inventory-modal" id="inventory-modal" role="dialog" aria-modal="true" aria-labelledby="inventory-modal-title" hidden>
+    <button class="inventory-modal-backdrop" type="button" aria-label="Close inventory" data-i18n-aria="closeInventory" data-close-inventory></button>
+    <section class="inventory-modal-panel">
+      <header class="inventory-modal-header">
+        <h2 id="inventory-modal-title" data-i18n="inventoryModalTitle">Full inventory</h2>
+        <button class="inventory-modal-close" type="button" data-i18n="close" data-close-inventory>Close</button>
+      </header>
+      <div class="inventory-modal-grid inventory-grid" id="inventory-modal-container"></div>
     </section>
   </div>
 

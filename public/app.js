@@ -1,6 +1,7 @@
 ﻿const socket = io();
 
 const translate = (key, values) => window.craftMateI18n.t(key, values);
+let lastRenderedStatus = null;
 function updateLlmLabel(provider, model) {
   llmInfo.textContent = translate('aiBrain', { provider: String(provider || '').toUpperCase(), model: model || '' });
 }
@@ -8,6 +9,7 @@ function updateLlmLabel(provider, model) {
 document.addEventListener('craftmate-language-changed', () => {
   const match = llmInfo.textContent.match(/(?:AI Brain|AI 脳):\s*([^ (]+)\s*\((.*)\)$/);
   if (match) updateLlmLabel(match[1], match[2]);
+  if (lastRenderedStatus) renderStatus(lastRenderedStatus);
 });
 
 // DOM要素
@@ -30,6 +32,9 @@ const armorBoots = document.getElementById('armor-boots');
 
 const invCount = document.getElementById('inv-count');
 const invContainer = document.getElementById('inventory-container');
+const inventoryModal = document.getElementById('inventory-modal');
+const inventoryModalContainer = document.getElementById('inventory-modal-container');
+const showAllInventoryButton = document.getElementById('btn-show-all-inventory');
 const entitiesContainer = document.getElementById('entities-container');
 
 const taskText = document.getElementById('current-task-text');
@@ -113,6 +118,7 @@ function updateConnectionUI(connected) {
 
 function renderStatus(status) {
   if (!status) return;
+  lastRenderedStatus = status;
 
   // HP & Food
   hpVal.textContent = status.health;
@@ -139,29 +145,11 @@ function renderStatus(status) {
   // Always replace both grids, including when the server sends missing or empty arrays.
   const inventory = Array.isArray(status.inventory) ? status.inventory.filter(item => item && Number(item.count) > 0) : [];
   const entityList = Array.isArray(status.nearbyEntities) ? status.nearbyEntities.filter(entity => entity && entity.name) : [];
-  invCount.textContent = inventory.reduce((sum, item) => sum + Number(item.count || 0), 0);
-  invContainer.replaceChildren();
-  if (inventory.length === 0) {
-    invContainer.appendChild(createGridEmptyState(translate('emptyInventory')));
-  } else {
-    inventory.forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'inv-item';
-      card.title = String(item.displayName || item.name || '');
-      const icon = document.createElement('span');
-      icon.className = 'inv-item-icon';
-      icon.setAttribute('aria-hidden', 'true');
-      icon.textContent = getItemIcon(item.name);
-      const name = document.createElement('span');
-      name.className = 'inv-item-name';
-      name.textContent = String(item.displayName || item.name || translate('unknownItem'));
-      const count = document.createElement('span');
-      count.className = 'inv-count';
-      count.textContent = `×${Number(item.count) || 0}`;
-      card.append(icon, name, count);
-      invContainer.appendChild(card);
-    });
-  }
+  invCount.textContent = inventory.length;
+  showAllInventoryButton.hidden = inventory.length <= 8;
+  showAllInventoryButton.textContent = translate('showAllItems', { count: inventory.length });
+  renderInventoryCards(inventory.slice(0, 8), invContainer);
+  if (!inventoryModal.hidden) renderInventoryCards(inventory, inventoryModalContainer);
 
   entitiesContainer.replaceChildren();
   if (entityList.length === 0) {
@@ -174,13 +162,19 @@ function renderStatus(status) {
       icon.className = 'entity-icon';
       icon.setAttribute('aria-hidden', 'true');
       icon.textContent = getEntityIcon(entity);
+      const copy = document.createElement('span');
+      copy.className = 'entity-copy';
+      const type = document.createElement('span');
+      type.className = 'entity-type';
+      type.textContent = translate(`entityCategory_${entity.category || 'other'}`);
       const name = document.createElement('span');
       name.className = 'entity-name';
-      name.textContent = String(entity.name);
+      name.textContent = getLocalizedEntityName(entity);
+      copy.append(type, name);
       const distance = document.createElement('span');
       distance.className = 'entity-distance';
       distance.textContent = `${Number(entity.distance || 0)}m`;
-      card.append(icon, name, distance);
+      card.append(icon, copy, distance);
       entitiesContainer.appendChild(card);
     });
   }
@@ -195,12 +189,35 @@ function renderStatus(status) {
   }
 }
 
-function createGridEmptyState(message) {
-  const empty = document.createElement('div');
-  empty.className = 'empty-hint';
-  empty.setAttribute('role', 'status');
-  empty.textContent = message;
-  return empty;
+function renderInventoryCards(items, container) {
+  container.replaceChildren();
+  if (!items.length) {
+    container.appendChild(createGridEmptyState(translate('emptyInventory')));
+    return;
+  }
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'inv-item';
+    card.title = String(item.displayName || item.name || '');
+    const icon = document.createElement('span');
+    icon.className = 'inv-item-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = getItemIcon(item.name);
+    const name = document.createElement('span');
+    name.className = 'inv-item-name';
+    name.textContent = getLocalizedItemName(item);
+    const count = document.createElement('span');
+    count.className = 'inv-count';
+    count.textContent = `×${Number(item.count) || 0}`;
+    card.append(icon, name, count);
+    container.appendChild(card);
+  });
+}
+
+function getLocalizedItemName(item) {
+  const rawName = String(item.name || '').toLowerCase().replace(/^minecraft:/, '').replace(/[^a-z0-9]+/g, '_');
+  const translated = translate(`itemName_${rawName}`);
+  return translated === `itemName_${rawName}` ? String(item.displayName || item.name || translate('unknownItem')) : translated;
 }
 
 function getItemIcon(name) {
@@ -216,8 +233,9 @@ function getItemIcon(name) {
 }
 
 function getEntityIcon(entity) {
-  if (entity.isPlayer) return '👤';
-  if (entity.isHostile) return '👾';
+  if (entity.category === 'player') return '👤';
+  if (entity.category === 'item') return getItemIcon(entity.name);
+  if (entity.category === 'hostile') return '👾';
   const name = String(entity.name || '').toLowerCase();
   if (/cow|mooshroom/.test(name)) return '🐄';
   if (/pig/.test(name)) return '🐖';
@@ -228,6 +246,44 @@ function getEntityIcon(entity) {
   if (/cat|ocelot/.test(name)) return '🐈';
   if (/villager/.test(name)) return '🧑';
   return '🐾';
+}
+
+function getLocalizedEntityName(entity) {
+  if (entity.customName) return String(entity.customName);
+  const rawName = String(entity.name || '').toLowerCase().replace(/^minecraft:/, '').replace(/[^a-z0-9]+/g, '_');
+  const prefix = entity.category === 'item' ? 'itemName_' : 'entityName_';
+  const translated = translate(`${prefix}${rawName}`);
+  return translated === `${prefix}${rawName}` ? String(entity.displayName || entity.name || translate('unknownEntity')) : translated;
+}
+
+showAllInventoryButton.addEventListener('click', () => {
+  if (!lastRenderedStatus) return;
+  const inventory = Array.isArray(lastRenderedStatus.inventory) ? lastRenderedStatus.inventory.filter(item => item && Number(item.count) > 0) : [];
+  renderInventoryCards(inventory, inventoryModalContainer);
+  inventoryModal.hidden = false;
+  inventoryModal.querySelector('.inventory-modal-close').focus();
+});
+
+inventoryModal.querySelectorAll('[data-close-inventory]').forEach(button => {
+  button.addEventListener('click', () => {
+    inventoryModal.hidden = true;
+    showAllInventoryButton.focus();
+  });
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !inventoryModal.hidden) {
+    inventoryModal.hidden = true;
+    showAllInventoryButton.focus();
+  }
+});
+
+function createGridEmptyState(message) {
+  const empty = document.createElement('div');
+  empty.className = 'empty-hint';
+  empty.setAttribute('role', 'status');
+  empty.textContent = message;
+  return empty;
 }
 
 function appendLog(log) {
@@ -487,7 +543,9 @@ backupFileInput.addEventListener('change', async () => {
   const button = document.getElementById('btn-restore-backup');
   try {
     if (file.size > 256 * 1024) throw new Error(translate('invalidBackup'));
-    const backup = JSON.parse(await file.text());
+    let backup;
+    try { backup = JSON.parse(await file.text()); }
+    catch { throw new Error(translate('invalidBackup')); }
     if (!backup || backup.format !== 'craftmate-settings-backup' || backup.version !== 1 || typeof backup.env !== 'string') {
       throw new Error(translate('invalidBackup'));
     }
@@ -500,7 +558,16 @@ backupFileInput.addEventListener('change', async () => {
       body: JSON.stringify(backup),
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || translate('restoreFailed'));
+    if (!response.ok) {
+      const messageKey = result.code === 'INVALID_JSON' || result.code === 'INVALID_BACKUP_DATA'
+        ? 'invalidBackup'
+        : result.code === 'RESTORE_PERMISSION_DENIED'
+          ? 'restorePermissionDenied'
+          : result.code === 'RESTORE_WRITE_FAILED'
+            ? 'restoreWriteFailed'
+            : '';
+      throw new Error(messageKey ? translate(messageKey) : result.error || translate('restoreFailed'));
+    }
     showSettingsMessage(translate('restoreSuccess'), 'success');
     setTimeout(() => {
       if (result.webPortChanged) {

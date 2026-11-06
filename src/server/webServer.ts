@@ -71,6 +71,13 @@ export class WebServer {
       }
     });
     this.app.use(express.static(publicPath, { index: false }));
+    this.app.use((error: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+      const parseError = error as { status?: number; type?: string };
+      if (parseError && (parseError.type === 'entity.parse.failed' || parseError.status === 400)) {
+        return res.status(400).json({ error: 'The request body must contain valid JSON.', code: 'INVALID_JSON' });
+      }
+      next(error);
+    });
   }
 
   private installationPath(): string {
@@ -164,17 +171,29 @@ export class WebServer {
       }
     });
 
-    this.app.post('/api/restore', (req, res) => {
+    this.app.post('/api/restore', async (req, res) => {
       if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Restore is available only to the authenticated local dashboard.' });
-      const backup = req.body as { format?: unknown; version?: unknown; env?: unknown };
-      if (!backup || backup.format !== 'craftmate-settings-backup' || backup.version !== 1 || typeof backup.env !== 'string') {
-        return res.status(400).json({ error: 'This is not a supported CraftMate settings backup.' });
+      const body = req.body as unknown;
+      if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return res.status(400).json({ error: 'This is not a supported CraftMate settings backup.', code: 'INVALID_BACKUP_DATA' });
+      }
+      const backup = body as { format?: unknown; version?: unknown; env?: unknown; createdAt?: unknown; fileName?: unknown };
+      if (backup.format !== 'craftmate-settings-backup' || backup.version !== 1 || typeof backup.env !== 'string' ||
+          (backup.createdAt !== undefined && (typeof backup.createdAt !== 'string' || !Number.isFinite(Date.parse(backup.createdAt)))) ||
+          (backup.fileName !== undefined && (typeof backup.fileName !== 'string' || !/^craftmate_backup_\d{8}_\d{6}\.json$/.test(backup.fileName)))) {
+        return res.status(400).json({ error: 'This is not a supported CraftMate settings backup.', code: 'INVALID_BACKUP_DATA' });
       }
       if (Buffer.byteLength(backup.env, 'utf8') > 128 * 1024 || backup.env.includes('\0')) {
-        return res.status(413).json({ error: 'The backup file is too large or contains invalid data.' });
+        return res.status(413).json({ error: 'The backup file is too large or contains invalid data.', code: 'INVALID_BACKUP_DATA' });
       }
 
-      const values = dotenv.parse(backup.env);
+      let values: Record<string, string>;
+      try { values = dotenv.parse(backup.env); }
+      catch { return res.status(400).json({ error: 'The backup settings could not be parsed.', code: 'INVALID_BACKUP_DATA' }); }
+      const knownSettings = ['MC_HOST', 'MC_PORT', 'MC_USERNAME', 'WEB_PORT', 'LLM_PROVIDER', 'GEMINI_API_KEY', 'GROQ_API_KEY', 'OPENAI_API_KEY', 'OLLAMA_MODEL'];
+      if (!Object.keys(values).some(key => knownSettings.includes(key))) {
+        return res.status(400).json({ error: 'The backup does not contain CraftMate settings.', code: 'INVALID_BACKUP_DATA' });
+      }
       const providers = ['gemini', 'groq', 'openai', 'ollama'];
       const provider = values.LLM_PROVIDER || 'gemini';
       const mcPort = Number(values.MC_PORT || 25565);
@@ -193,6 +212,22 @@ export class WebServer {
           return res.status(400).json({ error: `The backup contains an invalid model value (${key}).` });
         }
       }
+      for (const key of ['GEMINI_API_KEY', 'GROQ_API_KEY', 'OPENAI_API_KEY']) {
+        if (values[key] && (values[key].length > 512 || /[\r\n]/.test(values[key]))) {
+          return res.status(400).json({ error: `The backup contains an invalid API key value (${key}).`, code: 'INVALID_BACKUP_DATA' });
+        }
+      }
+      if (values.OLLAMA_BASE_URL) {
+        try {
+          const ollamaUrl = new URL(values.OLLAMA_BASE_URL);
+          if (!['http:', 'https:'].includes(ollamaUrl.protocol)) throw new Error('unsupported protocol');
+        } catch { return res.status(400).json({ error: 'The backup contains an invalid Ollama URL.', code: 'INVALID_BACKUP_DATA' }); }
+      }
+      for (const key of ['AUTO_EAT', 'AUTO_ARMOR']) {
+        if (values[key] && !['true', 'false'].includes(values[key].toLowerCase())) {
+          return res.status(400).json({ error: `The backup contains an invalid value for ${key}.`, code: 'INVALID_BACKUP_DATA' });
+        }
+      }
 
       const config = this.botWrapper.config;
       const previousEnv = (() => {
@@ -204,11 +239,15 @@ export class WebServer {
       const temporaryPath = `${this.envPath}.restore-${randomBytes(8).toString('hex')}`;
       try {
         fs.writeFileSync(temporaryPath, backup.env, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
-        fs.renameSync(temporaryPath, this.envPath);
+        await this.renameFileWithRetry(temporaryPath, this.envPath);
       } catch (error) {
         try { fs.rmSync(temporaryPath, { force: true }); } catch { }
         console.error('[Restore] Could not replace .env:', error);
-        return res.status(500).json({ error: 'Could not restore the settings file.' });
+        const code = (error as NodeJS.ErrnoException).code;
+        if (code === 'EACCES' || code === 'EPERM') {
+          return res.status(500).json({ error: 'Access was denied while replacing .env. The CraftMate install folder may require write permission.', code: 'RESTORE_PERMISSION_DENIED' });
+        }
+        return res.status(500).json({ error: 'Could not restore the settings file. Close applications that may be locking .env and try again.', code: 'RESTORE_WRITE_FAILED' });
       }
 
       for (const key of Object.keys(previousEnv)) {
@@ -436,6 +475,20 @@ export class WebServer {
       process.env[key] = value;
     }
     fs.writeFileSync(envPath, `${lines.filter((line, index) => index < lines.length - 1 || line !== '').join('\n').trimEnd()}\n`, 'utf8');
+  }
+
+  private async renameFileWithRetry(source: string, destination: string): Promise<void> {
+    const retryableErrors = new Set(['EBUSY', 'EACCES', 'EPERM']);
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      try {
+        fs.renameSync(source, destination);
+        return;
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code || '';
+        if (!retryableErrors.has(code) || attempt === 4) throw error;
+        await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+      }
+    }
   }
 
   private changePort(port: number): void {

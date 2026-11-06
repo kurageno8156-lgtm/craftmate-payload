@@ -279,6 +279,18 @@ body {
   font-weight: 700;
 }
 
+.inventory-view-all { width: 100%; margin-top: 8px; padding: 8px 10px; border: 1px solid rgba(16, 185, 129, .42); border-radius: 8px; background: rgba(16, 185, 129, .1); color: #a7f3d0; cursor: pointer; font: inherit; font-size: 11px; font-weight: 700; transition: background .15s ease, border-color .15s ease; }
+.inventory-view-all:hover { border-color: var(--accent-green); background: rgba(16, 185, 129, .2); }
+.inventory-modal[hidden] { display: none; }
+.inventory-modal { position: fixed; inset: 0; z-index: 1500; display: grid; place-items: center; padding: 22px; }
+.inventory-modal-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: rgba(2, 6, 23, .78); backdrop-filter: blur(5px); cursor: default; }
+.inventory-modal-panel { position: relative; display: flex; flex-direction: column; width: min(760px, 100%); max-height: min(86vh, 760px); padding: 20px; border: 1px solid #475569; border-radius: 16px; background: #172235; box-shadow: 0 24px 80px rgba(0, 0, 0, .58); }
+.inventory-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 15px; }
+.inventory-modal-header h2 { margin: 0; color: var(--text-main); font-size: 18px; }
+.inventory-modal-close { padding: 8px 13px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); color: var(--text-main); cursor: pointer; font: inherit; font-size: 11px; }
+.inventory-modal-close:hover { border-color: var(--accent-green); }
+.inventory-modal-grid.inventory-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); min-height: 120px; max-height: 65vh; padding: 12px; }
+
 /* エンティティリスト */
 .entities-list {
   display: grid;
@@ -309,7 +321,9 @@ body {
   font-size: 10px;
 }
 .entity-icon { font-size: 15px; text-align: center; }
-.entity-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entity-copy { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.entity-type { overflow: hidden; color: #94a3b8; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.entity-name { overflow: hidden; color: #f1f5f9; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .entity-distance { color: var(--text-muted); font-size: 9px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .entity-item.hostile {
@@ -594,6 +608,9 @@ body {
   .settings-fields, .connection-cards { grid-template-columns: 1fr; }
   .settings-field-wide { grid-column: auto; }
   .settings-tools { grid-template-columns: 1fr; }
+  .inventory-modal { padding: 12px; }
+  .inventory-modal-panel { padding: 14px; }
+  .inventory-modal-grid.inventory-grid { grid-template-columns: repeat(auto-fill, minmax(82px, 1fr)); }
   .settings-tools #btn-download-logs { grid-column: auto; }
   .backup-tools { grid-template-columns: 1fr; }
   .settings-footer { align-items: flex-start; flex-direction: column; }

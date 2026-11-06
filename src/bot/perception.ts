@@ -58,13 +58,36 @@ export class PerceptionManager {
         const distance = Math.round(pos.distanceTo(entity.position) * 10) / 10;
         if (distance > 32) continue; // 32ブロック以内のエンティティのみ
 
-        const name = entity.name || entity.username || 'unknown';
+        const rawName = entity.name || entity.username || 'unknown';
+        const isDroppedItem = /^(item|item_stack)$/i.test(rawName);
+        let droppedItem = null;
+        if (isDroppedItem) {
+          try { droppedItem = entity.getDroppedItem(); } catch { }
+        }
+        let customName: string | undefined;
+        try {
+          const formattedName = entity.getCustomName();
+          if (formattedName) customName = formattedName.toString().trim();
+        } catch { }
         const isPlayer = entity.type === 'player';
-        const isHostile = HOSTILE_MOBS.has(name.toLowerCase());
+        const isHostile = HOSTILE_MOBS.has(rawName.toLowerCase());
+        const name = isDroppedItem ? (droppedItem?.name || rawName) : isPlayer ? (entity.username || rawName) : rawName;
+        const displayName = isDroppedItem
+          ? (droppedItem?.displayName || name)
+          : (entity.displayName || (isPlayer ? entity.username : undefined) || name);
+        const category: BotStatus['nearbyEntities'][number]['category'] = isDroppedItem
+          ? 'item'
+          : isPlayer ? 'player'
+            : isHostile ? 'hostile'
+              : entity.kind === 'animal' || entity.kind === 'ambient' ? 'animal' : 'other';
 
         nearbyEntities.push({
-          name: isPlayer ? (entity.username || 'Player') : name,
-          type: entity.type || 'mob',
+          name,
+          type: isDroppedItem ? 'item' : entity.type || 'other',
+          displayName,
+          customName,
+          category,
+          itemCount: droppedItem?.count,
           distance,
           position: {
             x: Math.round(entity.position.x * 10) / 10,
