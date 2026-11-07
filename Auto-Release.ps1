@@ -142,7 +142,7 @@ Copy-Item -LiteralPath $setupPath -Destination (Join-Path $projectRoot 'CraftMat
 Copy-Item -LiteralPath $uninstallerPath -Destination (Join-Path $projectRoot 'Uninstall.exe') -Force
 Copy-Item -LiteralPath $updaterPath -Destination (Join-Path $projectRoot 'CraftMate_Updater.exe') -Force
 
-git add -- Auto-Release.ps1 Launcher.cs CraftMate.exe CraftMate_Updater.exe index.html package.json package-lock.json installer\Build-Release.ps1 installer\Setup.cs installer\Updater.cs installer\Uninstall.cs installer\app.manifest Uninstall.exe src public
+git add -- Auto-Release.ps1 Launcher.cs CraftMate.exe CraftMate_Updater.exe index.html .env.example package.json package-lock.json installer\Build-Release.ps1 installer\Setup.cs installer\Updater.cs installer\Uninstall.cs installer\app.manifest Uninstall.exe src public
 if ($LASTEXITCODE -ne 0) { throw 'git add failed.' }
 git diff --cached --quiet
 if ($LASTEXITCODE -eq 1) {

@@ -10,7 +10,6 @@ export interface BotConfig {
   mcHost: string;
   mcPort: number;
   mcUsername: string;
-  mcVersion?: string;
   mcAuth: 'offline' | 'microsoft';
 
   // AI Brain Settings
@@ -37,7 +36,6 @@ export const config: BotConfig = {
   mcHost: process.env.MC_HOST || 'localhost',
   mcPort: parseInt(process.env.MC_PORT || '25565', 10),
   mcUsername: process.env.MC_USERNAME || 'AIMAN',
-  mcVersion: process.env.MC_VERSION || undefined,
   mcAuth: (process.env.MC_AUTH as 'offline' | 'microsoft') || 'offline',
 
   llmProvider: (process.env.LLM_PROVIDER as 'gemini' | 'openai' | 'groq' | 'ollama') || 'gemini',

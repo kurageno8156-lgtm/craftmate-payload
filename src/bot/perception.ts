@@ -15,6 +15,10 @@ export class PerceptionManager {
     this.bot = bot;
   }
 
+  private supportsBlockStateIds(): boolean {
+    try { return this.bot.supportFeature('blockStateId') === true; } catch { return false; }
+  }
+
   /**
    * 現在のBotの詳細ステータスを取得
    */
@@ -190,14 +194,20 @@ ${importantBlocks}
 
     const pos = this.bot.entity.position.floored();
     const step = 2; // パフォーマンスのため2ブロック間隔でサンプリング
+    const hasBlockStateIds = this.supportsBlockStateIds();
 
     for (let x = -radius; x <= radius; x += step) {
       for (let y = Math.max(-8, -radius); y <= Math.min(8, radius); y += step) {
         for (let z = -radius; z <= radius; z += step) {
           const blockPos = pos.offset(x, y, z);
           const block = this.bot.blockAt(blockPos);
-          if (block && block.name !== 'air' && block.name !== 'cave_air') {
-            summary[block.name] = (summary[block.name] || 0) + 1;
+          const stateId = (block as any)?.stateId;
+          const stateBlockName = hasBlockStateIds && Number.isInteger(stateId)
+            ? (this.bot.registry as any).blocksByStateId?.[stateId]?.name
+            : undefined;
+          const blockName = block?.name || stateBlockName;
+          if (blockName && blockName !== 'air' && blockName !== 'cave_air' && blockName !== 'void_air') {
+            summary[blockName] = (summary[blockName] || 0) + 1;
           }
         }
       }

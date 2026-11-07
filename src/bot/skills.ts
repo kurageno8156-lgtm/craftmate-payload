@@ -32,6 +32,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, errorMsg: string): Prom
 export class SkillManager {
   private bot: Bot;
   private mcData: any;
+  private mcDataVersion: string | null = null;
   private isFollowing: boolean = false;
   private followTarget: string | null = null;
   private followInterval: NodeJS.Timeout | null = null;
@@ -39,13 +40,20 @@ export class SkillManager {
   constructor(bot: Bot) {
     this.bot = bot;
     this.bot.once('spawn', () => {
-      this.mcData = minecraftData(this.bot.version);
+      this.getMCData();
     });
   }
 
   private getMCData() {
-    if (!this.mcData && this.bot.version) {
-      this.mcData = minecraftData(this.bot.version);
+    const detectedVersion = this.bot.version;
+    if (!detectedVersion) return null;
+    if (this.mcDataVersion === detectedVersion) return this.mcData || null;
+    this.mcDataVersion = detectedVersion;
+    try {
+      this.mcData = minecraftData(detectedVersion);
+    } catch (error) {
+      this.mcData = null;
+      console.warn(`[Bot] minecraft-data has no definitions for detected Minecraft ${detectedVersion}:`, error);
     }
     return this.mcData;
   }

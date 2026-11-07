@@ -1,7 +1,7 @@
 import mineflayer, { Bot } from 'mineflayer';
 import { pathfinder } from 'mineflayer-pathfinder';
 import { plugin as collectBlock } from 'mineflayer-collectblock';
-import autoEatPkg from 'mineflayer-auto-eat';
+import { loader as autoEat } from 'mineflayer-auto-eat';
 import armorManager from 'mineflayer-armor-manager';
 import { plugin as pvp } from 'mineflayer-pvp';
 import { BotConfig } from '../config.js';
@@ -10,8 +10,6 @@ import { SkillManager } from './skills.js';
 import { AutoGuard } from './guard.js';
 import { ChatMessage, BotStatus } from '../types.js';
 import { EventEmitter } from 'events';
-
-const autoEat = (autoEatPkg as any).plugin || autoEatPkg;
 
 export class MinecraftBot extends EventEmitter {
   public bot!: Bot;
@@ -32,18 +30,15 @@ export class MinecraftBot extends EventEmitter {
    * ボットの接続開始
    */
   public start(): void {
-    console.log(`[Bot] Connecting to ${this.config.mcHost}:${this.config.mcPort} as "${this.config.mcUsername}"...`);
+    console.log(`[Bot] Connecting to ${this.config.mcHost}:${this.config.mcPort} as "${this.config.mcUsername}" (Minecraft version auto-detection enabled)...`);
 
     const botOptions: any = {
       host: this.config.mcHost,
       port: this.config.mcPort,
       username: this.config.mcUsername,
       auth: this.config.mcAuth,
+      version: false,
     };
-
-    if (this.config.mcVersion) {
-      botOptions.version = this.config.mcVersion;
-    }
 
     try {
       this.bot = mineflayer.createBot(botOptions);
@@ -99,6 +94,7 @@ export class MinecraftBot extends EventEmitter {
     this.bot.on('login', () => {
       if (this.bot !== connectedBot) return;
       console.log(`[Bot] Logged into server successfully as ${this.bot.username}`);
+      console.log(`[Bot] Detected Minecraft ${this.bot.version} (protocol ${this.bot.protocolVersion}).`);
       this.isConnected = true;
       this.emit('connected');
     });
@@ -115,13 +111,15 @@ export class MinecraftBot extends EventEmitter {
       const eater = (this.bot as any).autoEat;
       if (eater) {
         if (this.config.autoEat) {
-          eater.options.priority = 'foodPoints';
-          eater.options.startAt = 15;
-          eater.options.bannedFood = ['rotten_flesh', 'spider_eye', 'poisonous_potato', 'pufferfish', 'chicken'];
-          if (typeof eater.enable === 'function') eater.enable();
+          eater.setOpts({
+            priority: 'foodPoints',
+            minHunger: 15,
+            bannedFood: ['rotten_flesh', 'spider_eye', 'poisonous_potato', 'pufferfish', 'chicken'],
+          });
+          if (typeof eater.enableAuto === 'function') eater.enableAuto();
           console.log('[Bot] Auto-eat enabled (starts at food level 15).');
         } else {
-          if (typeof eater.disable === 'function') eater.disable();
+          if (typeof eater.disableAuto === 'function') eater.disableAuto();
           console.log('[Bot] Auto-eat disabled by configuration.');
         }
       } else if (this.config.autoEat) {
@@ -131,15 +129,18 @@ export class MinecraftBot extends EventEmitter {
       this.emit('spawned');
     });
 
-    this.bot.on('autoeat_started', (item: any) => {
-      if (this.bot === connectedBot) console.log(`[Bot] Auto-eating ${item?.name || 'food'} (food level ${this.bot.food}).`);
-    });
-    this.bot.on('autoeat_finished', (item: any) => {
-      if (this.bot === connectedBot) console.log(`[Bot] Finished eating ${item?.name || 'food'} (food level ${this.bot.food}).`);
-    });
-    this.bot.on('autoeat_error', (error: any) => {
-      if (this.bot === connectedBot) console.warn('[Bot] Auto-eat failed:', error?.message || error);
-    });
+    const eater = (connectedBot as any).autoEat;
+    if (eater && typeof eater.on === 'function') {
+      eater.on('eatStart', (opts: any) => {
+        if (this.bot === connectedBot) console.log(`[Bot] Auto-eating ${opts?.food?.name || 'food'} (food level ${this.bot.food}).`);
+      });
+      eater.on('eatFinish', (opts: any) => {
+        if (this.bot === connectedBot) console.log(`[Bot] Finished eating ${opts?.food?.name || 'food'} (food level ${this.bot.food}).`);
+      });
+      eater.on('eatFail', (error: any) => {
+        if (this.bot === connectedBot) console.warn('[Bot] Auto-eat failed:', error?.message || error);
+      });
+    }
 
     // プレイヤーからのチャット受信
     this.bot.on('chat', (username: string, message: string) => {

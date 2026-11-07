@@ -235,7 +235,7 @@ export class WebServer {
       })();
       const portChanged = webPort !== this.port;
       const minecraftChanged = mcPort !== config.mcPort || username !== config.mcUsername ||
-        (values.MC_HOST || 'localhost') !== config.mcHost || (values.MC_VERSION || undefined) !== config.mcVersion || auth !== config.mcAuth;
+        (values.MC_HOST || 'localhost') !== config.mcHost || auth !== config.mcAuth;
       const temporaryPath = `${this.envPath}.restore-${randomBytes(8).toString('hex')}`;
       try {
         fs.writeFileSync(temporaryPath, backup.env, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
@@ -258,7 +258,6 @@ export class WebServer {
       config.mcHost = values.MC_HOST || 'localhost';
       config.mcPort = mcPort;
       config.mcUsername = username;
-      config.mcVersion = values.MC_VERSION || undefined;
       config.mcAuth = auth as 'offline' | 'microsoft';
       config.llmProvider = provider as AIProvider;
       config.geminiApiKey = values.GEMINI_API_KEY || '';
