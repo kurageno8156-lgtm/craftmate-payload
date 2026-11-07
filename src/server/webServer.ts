@@ -334,6 +334,16 @@ export class WebServer {
       if (selectedMinecraftVersion.toLowerCase() !== 'auto' && !/^[A-Za-z0-9][A-Za-z0-9.-]{0,63}$/.test(selectedMinecraftVersion)) {
         return res.status(400).json({ error: 'Enter auto or a valid Minecraft version such as 1.21.1.' });
       }
+      // バージョン上限（26.1）チェック
+      if (selectedMinecraftVersion.toLowerCase() !== 'auto') {
+        const parts = selectedMinecraftVersion.split('.').map(Number);
+        const major = parts[0] || 0;
+        const minor = parts[1] || 0;
+        const patch = parts[2] || 0;
+        if (major > 26 || (major === 26 && minor > 1) || (major === 26 && minor === 1 && patch > 0)) {
+          return res.status(400).json({ error: 'Minecraft version must be 26.1 or lower.' });
+        }
+      }
       if (!Number.isInteger(parsedWebPort) || parsedWebPort < 1 || parsedWebPort > 65535) {
         return res.status(400).json({ error: 'Web port must be between 1 and 65535.' });
       }
