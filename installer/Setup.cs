@@ -6,6 +6,8 @@ using System.IO.Compression;
 using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
+using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
@@ -264,7 +266,8 @@ namespace CraftMateSetup
                         { "Extracting", "\u003e\u003e\u003e\u0020\u6b63\u5728\u89e3\u538b\u002e\u002e\u002e" },
                         { "Completed", "\u5b89\u88c5\u5b8c\u6210\u3002" },
                         { "CreatingShortcuts", "\u003e\u003e\u003e\u0020\u6b63\u5728\u521b\u5efa\u5feb\u6377\u65b9\u5f0f\u002e\u002e\u002e" },
-                        { "ShortcutsCreated", "\u003e\u003e\u003e\u0020\u5feb\u6377\u65b9\u5f0f\u5df2\u521b\u5efa\u3002" }
+                        { "ShortcutsCreated", "\u003e\u003e\u003e\u0020\u5feb\u6377\u65b9\u5f0f\u5df2\u521b\u5efa\u3002" },
+                        { "PinToStartPrompt", "\u8bf7\u5c07 CraftMate \u56f3\u5b9a\u5230\u300c\u5f00\u59cb\u300d\u83dc\u53f7\u3002" }
                     }
                 },
                 {
@@ -613,6 +616,19 @@ namespace CraftMateSetup
                     CreateShortcut(Path.Combine(startMenuFolder, "CraftMate.lnk"), executable, target);
                     CreateShortcut(Path.Combine(startMenuFolder, "CraftMate Updater.lnk"), updaterExecutable, target);
 
+                    bool pinned = TryPinToStartMenu(target, executable);
+                    if (!pinned)
+                    {
+                        Invoke(new Action(delegate {
+                            MessageBox.Show(
+                                this,
+                                "Please pin CraftMate to the Start menu manually.",
+                                "CraftMate",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information);
+                        }));
+                    }
+
                     Invoke(new Action(delegate { _txtLog.AppendText(UITexts.Get(_lang, "ShortcutsCreated") + "\r\n"); }));
                 }
                 catch (Exception shortcutError)
@@ -819,6 +835,64 @@ namespace CraftMateSetup
                 if (Marshal.IsComObject(shell)) Marshal.ReleaseComObject(shell);
             }
         }
+
+            private static bool TryPinToStartMenu(string targetDirectory, string executable)
+            {
+                string startMenuFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "CraftMate");
+                string startShortcut = Path.Combine(startMenuFolder, "CraftMate.lnk");
+                string script =
+                    "try {" +
+                    "$ErrorActionPreference = 'Stop'" +
+                    "$linkPath = '" + EscapePowerShellString(startShortcut) + "'" +
+                    "$exePath = '" + EscapePowerShellString(executable) + "'" +
+                    "$shell = New-Object -ComObject Shell.Application" +
+                    "$namespace = $shell.NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}')" +
+                    "$item = $namespace.Items() | Where-Object { $_.Name -eq 'CraftMate.exe' }" +
+                    "if ($null -eq $item) { exit 2 }" +
+                    "$verbs = $item.Verbs()" +
+                    "$pin = $verbs | Where-Object { $_.Name -replace '&', '' -cmatch '^Pin to Start$' }" +
+                    "if ($null -eq $pin) { exit 3 }" +
+                    "$pin.DoIt()" +
+                    "exit 0" +
+                    "} catch {" +
+                    "exit 9" +
+                    "}";
+
+                try
+                {
+                    RunPowerShell(script);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+
+            private static void RunPowerShell(string script)
+            {
+                string arguments = "-NoProfile -ExecutionPolicy Bypass -EncodedCommand " + Convert.ToBase64String(Encoding.UTF8.GetBytes(script));
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = "powershell",
+                    Arguments = arguments,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+
+                using (Process process = Process.Start(startInfo))
+                {
+                    if (process == null) return;
+                    process.WaitForExit(10000);
+                }
+            }
+
+            private static string EscapePowerShellString(string value)
+            {
+                return value.Replace("'", "''");
+            }
 
         private static void InstallEmbeddedUninstaller(string targetDirectory)
         {

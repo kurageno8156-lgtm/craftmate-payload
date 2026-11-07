@@ -331,14 +331,27 @@ export class WebServer {
         return res.status(400).json({ error: 'Minecraft port must be between 1 and 65535.' });
       }
       const selectedMinecraftVersion = typeof mcVersion === 'string' ? mcVersion.trim() : 'auto';
-      if (selectedMinecraftVersion.toLowerCase() !== 'auto' && !/^[A-Za-z0-9][A-Za-z0-9.-]{0,63}$/.test(selectedMinecraftVersion)) {
-        return res.status(400).json({ error: 'Enter auto or a valid Minecraft version such as 1.21.1.' });
+      if (selectedMinecraftVersion.toLowerCase() !== 'auto') {
+        const versionParts = selectedMinecraftVersion.split('.').map(part => {
+          const n = Number(part);
+          if (!Number.isInteger(n) || String(n) !== part.trim()) return NaN;
+          return n;
+        });
+        if (versionParts.some(n => Number.isNaN(n))) {
+          return res.status(400).json({ error: 'Enter auto or a valid Minecraft version such as 1.21.1.' });
+        }
+        const major = versionParts[0];
+        const minor = versionParts[1] || 0;
+        const patch = versionParts[2] || 0;
+        if (major > 26 || (major === 26 && minor > 1) || (major === 26 && minor === 1 && patch > 0)) {
+          return res.status(400).json({ error: 'Minecraft version must be 26.1 or lower.' });
+        }
       }
       if (!Number.isInteger(parsedWebPort) || parsedWebPort < 1 || parsedWebPort > 65535) {
         return res.status(400).json({ error: 'Web port must be between 1 and 65535.' });
       }
       if (typeof username !== 'string' || !/^[A-Za-z0-9_]{1,16}$/.test(username.trim())) {
-        return res.status(400).json({ error: 'Bot name must be 1–16 letters, numbers, or underscores.' });
+        return res.status(400).json({ error: 'Bot name must be 1 E6 letters, numbers, or underscores.' });
       }
       if (typeof provider !== 'string' || !providers.includes(provider as AIProvider)) {
         return res.status(400).json({ error: 'Choose Gemini, Groq, Ollama, or OpenAI.' });
@@ -401,7 +414,7 @@ export class WebServer {
     this.app.post('/api/command', async (req, res) => {
       const { instruction, sender } = req.body;
       if (!instruction) {
-        return res.status(400).json({ error: '指示(instruction)が必要です' });
+        return res.status(400).json({ error: '持E��(instruction)が忁E��でぁE });
       }
       this.agent.handleInstruction(instruction, sender || 'WebDashboard');
       res.json({ success: true, message: 'タスクを開始しました' });
