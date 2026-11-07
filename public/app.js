@@ -353,6 +353,8 @@ const settingsForm = document.getElementById('settings-form');
 const settingsMessage = document.getElementById('settings-message');
 const providerSelect = document.getElementById('setting-provider');
 const modelSelect = document.getElementById('setting-model');
+const minecraftVersionSelect = document.getElementById('setting-mc-version');
+const minecraftVersionCustomInput = document.getElementById('setting-mc-version-custom');
 const languageSelect = document.getElementById('setting-language');
 const apiKeyInput = document.getElementById('setting-api-key');
 languageSelect.value = window.craftMateI18n.language;
@@ -380,6 +382,27 @@ function showSettingsMessage(message, state) {
   settingsMessage.textContent = message || '';
   settingsMessage.className = `settings-message${state ? ` ${state}` : ''}`;
 }
+
+function updateCustomMinecraftVersionVisibility() {
+  const isCustom = minecraftVersionSelect.value === 'custom';
+  minecraftVersionCustomInput.hidden = !isCustom;
+  minecraftVersionCustomInput.required = isCustom;
+}
+
+function setMinecraftVersionSetting(version) {
+  const value = String(version || 'auto').trim() || 'auto';
+  const hasOption = Array.from(minecraftVersionSelect.options).some(option => option.value === value && option.value !== 'custom');
+  if (hasOption) {
+    minecraftVersionSelect.value = value;
+    minecraftVersionCustomInput.value = '';
+  } else {
+    minecraftVersionSelect.value = 'custom';
+    minecraftVersionCustomInput.value = value;
+  }
+  updateCustomMinecraftVersionVisibility();
+}
+
+minecraftVersionSelect.addEventListener('change', updateCustomMinecraftVersionVisibility);
 
 function setConnectionState(name, connected) {
   const dot = document.getElementById(`${name}-health-dot`);
@@ -410,7 +433,7 @@ async function loadSettings() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || translate('settingsLoadFailed'));
     document.getElementById('setting-mc-port').value = data.mcPort || 25565;
-    document.getElementById('setting-mc-version').value = data.mcVersion || 'auto';
+    setMinecraftVersionSetting(data.mcVersion || 'auto');
     document.getElementById('setting-username').value = data.username || 'AIMAN';
     document.getElementById('setting-web-port').value = data.webPort || 3000;
     providerSelect.value = data.provider || 'gemini';
@@ -451,7 +474,9 @@ settingsForm.addEventListener('submit', async event => {
   showSettingsMessage(translate('saving'));
   const payload = {
     mcPort: Number(document.getElementById('setting-mc-port').value),
-    mcVersion: document.getElementById('setting-mc-version').value.trim() || 'auto',
+    mcVersion: minecraftVersionSelect.value === 'custom'
+      ? minecraftVersionCustomInput.value.trim()
+      : minecraftVersionSelect.value,
     username: document.getElementById('setting-username').value.trim(),
     webPort: Number(document.getElementById('setting-web-port').value),
     provider: providerSelect.value,

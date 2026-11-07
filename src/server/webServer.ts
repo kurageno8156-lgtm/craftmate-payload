@@ -208,7 +208,7 @@ export class WebServer {
       if (!/^[A-Za-z0-9_]{1,16}$/.test(username) || (auth !== 'offline' && auth !== 'microsoft')) {
         return res.status(400).json({ error: 'The backup contains invalid Minecraft settings.' });
       }
-      if (minecraftVersion.toLowerCase() !== 'auto' && !/^(\d{1,3}\.){1,2}\d{1,3}$/.test(minecraftVersion)) {
+      if (minecraftVersion.toLowerCase() !== 'auto' && !/^[A-Za-z0-9][A-Za-z0-9.-]{0,63}$/.test(minecraftVersion)) {
         return res.status(400).json({ error: 'The backup contains an invalid Minecraft version.' });
       }
       for (const key of Object.values(MODEL_ENV_KEYS)) {
@@ -331,7 +331,7 @@ export class WebServer {
         return res.status(400).json({ error: 'Minecraft port must be between 1 and 65535.' });
       }
       const selectedMinecraftVersion = typeof mcVersion === 'string' ? mcVersion.trim() : 'auto';
-      if (selectedMinecraftVersion.toLowerCase() !== 'auto' && !/^(\d{1,3}\.){1,2}\d{1,3}$/.test(selectedMinecraftVersion)) {
+      if (selectedMinecraftVersion.toLowerCase() !== 'auto' && !/^[A-Za-z0-9][A-Za-z0-9.-]{0,63}$/.test(selectedMinecraftVersion)) {
         return res.status(400).json({ error: 'Enter auto or a valid Minecraft version such as 1.21.1.' });
       }
       if (!Number.isInteger(parsedWebPort) || parsedWebPort < 1 || parsedWebPort > 65535) {
