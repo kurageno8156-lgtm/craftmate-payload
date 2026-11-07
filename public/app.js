@@ -53,7 +53,7 @@ const logsContainer = document.getElementById('logs-container');
 const commandForm = document.getElementById('command-form');
 const commandInput = document.getElementById('command-input');
 
-// 初期設定�EスチE�Eタス読み込み
+// 初期設定・ステータス読み込み
 fetch('/api/status')
   .then(res => res.json())
   .then(data => {
@@ -143,16 +143,16 @@ function renderStatus(status) {
   dimVal.textContent = ({ overworld: translate('overworld'), nether: translate('nether'), the_nether: translate('nether'), end: translate('theEnd'), the_end: translate('theEnd') })[dimension.toLowerCase()] || dimension;
   biomeVal.textContent = getLocalizedBiomeName(status.biome);
   const gameTime = String(status.gameTime || '');
-  timeVal.textContent = /day|昼/i.test(gameTime) ? translate('daytime') : /night|夁Ei.test(gameTime) ? translate('nighttime') : gameTime;
+  timeVal.textContent = /day|昼/i.test(gameTime) ? translate('daytime') : /night|夜/i.test(gameTime) ? translate('nighttime') : gameTime;
   const formatEquipName = raw => {
     if (!raw || raw === '-') return '-';
-    if (raw === '素扁E) return translate('bareHands');
+    if (raw === '素手') return translate('bareHands');
     return getLocalizedItemName({ name: raw });
   };
-  heldVal.textContent = !status.heldItem || status.heldItem === '素扁E ? translate('bareHands') : formatEquipName(status.heldItem);
+  heldVal.textContent = !status.heldItem || status.heldItem === '素手' ? translate('bareHands') : formatEquipName(status.heldItem);
 
   // Armor
-  armorHelmet.innerHTML = `🪁E<span>${formatEquipName(status.equippedArmor?.helmet)}</span>`;
+  armorHelmet.innerHTML = `🪖 <span>${formatEquipName(status.equippedArmor?.helmet)}</span>`;
   armorChest.innerHTML = `🦺 <span>${formatEquipName(status.equippedArmor?.chestplate)}</span>`;
   armorLegs.innerHTML = `👖 <span>${formatEquipName(status.equippedArmor?.leggings)}</span>`;
   armorBoots.innerHTML = `👢 <span>${formatEquipName(status.equippedArmor?.boots)}</span>`;
@@ -223,7 +223,7 @@ function renderInventoryCards(items, container) {
     name.textContent = getLocalizedItemName(item);
     const count = document.createElement('span');
     count.className = 'inv-count';
-    count.textContent = `ÁE{Number(item.count) || 0}`;
+    count.textContent = `×${Number(item.count) || 0}`;
     card.append(icon, name, count);
     container.appendChild(card);
   });
@@ -261,12 +261,12 @@ function getLocalizedItemName(item) {
 
 function getItemIcon(name) {
   const item = String(name || '').toLowerCase();
-  if (/pickaxe|axe|sword|shovel|hoe|bow|shield|crossbow|trident/.test(item)) return '⚒︁E;
+  if (/pickaxe|axe|sword|shovel|hoe|bow|shield|crossbow|trident/.test(item)) return '⚒️';
   if (/bread|beef|pork|chicken|mutton|rabbit|potato|carrot|apple|fish|stew|food/.test(item)) return '🍖';
   if (/log|wood|plank|stick|sapling/.test(item)) return '🪵';
   if (/stone|cobble|deepslate|dirt|sand|gravel|ore/.test(item)) return '🪨';
   if (/torch|lantern|glowstone/.test(item)) return '🔦';
-  if (/armor|helmet|chestplate|leggings|boots/.test(item)) return '🛡�E�E;
+  if (/armor|helmet|chestplate|leggings|boots/.test(item)) return '🛡️';
   if (/diamond|emerald|gold|iron|ingot|coal|gem/.test(item)) return '💎';
   return '📦';
 }
@@ -283,7 +283,7 @@ function getEntityIcon(entity) {
   if (/horse|donkey|mule/.test(name)) return '🐴';
   if (/wolf|dog/.test(name)) return '🐺';
   if (/cat|ocelot/.test(name)) return '🐈';
-  if (/villager/.test(name)) return '🧁E;
+  if (/villager/.test(name)) return '🧑';
   return '🐾';
 }
 
@@ -382,12 +382,12 @@ btnCancel.addEventListener('click', () => {
   socket.emit('cancelTask');
 });
 
-// クイチE��コマンド�Eタン
+// クイックコマンドボタン
 document.querySelectorAll('.quick-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const cmd = btn.getAttribute('data-cmd');
     if (cmd) {
-      if (cmd === 'ストッチE || cmd === translate('stopInMinecraft')) {
+      if (cmd === 'ストップ' || cmd === translate('stopInMinecraft')) {
         socket.emit('cancelTask');
       } else {
         socket.emit('sendInstruction', { instruction: cmd, sender: 'WebDashboard' });
@@ -402,7 +402,7 @@ const settingsMessage = document.getElementById('settings-message');
 const providerSelect = document.getElementById('setting-provider');
 const modelSelect = document.getElementById('setting-model');
 const minecraftVersionSelect = document.getElementById('setting-mc-version');
-const minecraftVersionCustomInput = null; // removed
+const minecraftVersionCustomInput = document.getElementById('setting-mc-version-custom');
 const languageSelect = document.getElementById('setting-language');
 const apiKeyInput = document.getElementById('setting-api-key');
 languageSelect.value = window.craftMateI18n.language;
@@ -450,7 +450,7 @@ function setMinecraftVersionSetting(version) {
   updateCustomMinecraftVersionVisibility();
 }
 
-// removed custom version support
+minecraftVersionSelect.addEventListener('change', updateCustomMinecraftVersionVisibility);
 
 function setConnectionState(name, connected) {
   const dot = document.getElementById(`${name}-health-dot`);
