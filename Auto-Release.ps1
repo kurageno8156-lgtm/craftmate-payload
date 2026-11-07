@@ -36,6 +36,84 @@ function Get-CommandOutput {
     return (($output -join [Environment]::NewLine).Trim())
 }
 
+function Get-PreviousReleaseTag {
+    param(
+        [Parameter(Mandatory = $true)][string]$CurrentTag
+    )
+
+    $tags = @(& git tag --list 'v*')
+    if ($LASTEXITCODE -ne 0) {
+        return $null
+    }
+
+    $bestTag = $null
+    $bestVersion = $null
+    foreach ($candidate in $tags) {
+        $text = ([string]$candidate).Trim()
+        if ([string]::IsNullOrWhiteSpace($text)) { continue }
+        if ($text -eq $CurrentTag) { continue }
+        if ($text -notmatch '^v(\d+\.\d+\.\d+)$') { continue }
+
+        $parsed = $null
+        if (-not [version]::TryParse($Matches[1], [ref]$parsed)) { continue }
+
+        if ($null -eq $bestVersion -or $parsed -gt $bestVersion) {
+            $bestTag = $text
+            $bestVersion = $parsed
+        }
+    }
+
+    return $bestTag
+}
+
+function Get-ReleaseChangeList {
+    param(
+        [Parameter(Mandatory = $true)][string]$CurrentTag,
+        [string]$PreviousTag,
+        [int]$FallbackCommitCount = 20
+    )
+
+    $logOutput = @()
+    $rangeLabel = $null
+
+    if (-not [string]::IsNullOrWhiteSpace($PreviousTag)) {
+        $logOutput = @(& git log --no-decorate --pretty=format:%h%x20%s "$PreviousTag..HEAD")
+        if ($LASTEXITCODE -eq 0) {
+            $rangeLabel = "Changes since $PreviousTag"
+        }
+        else {
+            Write-Warning "Could not read the commit range $PreviousTag..HEAD; falling back to recent commits."
+            $logOutput = @()
+        }
+    }
+
+    if ($null -eq $rangeLabel) {
+        $logOutput = @(& git log --no-decorate --pretty=format:%h%x20%s -n $FallbackCommitCount)
+        if ($LASTEXITCODE -ne 0) {
+            return [pscustomobject]@{ RangeLabel = 'Changes'; Lines = @() }
+        }
+
+        $rangeLabel = if ([string]::IsNullOrWhiteSpace($PreviousTag)) {
+            "No previous release tag found; listing the last $FallbackCommitCount commits"
+        }
+        else {
+            'Recent commits'
+        }
+    }
+
+    # The release commit itself is created before the notes are built, so drop it.
+    $releaseSubject = "Release $CurrentTag"
+    $lines = @()
+    foreach ($entry in $logOutput) {
+        $text = ([string]$entry).Trim()
+        if ([string]::IsNullOrWhiteSpace($text)) { continue }
+        if ($text -match ('^\w+\s+' + [regex]::Escape($releaseSubject) + '$')) { continue }
+        $lines += "- $text"
+    }
+
+    return [pscustomobject]@{ RangeLabel = $rangeLabel; Lines = $lines }
+}
+
 $repo = Get-CommandOutput -Command 'gh' -Arguments @('repo', 'view', '--json', 'nameWithOwner', '--jq', '.nameWithOwner') -FailureMessage 'Could not identify the GitHub repository. Run this script inside an authenticated Git checkout.'
 if ([string]::IsNullOrWhiteSpace($repo)) {
     throw 'Could not identify the GitHub repository. Run this script inside an authenticated Git checkout.'
@@ -154,10 +232,39 @@ if ($LASTEXITCODE -eq 1) {
 git push origin $defaultBranch
 if ($LASTEXITCODE -ne 0) { throw 'git push failed. The local release commit was kept.' }
 
-if ([string]::IsNullOrWhiteSpace($Notes)) {
-    $Notes = "CraftMate $tag`n`nBug fixes and improvements"
+$previousTag = Get-PreviousReleaseTag -CurrentTag $tag
+$changeList = Get-ReleaseChangeList -CurrentTag $tag -PreviousTag $previousTag
+Write-Output "Change range: $($changeList.RangeLabel)"
+
+# Preserve the note text this script already produced, then append the commit list.
+$baseNotes = if ([string]::IsNullOrWhiteSpace($Notes)) {
+    "CraftMate $tag`n`nBug fixes and improvements"
 }
-$notes = $Notes
+else {
+    $Notes
+}
+
+$changeLines = @($changeList.Lines)
+if ($changeLines.Count -eq 0) {
+    $changeLines = @('- No commit messages were found for this release range.')
+}
+
+# Keep the release body readable when a single range contains many commits.
+$maxChangeLines = 100
+if ($changeLines.Count -gt $maxChangeLines) {
+    $omittedCount = $changeLines.Count - $maxChangeLines
+    $changeLines = $changeLines[0..($maxChangeLines - 1)]
+    $changeLines += "- ...and $omittedCount more commit(s) - see the compare view on GitHub."
+}
+
+$noteParts = New-Object System.Collections.Generic.List[string]
+$noteParts.Add($baseNotes.TrimEnd())
+$noteParts.Add('')
+$noteParts.Add("### $($changeList.RangeLabel)")
+$noteParts.Add('')
+foreach ($changeLine in $changeLines) { $noteParts.Add($changeLine) }
+$notes = ($noteParts -join [Environment]::NewLine)
+
 gh release create $tag $setupPath $updaterPath $payloadPath --repo $repo --target $defaultBranch --title "CraftMate Setup $tag" --notes $notes
 if ($LASTEXITCODE -ne 0) { throw "GitHub release creation failed. The version commit was pushed; retry with -Version $Version after resolving the release error." }
 
