@@ -410,6 +410,7 @@ async function loadSettings() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || translate('settingsLoadFailed'));
     document.getElementById('setting-mc-port').value = data.mcPort || 25565;
+    document.getElementById('setting-mc-version').value = data.mcVersion || 'auto';
     document.getElementById('setting-username').value = data.username || 'AIMAN';
     document.getElementById('setting-web-port').value = data.webPort || 3000;
     providerSelect.value = data.provider || 'gemini';
@@ -450,6 +451,7 @@ settingsForm.addEventListener('submit', async event => {
   showSettingsMessage(translate('saving'));
   const payload = {
     mcPort: Number(document.getElementById('setting-mc-port').value),
+    mcVersion: document.getElementById('setting-mc-version').value.trim() || 'auto',
     username: document.getElementById('setting-username').value.trim(),
     webPort: Number(document.getElementById('setting-web-port').value),
     provider: providerSelect.value,

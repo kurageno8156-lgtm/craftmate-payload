@@ -190,7 +190,7 @@ export class WebServer {
       let values: Record<string, string>;
       try { values = dotenv.parse(backup.env); }
       catch { return res.status(400).json({ error: 'The backup settings could not be parsed.', code: 'INVALID_BACKUP_DATA' }); }
-      const knownSettings = ['MC_HOST', 'MC_PORT', 'MC_USERNAME', 'WEB_PORT', 'LLM_PROVIDER', 'GEMINI_API_KEY', 'GROQ_API_KEY', 'OPENAI_API_KEY', 'OLLAMA_MODEL'];
+      const knownSettings = ['MC_HOST', 'MC_PORT', 'MC_USERNAME', 'MINECRAFT_VERSION', 'WEB_PORT', 'LLM_PROVIDER', 'GEMINI_API_KEY', 'GROQ_API_KEY', 'OPENAI_API_KEY', 'OLLAMA_MODEL'];
       if (!Object.keys(values).some(key => knownSettings.includes(key))) {
         return res.status(400).json({ error: 'The backup does not contain CraftMate settings.', code: 'INVALID_BACKUP_DATA' });
       }
@@ -200,12 +200,16 @@ export class WebServer {
       const webPort = Number(values.WEB_PORT || 3000);
       const username = values.MC_USERNAME || 'AIMAN';
       const auth = values.MC_AUTH || 'offline';
+      const minecraftVersion = values.MINECRAFT_VERSION || 'auto';
       if (!providers.includes(provider)) return res.status(400).json({ error: 'The backup contains an unsupported AI provider.' });
       if (!Number.isInteger(mcPort) || mcPort < 1 || mcPort > 65535 || !Number.isInteger(webPort) || webPort < 1 || webPort > 65535) {
         return res.status(400).json({ error: 'The backup contains an invalid port number.' });
       }
       if (!/^[A-Za-z0-9_]{1,16}$/.test(username) || (auth !== 'offline' && auth !== 'microsoft')) {
         return res.status(400).json({ error: 'The backup contains invalid Minecraft settings.' });
+      }
+      if (minecraftVersion.toLowerCase() !== 'auto' && !/^(\d{1,3}\.){1,2}\d{1,3}$/.test(minecraftVersion)) {
+        return res.status(400).json({ error: 'The backup contains an invalid Minecraft version.' });
       }
       for (const key of Object.values(MODEL_ENV_KEYS)) {
         if (values[key] && !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(values[key])) {
@@ -235,7 +239,7 @@ export class WebServer {
       })();
       const portChanged = webPort !== this.port;
       const minecraftChanged = mcPort !== config.mcPort || username !== config.mcUsername ||
-        (values.MC_HOST || 'localhost') !== config.mcHost || auth !== config.mcAuth;
+        (values.MC_HOST || 'localhost') !== config.mcHost || auth !== config.mcAuth || minecraftVersion !== (config.mcVersion || 'auto');
       const temporaryPath = `${this.envPath}.restore-${randomBytes(8).toString('hex')}`;
       try {
         fs.writeFileSync(temporaryPath, backup.env, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
@@ -259,6 +263,7 @@ export class WebServer {
       config.mcPort = mcPort;
       config.mcUsername = username;
       config.mcAuth = auth as 'offline' | 'microsoft';
+      config.mcVersion = minecraftVersion;
       config.llmProvider = provider as AIProvider;
       config.geminiApiKey = values.GEMINI_API_KEY || '';
       config.geminiModel = values.GEMINI_MODEL || 'gemini-3.1-flash-lite';
@@ -307,6 +312,7 @@ export class WebServer {
       const config = this.botWrapper.config;
       res.json({
         mcPort: config.mcPort,
+        mcVersion: config.mcVersion || 'auto',
         username: config.mcUsername,
         webPort: this.port,
         provider: config.llmProvider,
@@ -316,13 +322,17 @@ export class WebServer {
     });
 
     this.app.post('/api/settings', async (req, res) => {
-      const { mcPort, username, webPort, provider, model, aiApiKey } = req.body || {};
+      const { mcPort, mcVersion, username, webPort, provider, model, aiApiKey } = req.body || {};
       const parsedMcPort = Number(mcPort);
       const parsedWebPort = Number(webPort);
       const providers = Object.keys(MODEL_ENV_KEYS) as AIProvider[];
 
       if (!Number.isInteger(parsedMcPort) || parsedMcPort < 1 || parsedMcPort > 65535) {
         return res.status(400).json({ error: 'Minecraft port must be between 1 and 65535.' });
+      }
+      const selectedMinecraftVersion = typeof mcVersion === 'string' ? mcVersion.trim() : 'auto';
+      if (selectedMinecraftVersion.toLowerCase() !== 'auto' && !/^(\d{1,3}\.){1,2}\d{1,3}$/.test(selectedMinecraftVersion)) {
+        return res.status(400).json({ error: 'Enter auto or a valid Minecraft version such as 1.21.1.' });
       }
       if (!Number.isInteger(parsedWebPort) || parsedWebPort < 1 || parsedWebPort > 65535) {
         return res.status(400).json({ error: 'Web port must be between 1 and 65535.' });
@@ -344,9 +354,10 @@ export class WebServer {
 
       const config = this.botWrapper.config;
       const portChanged = parsedWebPort !== this.port;
-      const minecraftChanged = parsedMcPort !== config.mcPort || username.trim() !== config.mcUsername;
+      const minecraftChanged = parsedMcPort !== config.mcPort || username.trim() !== config.mcUsername || selectedMinecraftVersion !== (config.mcVersion || 'auto');
       const updates: Record<string, string> = {
         MC_PORT: String(parsedMcPort),
+        MINECRAFT_VERSION: selectedMinecraftVersion || 'auto',
         MC_USERNAME: username.trim(),
         WEB_PORT: String(parsedWebPort),
         LLM_PROVIDER: selectedProvider,
@@ -365,6 +376,7 @@ export class WebServer {
       }
 
       config.mcPort = parsedMcPort;
+      config.mcVersion = selectedMinecraftVersion || 'auto';
       config.mcUsername = username.trim();
       config.webPort = parsedWebPort;
       config.llmProvider = selectedProvider;
@@ -380,7 +392,7 @@ export class WebServer {
       this.agent.restartAIClient();
       if (minecraftChanged) this.botWrapper.reconnect();
 
-      res.json({ success: true, reconnecting: minecraftChanged, webPortChanged: portChanged, webPort: parsedWebPort, provider: selectedProvider, model: selectedModel });
+      res.json({ success: true, reconnecting: minecraftChanged, webPortChanged: portChanged, webPort: parsedWebPort, provider: selectedProvider, model: selectedModel, mcVersion: config.mcVersion });
       if (portChanged) {
         setTimeout(() => this.changePort(parsedWebPort), 300);
       }

@@ -30,14 +30,16 @@ export class MinecraftBot extends EventEmitter {
    * ボットの接続開始
    */
   public start(): void {
-    console.log(`[Bot] Connecting to ${this.config.mcHost}:${this.config.mcPort} as "${this.config.mcUsername}" (Minecraft version auto-detection enabled)...`);
+    const configuredVersion = (this.config.mcVersion || '').trim();
+    const requestedVersion = configuredVersion && configuredVersion.toLowerCase() !== 'auto' ? configuredVersion : false;
+    console.log(`[Bot] Connecting to ${this.config.mcHost}:${this.config.mcPort} as "${this.config.mcUsername}" (Minecraft version ${requestedVersion || 'auto-detection'})...`);
 
     const botOptions: any = {
       host: this.config.mcHost,
       port: this.config.mcPort,
       username: this.config.mcUsername,
       auth: this.config.mcAuth,
-      version: false,
+      version: requestedVersion,
     };
 
     try {

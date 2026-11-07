@@ -9,6 +9,7 @@ export interface BotConfig {
   // Minecraft Connection
   mcHost: string;
   mcPort: number;
+  mcVersion: string;
   mcUsername: string;
   mcAuth: 'offline' | 'microsoft';
 
@@ -35,6 +36,7 @@ export interface BotConfig {
 export const config: BotConfig = {
   mcHost: process.env.MC_HOST || 'localhost',
   mcPort: parseInt(process.env.MC_PORT || '25565', 10),
+  mcVersion: process.env.MINECRAFT_VERSION || 'auto',
   mcUsername: process.env.MC_USERNAME || 'AIMAN',
   mcAuth: (process.env.MC_AUTH as 'offline' | 'microsoft') || 'offline',
 
