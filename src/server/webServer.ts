@@ -414,7 +414,7 @@ export class WebServer {
     this.app.post('/api/command', async (req, res) => {
       const { instruction, sender } = req.body;
       if (!instruction) {
-        return res.status(400).json({ error: '持E��(instruction)が忁E��でぁE });
+        return res.status(400).json({ error: '指示(instruction)が必要です' });
       }
       this.agent.handleInstruction(instruction, sender || 'WebDashboard');
       res.json({ success: true, message: 'タスクを開始しました' });
