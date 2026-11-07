@@ -169,10 +169,25 @@ export class SkillManager {
    */
   public async stopActions(): Promise<ToolCallResult> {
     this.stopFollowing();
-    this.bot.pathfinder.stop();
-    if ((this.bot as any).pvp) {
-      (this.bot as any).pvp.stop();
-    }
+    try {
+      if ((this.bot as any).collectBlock && typeof (this.bot as any).collectBlock.cancelTask === 'function') {
+        await (this.bot as any).collectBlock.cancelTask();
+      }
+    } catch { }
+    try {
+      this.bot.pathfinder.stop();
+    } catch { }
+    try {
+      if ((this.bot as any).pvp) {
+        (this.bot as any).pvp.stop();
+      }
+    } catch { }
+    try {
+      this.bot.stopDigging();
+    } catch { }
+    try {
+      this.bot.clearControlStates();
+    } catch { }
     return { success: true, message: 'すべての行動・移動を停止しました。' };
   }
 

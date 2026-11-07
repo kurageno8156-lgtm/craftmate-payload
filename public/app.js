@@ -1,6 +1,16 @@
-﻿const socket = io();
+const socket = io();
 
 const translate = (key, values) => window.craftMateI18n.t(key, values);
+let mcNameDb = { items: {}, entities: {}, biomes: {} };
+fetch('/minecraft-names.json')
+  .then(res => res.json())
+  .then(data => {
+    if (data) {
+      mcNameDb = data;
+      if (lastRenderedStatus) renderStatus(lastRenderedStatus);
+    }
+  })
+  .catch(err => console.warn('Could not load minecraft-names.json:', err));
 let lastRenderedStatus = null;
 function updateLlmLabel(provider, model) {
   llmInfo.textContent = translate('aiBrain', { provider: String(provider || '').toUpperCase(), model: model || '' });
@@ -131,16 +141,21 @@ function renderStatus(status) {
   posVal.textContent = `X: ${status.position.x}, Y: ${status.position.y}, Z: ${status.position.z}`;
   const dimension = String(status.dimension || '');
   dimVal.textContent = ({ overworld: translate('overworld'), nether: translate('nether'), the_nether: translate('nether'), end: translate('theEnd'), the_end: translate('theEnd') })[dimension.toLowerCase()] || dimension;
-  biomeVal.textContent = status.biome;
+  biomeVal.textContent = getLocalizedBiomeName(status.biome);
   const gameTime = String(status.gameTime || '');
   timeVal.textContent = /day|昼/i.test(gameTime) ? translate('daytime') : /night|夜/i.test(gameTime) ? translate('nighttime') : gameTime;
-  heldVal.textContent = !status.heldItem || status.heldItem === '素手' ? translate('bareHands') : status.heldItem;
+  const formatEquipName = raw => {
+    if (!raw || raw === '-') return '-';
+    if (raw === '素手') return translate('bareHands');
+    return getLocalizedItemName({ name: raw });
+  };
+  heldVal.textContent = !status.heldItem || status.heldItem === '素手' ? translate('bareHands') : formatEquipName(status.heldItem);
 
   // Armor
-  armorHelmet.innerHTML = `🪖 <span>${status.equippedArmor?.helmet || '-'}</span>`;
-  armorChest.innerHTML = `🦺 <span>${status.equippedArmor?.chestplate || '-'}</span>`;
-  armorLegs.innerHTML = `👖 <span>${status.equippedArmor?.leggings || '-'}</span>`;
-  armorBoots.innerHTML = `👢 <span>${status.equippedArmor?.boots || '-'}</span>`;
+  armorHelmet.innerHTML = `🪖 <span>${formatEquipName(status.equippedArmor?.helmet)}</span>`;
+  armorChest.innerHTML = `🦺 <span>${formatEquipName(status.equippedArmor?.chestplate)}</span>`;
+  armorLegs.innerHTML = `👖 <span>${formatEquipName(status.equippedArmor?.leggings)}</span>`;
+  armorBoots.innerHTML = `👢 <span>${formatEquipName(status.equippedArmor?.boots)}</span>`;
 
   // Always replace both grids, including when the server sends missing or empty arrays.
   const inventory = Array.isArray(status.inventory) ? status.inventory.filter(item => item && Number(item.count) > 0) : [];
@@ -214,10 +229,34 @@ function renderInventoryCards(items, container) {
   });
 }
 
+function getMinecraftDataName(category, rawKey) {
+  if (!rawKey) return null;
+  const key = String(rawKey).toLowerCase().trim().replace(/^minecraft:/, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  const lang = window.craftMateI18n?.language === 'ja' ? 'ja' : 'en';
+  const entry = mcNameDb && mcNameDb[category] ? mcNameDb[category][key] : null;
+  if (entry && entry[lang]) return entry[lang];
+  if (entry && entry.en) return entry.en;
+  return null;
+}
+
+function getLocalizedBiomeName(biome) {
+  if (!biome || biome === 'unknown' || biome === 'offline') {
+    return biome || 'unknown';
+  }
+  const fromDb = getMinecraftDataName('biomes', biome);
+  if (fromDb) return fromDb;
+  const rawKey = String(biome).toLowerCase().trim().replace(/^minecraft:/, '').replace(/[^a-z0-9]+/g, '_');
+  const translated = translate(`biome_${rawKey}`);
+  return translated === `biome_${rawKey}` ? biome : translated;
+}
+
 function getLocalizedItemName(item) {
-  const rawName = String(item.name || '').toLowerCase().replace(/^minecraft:/, '').replace(/[^a-z0-9]+/g, '_');
+  const rawName = String(item.name || '').toLowerCase().replace(/^minecraft:/, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  const fromDb = getMinecraftDataName('items', rawName);
+  if (fromDb) return fromDb;
   const translated = translate(`itemName_${rawName}`);
-  return translated === `itemName_${rawName}` ? String(item.displayName || item.name || translate('unknownItem')) : translated;
+  if (translated !== `itemName_${rawName}`) return translated;
+  return String(item.displayName || item.name || translate('unknownItem'));
 }
 
 function getItemIcon(name) {
@@ -250,10 +289,19 @@ function getEntityIcon(entity) {
 
 function getLocalizedEntityName(entity) {
   if (entity.customName) return String(entity.customName);
-  const rawName = String(entity.name || '').toLowerCase().replace(/^minecraft:/, '').replace(/[^a-z0-9]+/g, '_');
-  const prefix = entity.category === 'item' ? 'itemName_' : 'entityName_';
-  const translated = translate(`${prefix}${rawName}`);
-  return translated === `${prefix}${rawName}` ? String(entity.displayName || entity.name || translate('unknownEntity')) : translated;
+  const rawName = String(entity.name || '').toLowerCase().replace(/^minecraft:/, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  if (entity.category === 'item') {
+    const fromDb = getMinecraftDataName('items', rawName);
+    if (fromDb) return fromDb;
+    const translated = translate(`itemName_${rawName}`);
+    if (translated !== `itemName_${rawName}`) return translated;
+  } else {
+    const fromDb = getMinecraftDataName('entities', rawName);
+    if (fromDb) return fromDb;
+    const translated = translate(`entityName_${rawName}`);
+    if (translated !== `entityName_${rawName}`) return translated;
+  }
+  return String(entity.displayName || entity.name || translate('unknownEntity'));
 }
 
 showAllInventoryButton.addEventListener('click', () => {

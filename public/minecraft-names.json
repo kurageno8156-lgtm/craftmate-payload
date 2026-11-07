@@ -1,0 +1,6940 @@
+{
+  "items": {
+    "air": {
+      "en": "Air",
+      "ja": "空気"
+    },
+    "stone": {
+      "en": "Stone",
+      "ja": "石"
+    },
+    "granite": {
+      "en": "Granite",
+      "ja": "花崗岩"
+    },
+    "polished_granite": {
+      "en": "Polished Granite",
+      "ja": "磨かれた花崗岩"
+    },
+    "diorite": {
+      "en": "Diorite",
+      "ja": "閃緑岩"
+    },
+    "polished_diorite": {
+      "en": "Polished Diorite",
+      "ja": "磨かれた閃緑岩"
+    },
+    "andesite": {
+      "en": "Andesite",
+      "ja": "安山岩"
+    },
+    "polished_andesite": {
+      "en": "Polished Andesite",
+      "ja": "磨かれた安山岩"
+    },
+    "deepslate": {
+      "en": "Deepslate",
+      "ja": "深層岩"
+    },
+    "cobbled_deepslate": {
+      "en": "Cobbled Deepslate",
+      "ja": "深層岩の丸石"
+    },
+    "polished_deepslate": {
+      "en": "Polished Deepslate",
+      "ja": "磨かれた深層岩"
+    },
+    "calcite": {
+      "en": "Calcite",
+      "ja": "方解石"
+    },
+    "tuff": {
+      "en": "Tuff",
+      "ja": "凝灰岩"
+    },
+    "tuff_slab": {
+      "en": "Tuff Slab",
+      "ja": "凝灰岩のハーフブロック"
+    },
+    "tuff_stairs": {
+      "en": "Tuff Stairs",
+      "ja": "凝灰岩の階段"
+    },
+    "tuff_wall": {
+      "en": "Tuff Wall",
+      "ja": "凝灰岩の塀"
+    },
+    "chiseled_tuff": {
+      "en": "Chiseled Tuff",
+      "ja": "模様入りの凝灰岩"
+    },
+    "polished_tuff": {
+      "en": "Polished Tuff",
+      "ja": "磨かれた凝灰岩"
+    },
+    "polished_tuff_slab": {
+      "en": "Polished Tuff Slab",
+      "ja": "磨かれた凝灰岩のハーフブロック"
+    },
+    "polished_tuff_stairs": {
+      "en": "Polished Tuff Stairs",
+      "ja": "磨かれた凝灰岩の階段"
+    },
+    "polished_tuff_wall": {
+      "en": "Polished Tuff Wall",
+      "ja": "磨かれた凝灰岩の塀"
+    },
+    "tuff_bricks": {
+      "en": "Tuff Bricks",
+      "ja": "凝灰岩レンガ"
+    },
+    "tuff_brick_slab": {
+      "en": "Tuff Brick Slab",
+      "ja": "凝灰岩レンガのハーフブロック"
+    },
+    "tuff_brick_stairs": {
+      "en": "Tuff Brick Stairs",
+      "ja": "凝灰岩レンガの階段"
+    },
+    "tuff_brick_wall": {
+      "en": "Tuff Brick Wall",
+      "ja": "凝灰岩レンガの塀"
+    },
+    "chiseled_tuff_bricks": {
+      "en": "Chiseled Tuff Bricks",
+      "ja": "模様入りの凝灰岩レンガ"
+    },
+    "dripstone_block": {
+      "en": "Dripstone Block",
+      "ja": "鍾乳石ブロック"
+    },
+    "grass_block": {
+      "en": "Grass Block",
+      "ja": "草ブロック"
+    },
+    "dirt": {
+      "en": "Dirt",
+      "ja": "土"
+    },
+    "coarse_dirt": {
+      "en": "Coarse Dirt",
+      "ja": "粗い土"
+    },
+    "podzol": {
+      "en": "Podzol",
+      "ja": "ポドゾル"
+    },
+    "rooted_dirt": {
+      "en": "Rooted Dirt",
+      "ja": "根付いた土"
+    },
+    "mud": {
+      "en": "Mud",
+      "ja": "泥"
+    },
+    "crimson_nylium": {
+      "en": "Crimson Nylium",
+      "ja": "真紅のナイリウム"
+    },
+    "warped_nylium": {
+      "en": "Warped Nylium",
+      "ja": "歪んだナイリウム"
+    },
+    "cobblestone": {
+      "en": "Cobblestone",
+      "ja": "丸石"
+    },
+    "oak_planks": {
+      "en": "Oak Planks",
+      "ja": "オークの板材"
+    },
+    "spruce_planks": {
+      "en": "Spruce Planks",
+      "ja": "トウヒの板材"
+    },
+    "birch_planks": {
+      "en": "Birch Planks",
+      "ja": "シラカバの板材"
+    },
+    "jungle_planks": {
+      "en": "Jungle Planks",
+      "ja": "ジャングルの板材"
+    },
+    "acacia_planks": {
+      "en": "Acacia Planks",
+      "ja": "アカシアの板材"
+    },
+    "cherry_planks": {
+      "en": "Cherry Planks",
+      "ja": "サクラの板材"
+    },
+    "dark_oak_planks": {
+      "en": "Dark Oak Planks",
+      "ja": "ダークオークの板材"
+    },
+    "pale_oak_planks": {
+      "en": "Pale Oak Planks",
+      "ja": "ペールオークの板材"
+    },
+    "mangrove_planks": {
+      "en": "Mangrove Planks",
+      "ja": "マングローブの板材"
+    },
+    "bamboo_planks": {
+      "en": "Bamboo Planks",
+      "ja": "竹の板材"
+    },
+    "crimson_planks": {
+      "en": "Crimson Planks",
+      "ja": "真紅の板材"
+    },
+    "warped_planks": {
+      "en": "Warped Planks",
+      "ja": "歪んだ板材"
+    },
+    "bamboo_mosaic": {
+      "en": "Bamboo Mosaic",
+      "ja": "竹細工"
+    },
+    "oak_sapling": {
+      "en": "Oak Sapling",
+      "ja": "オークの苗木"
+    },
+    "spruce_sapling": {
+      "en": "Spruce Sapling",
+      "ja": "トウヒの苗木"
+    },
+    "birch_sapling": {
+      "en": "Birch Sapling",
+      "ja": "シラカバの苗木"
+    },
+    "jungle_sapling": {
+      "en": "Jungle Sapling",
+      "ja": "ジャングルの苗木"
+    },
+    "acacia_sapling": {
+      "en": "Acacia Sapling",
+      "ja": "アカシアの苗木"
+    },
+    "cherry_sapling": {
+      "en": "Cherry Sapling",
+      "ja": "サクラの苗木"
+    },
+    "dark_oak_sapling": {
+      "en": "Dark Oak Sapling",
+      "ja": "ダークオークの苗木"
+    },
+    "pale_oak_sapling": {
+      "en": "Pale Oak Sapling",
+      "ja": "ペールオークの苗木"
+    },
+    "mangrove_propagule": {
+      "en": "Mangrove Propagule",
+      "ja": "マングローブの芽"
+    },
+    "bedrock": {
+      "en": "Bedrock",
+      "ja": "岩盤"
+    },
+    "sand": {
+      "en": "Sand",
+      "ja": "砂"
+    },
+    "suspicious_sand": {
+      "en": "Suspicious Sand",
+      "ja": "怪しげな砂"
+    },
+    "suspicious_gravel": {
+      "en": "Suspicious Gravel",
+      "ja": "怪しげな砂利"
+    },
+    "red_sand": {
+      "en": "Red Sand",
+      "ja": "赤い砂"
+    },
+    "gravel": {
+      "en": "Gravel",
+      "ja": "砂利"
+    },
+    "coal_ore": {
+      "en": "Coal Ore",
+      "ja": "石炭鉱石"
+    },
+    "deepslate_coal_ore": {
+      "en": "Deepslate Coal Ore",
+      "ja": "深層石炭鉱石"
+    },
+    "iron_ore": {
+      "en": "Iron Ore",
+      "ja": "鉄鉱石"
+    },
+    "deepslate_iron_ore": {
+      "en": "Deepslate Iron Ore",
+      "ja": "深層鉄鉱石"
+    },
+    "copper_ore": {
+      "en": "Copper Ore",
+      "ja": "銅鉱石"
+    },
+    "deepslate_copper_ore": {
+      "en": "Deepslate Copper Ore",
+      "ja": "深層銅鉱石"
+    },
+    "gold_ore": {
+      "en": "Gold Ore",
+      "ja": "金鉱石"
+    },
+    "deepslate_gold_ore": {
+      "en": "Deepslate Gold Ore",
+      "ja": "深層金鉱石"
+    },
+    "redstone_ore": {
+      "en": "Redstone Ore",
+      "ja": "レッドストーン鉱石"
+    },
+    "deepslate_redstone_ore": {
+      "en": "Deepslate Redstone Ore",
+      "ja": "深層レッドストーン鉱石"
+    },
+    "emerald_ore": {
+      "en": "Emerald Ore",
+      "ja": "エメラルド鉱石"
+    },
+    "deepslate_emerald_ore": {
+      "en": "Deepslate Emerald Ore",
+      "ja": "深層エメラルド鉱石"
+    },
+    "lapis_ore": {
+      "en": "Lapis Lazuli Ore",
+      "ja": "ラピスラズリ鉱石"
+    },
+    "deepslate_lapis_ore": {
+      "en": "Deepslate Lapis Lazuli Ore",
+      "ja": "深層ラピスラズリ鉱石"
+    },
+    "diamond_ore": {
+      "en": "Diamond Ore",
+      "ja": "ダイヤモンド鉱石"
+    },
+    "deepslate_diamond_ore": {
+      "en": "Deepslate Diamond Ore",
+      "ja": "深層ダイヤモンド鉱石"
+    },
+    "nether_gold_ore": {
+      "en": "Nether Gold Ore",
+      "ja": "ネザー金鉱石"
+    },
+    "nether_quartz_ore": {
+      "en": "Nether Quartz Ore",
+      "ja": "ネザークォーツ鉱石"
+    },
+    "ancient_debris": {
+      "en": "Ancient Debris",
+      "ja": "古代の残骸"
+    },
+    "coal_block": {
+      "en": "Block of Coal",
+      "ja": "石炭ブロック"
+    },
+    "raw_iron_block": {
+      "en": "Block of Raw Iron",
+      "ja": "鉄の原石ブロック"
+    },
+    "raw_copper_block": {
+      "en": "Block of Raw Copper",
+      "ja": "銅の原石ブロック"
+    },
+    "raw_gold_block": {
+      "en": "Block of Raw Gold",
+      "ja": "金の原石ブロック"
+    },
+    "heavy_core": {
+      "en": "Heavy Core",
+      "ja": "ヘビーコア"
+    },
+    "amethyst_block": {
+      "en": "Block of Amethyst",
+      "ja": "アメジストブロック"
+    },
+    "budding_amethyst": {
+      "en": "Budding Amethyst",
+      "ja": "芽生えたアメジスト"
+    },
+    "iron_block": {
+      "en": "Block of Iron",
+      "ja": "鉄ブロック"
+    },
+    "copper_block": {
+      "en": "Block of Copper",
+      "ja": "銅ブロック"
+    },
+    "gold_block": {
+      "en": "Block of Gold",
+      "ja": "金ブロック"
+    },
+    "diamond_block": {
+      "en": "Block of Diamond",
+      "ja": "ダイヤモンドブロック"
+    },
+    "netherite_block": {
+      "en": "Block of Netherite",
+      "ja": "ネザライトブロック"
+    },
+    "exposed_copper": {
+      "en": "Exposed Copper",
+      "ja": "風化した銅"
+    },
+    "weathered_copper": {
+      "en": "Weathered Copper",
+      "ja": "錆びた銅"
+    },
+    "oxidized_copper": {
+      "en": "Oxidized Copper",
+      "ja": "酸化した銅"
+    },
+    "chiseled_copper": {
+      "en": "Chiseled Copper",
+      "ja": "模様入りの銅"
+    },
+    "exposed_chiseled_copper": {
+      "en": "Exposed Chiseled Copper",
+      "ja": "風化した模様入りの銅"
+    },
+    "weathered_chiseled_copper": {
+      "en": "Weathered Chiseled Copper",
+      "ja": "錆びた模様入りの銅"
+    },
+    "oxidized_chiseled_copper": {
+      "en": "Oxidized Chiseled Copper",
+      "ja": "酸化した模様入りの銅"
+    },
+    "cut_copper": {
+      "en": "Cut Copper",
+      "ja": "切り込み入りの銅"
+    },
+    "exposed_cut_copper": {
+      "en": "Exposed Cut Copper",
+      "ja": "風化した切り込み入りの銅"
+    },
+    "weathered_cut_copper": {
+      "en": "Weathered Cut Copper",
+      "ja": "錆びた切り込み入りの銅"
+    },
+    "oxidized_cut_copper": {
+      "en": "Oxidized Cut Copper",
+      "ja": "酸化した切り込み入りの銅"
+    },
+    "cut_copper_stairs": {
+      "en": "Cut Copper Stairs",
+      "ja": "切り込み入りの銅の階段"
+    },
+    "exposed_cut_copper_stairs": {
+      "en": "Exposed Cut Copper Stairs",
+      "ja": "風化した切り込み入りの銅の階段"
+    },
+    "weathered_cut_copper_stairs": {
+      "en": "Weathered Cut Copper Stairs",
+      "ja": "錆びた切り込み入りの銅の階段"
+    },
+    "oxidized_cut_copper_stairs": {
+      "en": "Oxidized Cut Copper Stairs",
+      "ja": "酸化した切り込み入りの銅の階段"
+    },
+    "cut_copper_slab": {
+      "en": "Cut Copper Slab",
+      "ja": "切り込み入りの銅のハーフブロック"
+    },
+    "exposed_cut_copper_slab": {
+      "en": "Exposed Cut Copper Slab",
+      "ja": "風化した切り込み入りの銅のハーフブロック"
+    },
+    "weathered_cut_copper_slab": {
+      "en": "Weathered Cut Copper Slab",
+      "ja": "錆びた切り込み入りの銅のハーフブロック"
+    },
+    "oxidized_cut_copper_slab": {
+      "en": "Oxidized Cut Copper Slab",
+      "ja": "酸化した切り込み入りの銅のハーフブロック"
+    },
+    "waxed_copper_block": {
+      "en": "Waxed Block of Copper",
+      "ja": "錆止めされた銅ブロック"
+    },
+    "waxed_exposed_copper": {
+      "en": "Waxed Exposed Copper",
+      "ja": "錆止めされた風化した銅"
+    },
+    "waxed_weathered_copper": {
+      "en": "Waxed Weathered Copper",
+      "ja": "錆止めされた錆びた銅"
+    },
+    "waxed_oxidized_copper": {
+      "en": "Waxed Oxidized Copper",
+      "ja": "錆止めされた酸化した銅"
+    },
+    "waxed_chiseled_copper": {
+      "en": "Waxed Chiseled Copper",
+      "ja": "錆止めされた模様入りの銅"
+    },
+    "waxed_exposed_chiseled_copper": {
+      "en": "Waxed Exposed Chiseled Copper",
+      "ja": "錆止めされた風化した模様入りの銅"
+    },
+    "waxed_weathered_chiseled_copper": {
+      "en": "Waxed Weathered Chiseled Copper",
+      "ja": "錆止めされた錆びた模様入りの銅"
+    },
+    "waxed_oxidized_chiseled_copper": {
+      "en": "Waxed Oxidized Chiseled Copper",
+      "ja": "錆止めされた酸化した模様入りの銅"
+    },
+    "waxed_cut_copper": {
+      "en": "Waxed Cut Copper",
+      "ja": "錆止めされた切り込み入りの銅"
+    },
+    "waxed_exposed_cut_copper": {
+      "en": "Waxed Exposed Cut Copper",
+      "ja": "錆止めされた風化した切り込み入りの銅"
+    },
+    "waxed_weathered_cut_copper": {
+      "en": "Waxed Weathered Cut Copper",
+      "ja": "錆止めされた錆びた切り込み入りの銅"
+    },
+    "waxed_oxidized_cut_copper": {
+      "en": "Waxed Oxidized Cut Copper",
+      "ja": "錆止めされた酸化した切り込み入りの銅"
+    },
+    "waxed_cut_copper_stairs": {
+      "en": "Waxed Cut Copper Stairs",
+      "ja": "錆止めされた切り込み入りの銅の階段"
+    },
+    "waxed_exposed_cut_copper_stairs": {
+      "en": "Waxed Exposed Cut Copper Stairs",
+      "ja": "錆止めされた風化した切り込み入りの銅の階段"
+    },
+    "waxed_weathered_cut_copper_stairs": {
+      "en": "Waxed Weathered Cut Copper Stairs",
+      "ja": "錆止めされた錆びた切り込み入りの銅の階段"
+    },
+    "waxed_oxidized_cut_copper_stairs": {
+      "en": "Waxed Oxidized Cut Copper Stairs",
+      "ja": "錆止めされた酸化した切り込み入りの銅の階段"
+    },
+    "waxed_cut_copper_slab": {
+      "en": "Waxed Cut Copper Slab",
+      "ja": "錆止めされた切り込み入りの銅のハーフブロック"
+    },
+    "waxed_exposed_cut_copper_slab": {
+      "en": "Waxed Exposed Cut Copper Slab",
+      "ja": "錆止めされた風化した切り込み入りの銅のハーフブロック"
+    },
+    "waxed_weathered_cut_copper_slab": {
+      "en": "Waxed Weathered Cut Copper Slab",
+      "ja": "錆止めされた錆びた切り込み入りの銅のハーフブロック"
+    },
+    "waxed_oxidized_cut_copper_slab": {
+      "en": "Waxed Oxidized Cut Copper Slab",
+      "ja": "錆止めされた酸化した切り込み入りの銅のハーフブロック"
+    },
+    "oak_log": {
+      "en": "Oak Log",
+      "ja": "オークの原木"
+    },
+    "spruce_log": {
+      "en": "Spruce Log",
+      "ja": "トウヒの原木"
+    },
+    "birch_log": {
+      "en": "Birch Log",
+      "ja": "シラカバの原木"
+    },
+    "jungle_log": {
+      "en": "Jungle Log",
+      "ja": "ジャングルの原木"
+    },
+    "acacia_log": {
+      "en": "Acacia Log",
+      "ja": "アカシアの原木"
+    },
+    "cherry_log": {
+      "en": "Cherry Log",
+      "ja": "サクラの原木"
+    },
+    "pale_oak_log": {
+      "en": "Pale Oak Log",
+      "ja": "ペールオークの原木"
+    },
+    "dark_oak_log": {
+      "en": "Dark Oak Log",
+      "ja": "ダークオークの原木"
+    },
+    "mangrove_log": {
+      "en": "Mangrove Log",
+      "ja": "マングローブの原木"
+    },
+    "mangrove_roots": {
+      "en": "Mangrove Roots",
+      "ja": "マングローブの根"
+    },
+    "muddy_mangrove_roots": {
+      "en": "Muddy Mangrove Roots",
+      "ja": "泥だらけのマングローブの根"
+    },
+    "crimson_stem": {
+      "en": "Crimson Stem",
+      "ja": "真紅の幹"
+    },
+    "warped_stem": {
+      "en": "Warped Stem",
+      "ja": "歪んだ幹"
+    },
+    "bamboo_block": {
+      "en": "Block of Bamboo",
+      "ja": "竹ブロック"
+    },
+    "stripped_oak_log": {
+      "en": "Stripped Oak Log",
+      "ja": "樹皮を剥いだオークの原木"
+    },
+    "stripped_spruce_log": {
+      "en": "Stripped Spruce Log",
+      "ja": "樹皮を剥いだトウヒの原木"
+    },
+    "stripped_birch_log": {
+      "en": "Stripped Birch Log",
+      "ja": "樹皮を剥いだシラカバの原木"
+    },
+    "stripped_jungle_log": {
+      "en": "Stripped Jungle Log",
+      "ja": "樹皮を剥いだジャングルの原木"
+    },
+    "stripped_acacia_log": {
+      "en": "Stripped Acacia Log",
+      "ja": "樹皮を剥いだアカシアの原木"
+    },
+    "stripped_cherry_log": {
+      "en": "Stripped Cherry Log",
+      "ja": "樹皮を剥いだサクラの原木"
+    },
+    "stripped_dark_oak_log": {
+      "en": "Stripped Dark Oak Log",
+      "ja": "樹皮を剥いだダークオークの原木"
+    },
+    "stripped_pale_oak_log": {
+      "en": "Stripped Pale Oak Log",
+      "ja": "樹皮を剥いだペールオークの原木"
+    },
+    "stripped_mangrove_log": {
+      "en": "Stripped Mangrove Log",
+      "ja": "樹皮を剥いだマングローブの原木"
+    },
+    "stripped_crimson_stem": {
+      "en": "Stripped Crimson Stem",
+      "ja": "表皮を剥いだ真紅の幹"
+    },
+    "stripped_warped_stem": {
+      "en": "Stripped Warped Stem",
+      "ja": "表皮を剥いだ歪んだ幹"
+    },
+    "stripped_oak_wood": {
+      "en": "Stripped Oak Wood",
+      "ja": "樹皮を剥いだオークの木"
+    },
+    "stripped_spruce_wood": {
+      "en": "Stripped Spruce Wood",
+      "ja": "樹皮を剥いだトウヒの木"
+    },
+    "stripped_birch_wood": {
+      "en": "Stripped Birch Wood",
+      "ja": "樹皮を剥いだシラカバの木"
+    },
+    "stripped_jungle_wood": {
+      "en": "Stripped Jungle Wood",
+      "ja": "樹皮を剥いだジャングルの木"
+    },
+    "stripped_acacia_wood": {
+      "en": "Stripped Acacia Wood",
+      "ja": "樹皮を剥いだアカシアの木"
+    },
+    "stripped_cherry_wood": {
+      "en": "Stripped Cherry Wood",
+      "ja": "樹皮を剥いだサクラの木"
+    },
+    "stripped_dark_oak_wood": {
+      "en": "Stripped Dark Oak Wood",
+      "ja": "樹皮を剥いだダークオークの木"
+    },
+    "stripped_pale_oak_wood": {
+      "en": "Stripped Pale Oak Wood",
+      "ja": "樹皮を剥いだペールオークの木"
+    },
+    "stripped_mangrove_wood": {
+      "en": "Stripped Mangrove Wood",
+      "ja": "樹皮を剥いだマングローブの木"
+    },
+    "stripped_crimson_hyphae": {
+      "en": "Stripped Crimson Hyphae",
+      "ja": "表皮を剥いだ真紅の菌糸"
+    },
+    "stripped_warped_hyphae": {
+      "en": "Stripped Warped Hyphae",
+      "ja": "表皮を剥いだ歪んだ菌糸"
+    },
+    "stripped_bamboo_block": {
+      "en": "Block of Stripped Bamboo",
+      "ja": "表皮を剥いだ竹ブロック"
+    },
+    "oak_wood": {
+      "en": "Oak Wood",
+      "ja": "オークの木"
+    },
+    "spruce_wood": {
+      "en": "Spruce Wood",
+      "ja": "トウヒの木"
+    },
+    "birch_wood": {
+      "en": "Birch Wood",
+      "ja": "シラカバの木"
+    },
+    "jungle_wood": {
+      "en": "Jungle Wood",
+      "ja": "ジャングルの木"
+    },
+    "acacia_wood": {
+      "en": "Acacia Wood",
+      "ja": "アカシアの木"
+    },
+    "cherry_wood": {
+      "en": "Cherry Wood",
+      "ja": "サクラの木"
+    },
+    "pale_oak_wood": {
+      "en": "Pale Oak Wood",
+      "ja": "ペールオークの木"
+    },
+    "dark_oak_wood": {
+      "en": "Dark Oak Wood",
+      "ja": "ダークオークの木"
+    },
+    "mangrove_wood": {
+      "en": "Mangrove Wood",
+      "ja": "マングローブの木"
+    },
+    "crimson_hyphae": {
+      "en": "Crimson Hyphae",
+      "ja": "真紅の菌糸"
+    },
+    "warped_hyphae": {
+      "en": "Warped Hyphae",
+      "ja": "歪んだ菌糸"
+    },
+    "oak_leaves": {
+      "en": "Oak Leaves",
+      "ja": "オークの葉"
+    },
+    "spruce_leaves": {
+      "en": "Spruce Leaves",
+      "ja": "トウヒの葉"
+    },
+    "birch_leaves": {
+      "en": "Birch Leaves",
+      "ja": "シラカバの葉"
+    },
+    "jungle_leaves": {
+      "en": "Jungle Leaves",
+      "ja": "ジャングルの葉"
+    },
+    "acacia_leaves": {
+      "en": "Acacia Leaves",
+      "ja": "アカシアの葉"
+    },
+    "cherry_leaves": {
+      "en": "Cherry Leaves",
+      "ja": "サクラの葉"
+    },
+    "dark_oak_leaves": {
+      "en": "Dark Oak Leaves",
+      "ja": "ダークオークの葉"
+    },
+    "pale_oak_leaves": {
+      "en": "Pale Oak Leaves",
+      "ja": "ペールオークの葉"
+    },
+    "mangrove_leaves": {
+      "en": "Mangrove Leaves",
+      "ja": "マングローブの葉"
+    },
+    "azalea_leaves": {
+      "en": "Azalea Leaves",
+      "ja": "ツツジの葉"
+    },
+    "flowering_azalea_leaves": {
+      "en": "Flowering Azalea Leaves",
+      "ja": "開花したツツジの葉"
+    },
+    "sponge": {
+      "en": "Sponge",
+      "ja": "スポンジ"
+    },
+    "wet_sponge": {
+      "en": "Wet Sponge",
+      "ja": "濡れたスポンジ"
+    },
+    "glass": {
+      "en": "Glass",
+      "ja": "ガラス"
+    },
+    "tinted_glass": {
+      "en": "Tinted Glass",
+      "ja": "遮光ガラス"
+    },
+    "lapis_block": {
+      "en": "Block of Lapis Lazuli",
+      "ja": "ラピスラズリブロック"
+    },
+    "sandstone": {
+      "en": "Sandstone",
+      "ja": "砂岩"
+    },
+    "chiseled_sandstone": {
+      "en": "Chiseled Sandstone",
+      "ja": "模様入りの砂岩"
+    },
+    "cut_sandstone": {
+      "en": "Cut Sandstone",
+      "ja": "研がれた砂岩"
+    },
+    "cobweb": {
+      "en": "Cobweb",
+      "ja": "クモの巣"
+    },
+    "short_grass": {
+      "en": "Short Grass",
+      "ja": "背の低い草"
+    },
+    "fern": {
+      "en": "Fern",
+      "ja": "シダ"
+    },
+    "bush": {
+      "en": "Bush",
+      "ja": "茂み"
+    },
+    "azalea": {
+      "en": "Azalea",
+      "ja": "ツツジ"
+    },
+    "flowering_azalea": {
+      "en": "Flowering Azalea",
+      "ja": "開花したツツジ"
+    },
+    "dead_bush": {
+      "en": "Dead Bush",
+      "ja": "枯れ木"
+    },
+    "firefly_bush": {
+      "en": "Firefly Bush",
+      "ja": "ホタルの茂み"
+    },
+    "short_dry_grass": {
+      "en": "Short Dry Grass",
+      "ja": "背の低い枯れ草"
+    },
+    "tall_dry_grass": {
+      "en": "Tall Dry Grass",
+      "ja": "背の高い枯れ草"
+    },
+    "seagrass": {
+      "en": "Seagrass",
+      "ja": "海草"
+    },
+    "sea_pickle": {
+      "en": "Sea Pickle",
+      "ja": "シーピクルス"
+    },
+    "white_wool": {
+      "en": "White Wool",
+      "ja": "白色の羊毛"
+    },
+    "orange_wool": {
+      "en": "Orange Wool",
+      "ja": "橙色の羊毛"
+    },
+    "magenta_wool": {
+      "en": "Magenta Wool",
+      "ja": "赤紫色の羊毛"
+    },
+    "light_blue_wool": {
+      "en": "Light Blue Wool",
+      "ja": "空色の羊毛"
+    },
+    "yellow_wool": {
+      "en": "Yellow Wool",
+      "ja": "黄色の羊毛"
+    },
+    "lime_wool": {
+      "en": "Lime Wool",
+      "ja": "黄緑色の羊毛"
+    },
+    "pink_wool": {
+      "en": "Pink Wool",
+      "ja": "桃色の羊毛"
+    },
+    "gray_wool": {
+      "en": "Gray Wool",
+      "ja": "灰色の羊毛"
+    },
+    "light_gray_wool": {
+      "en": "Light Gray Wool",
+      "ja": "薄灰色の羊毛"
+    },
+    "cyan_wool": {
+      "en": "Cyan Wool",
+      "ja": "青緑色の羊毛"
+    },
+    "purple_wool": {
+      "en": "Purple Wool",
+      "ja": "紫色の羊毛"
+    },
+    "blue_wool": {
+      "en": "Blue Wool",
+      "ja": "青色の羊毛"
+    },
+    "brown_wool": {
+      "en": "Brown Wool",
+      "ja": "茶色の羊毛"
+    },
+    "green_wool": {
+      "en": "Green Wool",
+      "ja": "緑色の羊毛"
+    },
+    "red_wool": {
+      "en": "Red Wool",
+      "ja": "赤色の羊毛"
+    },
+    "black_wool": {
+      "en": "Black Wool",
+      "ja": "黒色の羊毛"
+    },
+    "dandelion": {
+      "en": "Dandelion",
+      "ja": "タンポポ"
+    },
+    "golden_dandelion": {
+      "en": "Golden Dandelion",
+      "ja": "金のタンポポ"
+    },
+    "open_eyeblossom": {
+      "en": "Open Eyeblossom",
+      "ja": "開いたヒトミソウ"
+    },
+    "closed_eyeblossom": {
+      "en": "Closed Eyeblossom",
+      "ja": "閉じたヒトミソウ"
+    },
+    "poppy": {
+      "en": "Poppy",
+      "ja": "ポピー"
+    },
+    "blue_orchid": {
+      "en": "Blue Orchid",
+      "ja": "ヒスイラン"
+    },
+    "allium": {
+      "en": "Allium",
+      "ja": "アリウム"
+    },
+    "azure_bluet": {
+      "en": "Azure Bluet",
+      "ja": "ヒナソウ"
+    },
+    "red_tulip": {
+      "en": "Red Tulip",
+      "ja": "赤色のチューリップ"
+    },
+    "orange_tulip": {
+      "en": "Orange Tulip",
+      "ja": "橙色のチューリップ"
+    },
+    "white_tulip": {
+      "en": "White Tulip",
+      "ja": "白色のチューリップ"
+    },
+    "pink_tulip": {
+      "en": "Pink Tulip",
+      "ja": "桃色のチューリップ"
+    },
+    "oxeye_daisy": {
+      "en": "Oxeye Daisy",
+      "ja": "フランスギク"
+    },
+    "cornflower": {
+      "en": "Cornflower",
+      "ja": "ヤグルマギク"
+    },
+    "lily_of_the_valley": {
+      "en": "Lily of the Valley",
+      "ja": "スズラン"
+    },
+    "wither_rose": {
+      "en": "Wither Rose",
+      "ja": "ウィザーローズ"
+    },
+    "torchflower": {
+      "en": "Torchflower",
+      "ja": "トーチフラワー"
+    },
+    "pitcher_plant": {
+      "en": "Pitcher Plant",
+      "ja": "ウツボカズラ"
+    },
+    "spore_blossom": {
+      "en": "Spore Blossom",
+      "ja": "胞子の花"
+    },
+    "brown_mushroom": {
+      "en": "Brown Mushroom",
+      "ja": "茶色のキノコ"
+    },
+    "red_mushroom": {
+      "en": "Red Mushroom",
+      "ja": "赤色のキノコ"
+    },
+    "crimson_fungus": {
+      "en": "Crimson Fungus",
+      "ja": "真紅のキノコ"
+    },
+    "warped_fungus": {
+      "en": "Warped Fungus",
+      "ja": "歪んだキノコ"
+    },
+    "crimson_roots": {
+      "en": "Crimson Roots",
+      "ja": "真紅の根"
+    },
+    "warped_roots": {
+      "en": "Warped Roots",
+      "ja": "歪んだ根"
+    },
+    "nether_sprouts": {
+      "en": "Nether Sprouts",
+      "ja": "ネザースプラウト"
+    },
+    "weeping_vines": {
+      "en": "Weeping Vines",
+      "ja": "しだれツタ"
+    },
+    "twisting_vines": {
+      "en": "Twisting Vines",
+      "ja": "ねじれツタ"
+    },
+    "sugar_cane": {
+      "en": "Sugar Cane",
+      "ja": "サトウキビ"
+    },
+    "kelp": {
+      "en": "Kelp",
+      "ja": "コンブ"
+    },
+    "pink_petals": {
+      "en": "Pink Petals",
+      "ja": "桜色の花びら"
+    },
+    "wildflowers": {
+      "en": "Wildflowers",
+      "ja": "野花"
+    },
+    "leaf_litter": {
+      "en": "Leaf Litter",
+      "ja": "落ち葉"
+    },
+    "moss_carpet": {
+      "en": "Moss Carpet",
+      "ja": "苔のカーペット"
+    },
+    "moss_block": {
+      "en": "Moss Block",
+      "ja": "苔ブロック"
+    },
+    "pale_moss_carpet": {
+      "en": "Pale Moss Carpet",
+      "ja": "色あせた苔のカーペット"
+    },
+    "pale_hanging_moss": {
+      "en": "Pale Hanging Moss",
+      "ja": "色あせた垂れ苔"
+    },
+    "pale_moss_block": {
+      "en": "Pale Moss Block",
+      "ja": "色あせた苔ブロック"
+    },
+    "hanging_roots": {
+      "en": "Hanging Roots",
+      "ja": "垂れ根"
+    },
+    "big_dripleaf": {
+      "en": "Big Dripleaf",
+      "ja": "大きなドリップリーフ"
+    },
+    "small_dripleaf": {
+      "en": "Small Dripleaf",
+      "ja": "小さなドリップリーフ"
+    },
+    "bamboo": {
+      "en": "Bamboo",
+      "ja": "竹"
+    },
+    "oak_slab": {
+      "en": "Oak Slab",
+      "ja": "オークのハーフブロック"
+    },
+    "spruce_slab": {
+      "en": "Spruce Slab",
+      "ja": "トウヒのハーフブロック"
+    },
+    "birch_slab": {
+      "en": "Birch Slab",
+      "ja": "シラカバのハーフブロック"
+    },
+    "jungle_slab": {
+      "en": "Jungle Slab",
+      "ja": "ジャングルのハーフブロック"
+    },
+    "acacia_slab": {
+      "en": "Acacia Slab",
+      "ja": "アカシアのハーフブロック"
+    },
+    "cherry_slab": {
+      "en": "Cherry Slab",
+      "ja": "サクラのハーフブロック"
+    },
+    "dark_oak_slab": {
+      "en": "Dark Oak Slab",
+      "ja": "ダークオークのハーフブロック"
+    },
+    "pale_oak_slab": {
+      "en": "Pale Oak Slab",
+      "ja": "ペールオークのハーフブロック"
+    },
+    "mangrove_slab": {
+      "en": "Mangrove Slab",
+      "ja": "マングローブのハーフブロック"
+    },
+    "bamboo_slab": {
+      "en": "Bamboo Slab",
+      "ja": "竹のハーフブロック"
+    },
+    "bamboo_mosaic_slab": {
+      "en": "Bamboo Mosaic Slab",
+      "ja": "竹細工のハーフブロック"
+    },
+    "crimson_slab": {
+      "en": "Crimson Slab",
+      "ja": "真紅のハーフブロック"
+    },
+    "warped_slab": {
+      "en": "Warped Slab",
+      "ja": "歪んだハーフブロック"
+    },
+    "stone_slab": {
+      "en": "Stone Slab",
+      "ja": "石のハーフブロック"
+    },
+    "smooth_stone_slab": {
+      "en": "Smooth Stone Slab",
+      "ja": "滑らかな石のハーフブロック"
+    },
+    "sandstone_slab": {
+      "en": "Sandstone Slab",
+      "ja": "砂岩のハーフブロック"
+    },
+    "cut_sandstone_slab": {
+      "en": "Cut Sandstone Slab",
+      "ja": "研がれた砂岩のハーフブロック"
+    },
+    "petrified_oak_slab": {
+      "en": "Petrified Oak Slab",
+      "ja": "石化したオークのハーフブロック"
+    },
+    "cobblestone_slab": {
+      "en": "Cobblestone Slab",
+      "ja": "丸石のハーフブロック"
+    },
+    "brick_slab": {
+      "en": "Brick Slab",
+      "ja": "レンガのハーフブロック"
+    },
+    "stone_brick_slab": {
+      "en": "Stone Brick Slab",
+      "ja": "石レンガのハーフブロック"
+    },
+    "mud_brick_slab": {
+      "en": "Mud Brick Slab",
+      "ja": "泥レンガのハーフブロック"
+    },
+    "nether_brick_slab": {
+      "en": "Nether Brick Slab",
+      "ja": "ネザーレンガのハーフブロック"
+    },
+    "quartz_slab": {
+      "en": "Quartz Slab",
+      "ja": "クォーツのハーフブロック"
+    },
+    "red_sandstone_slab": {
+      "en": "Red Sandstone Slab",
+      "ja": "赤い砂岩のハーフブロック"
+    },
+    "cut_red_sandstone_slab": {
+      "en": "Cut Red Sandstone Slab",
+      "ja": "研がれた赤い砂岩のハーフブロック"
+    },
+    "purpur_slab": {
+      "en": "Purpur Slab",
+      "ja": "プルプァのハーフブロック"
+    },
+    "prismarine_slab": {
+      "en": "Prismarine Slab",
+      "ja": "プリズマリンのハーフブロック"
+    },
+    "prismarine_brick_slab": {
+      "en": "Prismarine Brick Slab",
+      "ja": "プリズマリンレンガのハーフブロック"
+    },
+    "dark_prismarine_slab": {
+      "en": "Dark Prismarine Slab",
+      "ja": "ダークプリズマリンのハーフブロック"
+    },
+    "smooth_quartz": {
+      "en": "Smooth Quartz Block",
+      "ja": "滑らかなクォーツブロック"
+    },
+    "smooth_red_sandstone": {
+      "en": "Smooth Red Sandstone",
+      "ja": "滑らかな赤い砂岩"
+    },
+    "smooth_sandstone": {
+      "en": "Smooth Sandstone",
+      "ja": "滑らかな砂岩"
+    },
+    "smooth_stone": {
+      "en": "Smooth Stone",
+      "ja": "滑らかな石"
+    },
+    "bricks": {
+      "en": "Bricks",
+      "ja": "レンガ"
+    },
+    "acacia_shelf": {
+      "en": "Acacia Shelf",
+      "ja": "アカシアの棚"
+    },
+    "bamboo_shelf": {
+      "en": "Bamboo Shelf",
+      "ja": "竹の棚"
+    },
+    "birch_shelf": {
+      "en": "Birch Shelf",
+      "ja": "シラカバの棚"
+    },
+    "cherry_shelf": {
+      "en": "Cherry Shelf",
+      "ja": "サクラの棚"
+    },
+    "crimson_shelf": {
+      "en": "Crimson Shelf",
+      "ja": "真紅の棚"
+    },
+    "dark_oak_shelf": {
+      "en": "Dark Oak Shelf",
+      "ja": "ダークオークの棚"
+    },
+    "jungle_shelf": {
+      "en": "Jungle Shelf",
+      "ja": "ジャングルの棚"
+    },
+    "mangrove_shelf": {
+      "en": "Mangrove Shelf",
+      "ja": "マングローブの棚"
+    },
+    "oak_shelf": {
+      "en": "Oak Shelf",
+      "ja": "オークの棚"
+    },
+    "pale_oak_shelf": {
+      "en": "Pale Oak Shelf",
+      "ja": "ペールオークの棚"
+    },
+    "spruce_shelf": {
+      "en": "Spruce Shelf",
+      "ja": "トウヒの棚"
+    },
+    "warped_shelf": {
+      "en": "Warped Shelf",
+      "ja": "歪んだ棚"
+    },
+    "bookshelf": {
+      "en": "Bookshelf",
+      "ja": "本棚"
+    },
+    "chiseled_bookshelf": {
+      "en": "Chiseled Bookshelf",
+      "ja": "模様入りの本棚"
+    },
+    "decorated_pot": {
+      "en": "Decorated Pot",
+      "ja": "飾り壺"
+    },
+    "mossy_cobblestone": {
+      "en": "Mossy Cobblestone",
+      "ja": "苔むした丸石"
+    },
+    "obsidian": {
+      "en": "Obsidian",
+      "ja": "黒曜石"
+    },
+    "torch": {
+      "en": "Torch",
+      "ja": "松明"
+    },
+    "end_rod": {
+      "en": "End Rod",
+      "ja": "エンドロッド"
+    },
+    "chorus_plant": {
+      "en": "Chorus Plant",
+      "ja": "コーラスプラント"
+    },
+    "chorus_flower": {
+      "en": "Chorus Flower",
+      "ja": "コーラスフラワー"
+    },
+    "purpur_block": {
+      "en": "Purpur Block",
+      "ja": "プルプァブロック"
+    },
+    "purpur_pillar": {
+      "en": "Purpur Pillar",
+      "ja": "プルプァの柱"
+    },
+    "purpur_stairs": {
+      "en": "Purpur Stairs",
+      "ja": "プルプァの階段"
+    },
+    "spawner": {
+      "en": "Monster Spawner",
+      "ja": "モンスタースポナー"
+    },
+    "creaking_heart": {
+      "en": "Creaking Heart",
+      "ja": "クリーキングの心臓"
+    },
+    "chest": {
+      "en": "Chest",
+      "ja": "チェスト"
+    },
+    "crafting_table": {
+      "en": "Crafting Table",
+      "ja": "作業台"
+    },
+    "farmland": {
+      "en": "Farmland",
+      "ja": "耕地"
+    },
+    "furnace": {
+      "en": "Furnace",
+      "ja": "かまど"
+    },
+    "ladder": {
+      "en": "Ladder",
+      "ja": "はしご"
+    },
+    "cobblestone_stairs": {
+      "en": "Cobblestone Stairs",
+      "ja": "丸石の階段"
+    },
+    "snow": {
+      "en": "Snow",
+      "ja": "雪"
+    },
+    "ice": {
+      "en": "Ice",
+      "ja": "氷"
+    },
+    "snow_block": {
+      "en": "Snow Block",
+      "ja": "雪ブロック"
+    },
+    "cactus": {
+      "en": "Cactus",
+      "ja": "サボテン"
+    },
+    "cactus_flower": {
+      "en": "Cactus Flower",
+      "ja": "サボテンの花"
+    },
+    "clay": {
+      "en": "Clay",
+      "ja": "粘土"
+    },
+    "jukebox": {
+      "en": "Jukebox",
+      "ja": "ジュークボックス"
+    },
+    "oak_fence": {
+      "en": "Oak Fence",
+      "ja": "オークのフェンス"
+    },
+    "spruce_fence": {
+      "en": "Spruce Fence",
+      "ja": "トウヒのフェンス"
+    },
+    "birch_fence": {
+      "en": "Birch Fence",
+      "ja": "シラカバのフェンス"
+    },
+    "jungle_fence": {
+      "en": "Jungle Fence",
+      "ja": "ジャングルのフェンス"
+    },
+    "acacia_fence": {
+      "en": "Acacia Fence",
+      "ja": "アカシアのフェンス"
+    },
+    "cherry_fence": {
+      "en": "Cherry Fence",
+      "ja": "サクラのフェンス"
+    },
+    "dark_oak_fence": {
+      "en": "Dark Oak Fence",
+      "ja": "ダークオークのフェンス"
+    },
+    "pale_oak_fence": {
+      "en": "Pale Oak Fence",
+      "ja": "ペールオークのフェンス"
+    },
+    "mangrove_fence": {
+      "en": "Mangrove Fence",
+      "ja": "マングローブのフェンス"
+    },
+    "bamboo_fence": {
+      "en": "Bamboo Fence",
+      "ja": "竹のフェンス"
+    },
+    "crimson_fence": {
+      "en": "Crimson Fence",
+      "ja": "真紅のフェンス"
+    },
+    "warped_fence": {
+      "en": "Warped Fence",
+      "ja": "歪んだフェンス"
+    },
+    "pumpkin": {
+      "en": "Pumpkin",
+      "ja": "カボチャ"
+    },
+    "carved_pumpkin": {
+      "en": "Carved Pumpkin",
+      "ja": "くり抜かれたカボチャ"
+    },
+    "jack_o_lantern": {
+      "en": "Jack o'Lantern",
+      "ja": "ジャック・オ・ランタン"
+    },
+    "netherrack": {
+      "en": "Netherrack",
+      "ja": "ネザーラック"
+    },
+    "soul_sand": {
+      "en": "Soul Sand",
+      "ja": "ソウルサンド"
+    },
+    "soul_soil": {
+      "en": "Soul Soil",
+      "ja": "ソウルソイル"
+    },
+    "basalt": {
+      "en": "Basalt",
+      "ja": "玄武岩"
+    },
+    "polished_basalt": {
+      "en": "Polished Basalt",
+      "ja": "磨かれた玄武岩"
+    },
+    "smooth_basalt": {
+      "en": "Smooth Basalt",
+      "ja": "滑らかな玄武岩"
+    },
+    "soul_torch": {
+      "en": "Soul Torch",
+      "ja": "魂の松明"
+    },
+    "copper_torch": {
+      "en": "Copper Torch",
+      "ja": "銅の松明"
+    },
+    "glowstone": {
+      "en": "Glowstone",
+      "ja": "グロウストーン"
+    },
+    "infested_stone": {
+      "en": "Infested Stone",
+      "ja": "虫食い石"
+    },
+    "infested_cobblestone": {
+      "en": "Infested Cobblestone",
+      "ja": "虫食い丸石"
+    },
+    "infested_stone_bricks": {
+      "en": "Infested Stone Bricks",
+      "ja": "虫食い石レンガ"
+    },
+    "infested_mossy_stone_bricks": {
+      "en": "Infested Mossy Stone Bricks",
+      "ja": "苔むした虫食い石レンガ"
+    },
+    "infested_cracked_stone_bricks": {
+      "en": "Infested Cracked Stone Bricks",
+      "ja": "ひび割れた虫食い石レンガ"
+    },
+    "infested_chiseled_stone_bricks": {
+      "en": "Infested Chiseled Stone Bricks",
+      "ja": "模様入りの虫食い石レンガ"
+    },
+    "infested_deepslate": {
+      "en": "Infested Deepslate",
+      "ja": "虫食い深層岩"
+    },
+    "stone_bricks": {
+      "en": "Stone Bricks",
+      "ja": "石レンガ"
+    },
+    "mossy_stone_bricks": {
+      "en": "Mossy Stone Bricks",
+      "ja": "苔むした石レンガ"
+    },
+    "cracked_stone_bricks": {
+      "en": "Cracked Stone Bricks",
+      "ja": "ひび割れた石レンガ"
+    },
+    "chiseled_stone_bricks": {
+      "en": "Chiseled Stone Bricks",
+      "ja": "模様入りの石レンガ"
+    },
+    "packed_mud": {
+      "en": "Packed Mud",
+      "ja": "固めた泥"
+    },
+    "mud_bricks": {
+      "en": "Mud Bricks",
+      "ja": "泥レンガ"
+    },
+    "deepslate_bricks": {
+      "en": "Deepslate Bricks",
+      "ja": "深層岩レンガ"
+    },
+    "cracked_deepslate_bricks": {
+      "en": "Cracked Deepslate Bricks",
+      "ja": "ひび割れた深層岩レンガ"
+    },
+    "deepslate_tiles": {
+      "en": "Deepslate Tiles",
+      "ja": "深層岩タイル"
+    },
+    "cracked_deepslate_tiles": {
+      "en": "Cracked Deepslate Tiles",
+      "ja": "ひび割れた深層岩タイル"
+    },
+    "chiseled_deepslate": {
+      "en": "Chiseled Deepslate",
+      "ja": "模様入りの深層岩"
+    },
+    "reinforced_deepslate": {
+      "en": "Reinforced Deepslate",
+      "ja": "強化された深層岩"
+    },
+    "brown_mushroom_block": {
+      "en": "Brown Mushroom Block",
+      "ja": "茶色のキノコブロック"
+    },
+    "red_mushroom_block": {
+      "en": "Red Mushroom Block",
+      "ja": "赤色のキノコブロック"
+    },
+    "mushroom_stem": {
+      "en": "Mushroom Stem",
+      "ja": "キノコの柄"
+    },
+    "iron_bars": {
+      "en": "Iron Bars",
+      "ja": "鉄格子"
+    },
+    "copper_bars": {
+      "en": "Copper Bars",
+      "ja": "銅格子"
+    },
+    "exposed_copper_bars": {
+      "en": "Exposed Copper Bars",
+      "ja": "風化した銅格子"
+    },
+    "weathered_copper_bars": {
+      "en": "Weathered Copper Bars",
+      "ja": "錆びた銅格子"
+    },
+    "oxidized_copper_bars": {
+      "en": "Oxidized Copper Bars",
+      "ja": "酸化した銅格子"
+    },
+    "waxed_copper_bars": {
+      "en": "Waxed Copper Bars",
+      "ja": "錆止めされた銅格子"
+    },
+    "waxed_exposed_copper_bars": {
+      "en": "Waxed Exposed Copper Bars",
+      "ja": "錆止めされた風化した銅格子"
+    },
+    "waxed_weathered_copper_bars": {
+      "en": "Waxed Weathered Copper Bars",
+      "ja": "錆止めされた錆びた銅格子"
+    },
+    "waxed_oxidized_copper_bars": {
+      "en": "Waxed Oxidized Copper Bars",
+      "ja": "錆止めされた酸化した銅格子"
+    },
+    "iron_chain": {
+      "en": "Iron Chain",
+      "ja": "鉄の鎖"
+    },
+    "copper_chain": {
+      "en": "Copper Chain",
+      "ja": "銅の鎖"
+    },
+    "exposed_copper_chain": {
+      "en": "Exposed Copper Chain",
+      "ja": "風化した銅の鎖"
+    },
+    "weathered_copper_chain": {
+      "en": "Weathered Copper Chain",
+      "ja": "錆びた銅の鎖"
+    },
+    "oxidized_copper_chain": {
+      "en": "Oxidized Copper Chain",
+      "ja": "酸化した銅の鎖"
+    },
+    "waxed_copper_chain": {
+      "en": "Waxed Copper Chain",
+      "ja": "錆止めされた銅の鎖"
+    },
+    "waxed_exposed_copper_chain": {
+      "en": "Waxed Exposed Copper Chain",
+      "ja": "錆止めされた風化した銅の鎖"
+    },
+    "waxed_weathered_copper_chain": {
+      "en": "Waxed Weathered Copper Chain",
+      "ja": "錆止めされた錆びた銅の鎖"
+    },
+    "waxed_oxidized_copper_chain": {
+      "en": "Waxed Oxidized Copper Chain",
+      "ja": "錆止めされた酸化した銅の鎖"
+    },
+    "glass_pane": {
+      "en": "Glass Pane",
+      "ja": "ガラス板"
+    },
+    "melon": {
+      "en": "Melon",
+      "ja": "スイカ"
+    },
+    "vine": {
+      "en": "Vines",
+      "ja": "ツタ"
+    },
+    "glow_lichen": {
+      "en": "Glow Lichen",
+      "ja": "ヒカリゴケ"
+    },
+    "resin_clump": {
+      "en": "Resin Clump",
+      "ja": "樹脂の塊"
+    },
+    "resin_block": {
+      "en": "Block of Resin",
+      "ja": "樹脂ブロック"
+    },
+    "resin_bricks": {
+      "en": "Resin Bricks",
+      "ja": "樹脂レンガ"
+    },
+    "resin_brick_stairs": {
+      "en": "Resin Brick Stairs",
+      "ja": "樹脂レンガの階段"
+    },
+    "resin_brick_slab": {
+      "en": "Resin Brick Slab",
+      "ja": "樹脂レンガのハーフブロック"
+    },
+    "resin_brick_wall": {
+      "en": "Resin Brick Wall",
+      "ja": "樹脂レンガの塀"
+    },
+    "chiseled_resin_bricks": {
+      "en": "Chiseled Resin Bricks",
+      "ja": "模様入りの樹脂レンガ"
+    },
+    "brick_stairs": {
+      "en": "Brick Stairs",
+      "ja": "レンガの階段"
+    },
+    "stone_brick_stairs": {
+      "en": "Stone Brick Stairs",
+      "ja": "石レンガの階段"
+    },
+    "mud_brick_stairs": {
+      "en": "Mud Brick Stairs",
+      "ja": "泥レンガの階段"
+    },
+    "mycelium": {
+      "en": "Mycelium",
+      "ja": "菌糸"
+    },
+    "lily_pad": {
+      "en": "Lily Pad",
+      "ja": "スイレンの葉"
+    },
+    "nether_bricks": {
+      "en": "Nether Bricks",
+      "ja": "ネザーレンガ"
+    },
+    "cracked_nether_bricks": {
+      "en": "Cracked Nether Bricks",
+      "ja": "ひび割れたネザーレンガ"
+    },
+    "chiseled_nether_bricks": {
+      "en": "Chiseled Nether Bricks",
+      "ja": "模様入りのネザーレンガ"
+    },
+    "nether_brick_fence": {
+      "en": "Nether Brick Fence",
+      "ja": "ネザーレンガのフェンス"
+    },
+    "nether_brick_stairs": {
+      "en": "Nether Brick Stairs",
+      "ja": "ネザーレンガの階段"
+    },
+    "sculk": {
+      "en": "Sculk",
+      "ja": "スカルク"
+    },
+    "sculk_vein": {
+      "en": "Sculk Vein",
+      "ja": "スカルクヴェイン"
+    },
+    "sculk_catalyst": {
+      "en": "Sculk Catalyst",
+      "ja": "スカルクカタリスト"
+    },
+    "sculk_shrieker": {
+      "en": "Sculk Shrieker",
+      "ja": "スカルクシュリーカー"
+    },
+    "enchanting_table": {
+      "en": "Enchanting Table",
+      "ja": "エンチャントテーブル"
+    },
+    "end_portal_frame": {
+      "en": "End Portal Frame",
+      "ja": "エンドポータルフレーム"
+    },
+    "end_stone": {
+      "en": "End Stone",
+      "ja": "エンドストーン"
+    },
+    "end_stone_bricks": {
+      "en": "End Stone Bricks",
+      "ja": "エンドストーンレンガ"
+    },
+    "dragon_egg": {
+      "en": "Dragon Egg",
+      "ja": "ドラゴンの卵"
+    },
+    "sandstone_stairs": {
+      "en": "Sandstone Stairs",
+      "ja": "砂岩の階段"
+    },
+    "ender_chest": {
+      "en": "Ender Chest",
+      "ja": "エンダーチェスト"
+    },
+    "emerald_block": {
+      "en": "Block of Emerald",
+      "ja": "エメラルドブロック"
+    },
+    "oak_stairs": {
+      "en": "Oak Stairs",
+      "ja": "オークの階段"
+    },
+    "spruce_stairs": {
+      "en": "Spruce Stairs",
+      "ja": "トウヒの階段"
+    },
+    "birch_stairs": {
+      "en": "Birch Stairs",
+      "ja": "シラカバの階段"
+    },
+    "jungle_stairs": {
+      "en": "Jungle Stairs",
+      "ja": "ジャングルの階段"
+    },
+    "acacia_stairs": {
+      "en": "Acacia Stairs",
+      "ja": "アカシアの階段"
+    },
+    "cherry_stairs": {
+      "en": "Cherry Stairs",
+      "ja": "サクラの階段"
+    },
+    "dark_oak_stairs": {
+      "en": "Dark Oak Stairs",
+      "ja": "ダークオークの階段"
+    },
+    "pale_oak_stairs": {
+      "en": "Pale Oak Stairs",
+      "ja": "ペールオークの階段"
+    },
+    "mangrove_stairs": {
+      "en": "Mangrove Stairs",
+      "ja": "マングローブの階段"
+    },
+    "bamboo_stairs": {
+      "en": "Bamboo Stairs",
+      "ja": "竹の階段"
+    },
+    "bamboo_mosaic_stairs": {
+      "en": "Bamboo Mosaic Stairs",
+      "ja": "竹細工の階段"
+    },
+    "crimson_stairs": {
+      "en": "Crimson Stairs",
+      "ja": "真紅の階段"
+    },
+    "warped_stairs": {
+      "en": "Warped Stairs",
+      "ja": "歪んだ階段"
+    },
+    "command_block": {
+      "en": "Command Block",
+      "ja": "コマンドブロック"
+    },
+    "beacon": {
+      "en": "Beacon",
+      "ja": "ビーコン"
+    },
+    "cobblestone_wall": {
+      "en": "Cobblestone Wall",
+      "ja": "丸石の塀"
+    },
+    "mossy_cobblestone_wall": {
+      "en": "Mossy Cobblestone Wall",
+      "ja": "苔むした丸石の塀"
+    },
+    "brick_wall": {
+      "en": "Brick Wall",
+      "ja": "レンガの塀"
+    },
+    "prismarine_wall": {
+      "en": "Prismarine Wall",
+      "ja": "プリズマリンの塀"
+    },
+    "red_sandstone_wall": {
+      "en": "Red Sandstone Wall",
+      "ja": "赤い砂岩の塀"
+    },
+    "mossy_stone_brick_wall": {
+      "en": "Mossy Stone Brick Wall",
+      "ja": "苔むした石レンガの塀"
+    },
+    "granite_wall": {
+      "en": "Granite Wall",
+      "ja": "花崗岩の塀"
+    },
+    "stone_brick_wall": {
+      "en": "Stone Brick Wall",
+      "ja": "石レンガの塀"
+    },
+    "mud_brick_wall": {
+      "en": "Mud Brick Wall",
+      "ja": "泥レンガの塀"
+    },
+    "nether_brick_wall": {
+      "en": "Nether Brick Wall",
+      "ja": "ネザーレンガの塀"
+    },
+    "andesite_wall": {
+      "en": "Andesite Wall",
+      "ja": "安山岩の塀"
+    },
+    "red_nether_brick_wall": {
+      "en": "Red Nether Brick Wall",
+      "ja": "赤いネザーレンガの塀"
+    },
+    "sandstone_wall": {
+      "en": "Sandstone Wall",
+      "ja": "砂岩の塀"
+    },
+    "end_stone_brick_wall": {
+      "en": "End Stone Brick Wall",
+      "ja": "エンドストーンレンガの塀"
+    },
+    "diorite_wall": {
+      "en": "Diorite Wall",
+      "ja": "閃緑岩の塀"
+    },
+    "blackstone_wall": {
+      "en": "Blackstone Wall",
+      "ja": "ブラックストーンの塀"
+    },
+    "polished_blackstone_wall": {
+      "en": "Polished Blackstone Wall",
+      "ja": "磨かれたブラックストーンの塀"
+    },
+    "polished_blackstone_brick_wall": {
+      "en": "Polished Blackstone Brick Wall",
+      "ja": "磨かれたブラックストーンレンガの塀"
+    },
+    "cobbled_deepslate_wall": {
+      "en": "Cobbled Deepslate Wall",
+      "ja": "深層岩の丸石の塀"
+    },
+    "polished_deepslate_wall": {
+      "en": "Polished Deepslate Wall",
+      "ja": "磨かれた深層岩の塀"
+    },
+    "deepslate_brick_wall": {
+      "en": "Deepslate Brick Wall",
+      "ja": "深層岩レンガの塀"
+    },
+    "deepslate_tile_wall": {
+      "en": "Deepslate Tile Wall",
+      "ja": "深層岩タイルの塀"
+    },
+    "anvil": {
+      "en": "Anvil",
+      "ja": "金床"
+    },
+    "chipped_anvil": {
+      "en": "Chipped Anvil",
+      "ja": "欠けた金床"
+    },
+    "damaged_anvil": {
+      "en": "Damaged Anvil",
+      "ja": "壊れかけの金床"
+    },
+    "chiseled_quartz_block": {
+      "en": "Chiseled Quartz Block",
+      "ja": "模様入りのクォーツブロック"
+    },
+    "quartz_block": {
+      "en": "Block of Quartz",
+      "ja": "クォーツブロック"
+    },
+    "quartz_bricks": {
+      "en": "Quartz Bricks",
+      "ja": "クォーツレンガ"
+    },
+    "quartz_pillar": {
+      "en": "Quartz Pillar",
+      "ja": "クォーツの柱"
+    },
+    "quartz_stairs": {
+      "en": "Quartz Stairs",
+      "ja": "クォーツの階段"
+    },
+    "white_terracotta": {
+      "en": "White Terracotta",
+      "ja": "白色のテラコッタ"
+    },
+    "orange_terracotta": {
+      "en": "Orange Terracotta",
+      "ja": "橙色のテラコッタ"
+    },
+    "magenta_terracotta": {
+      "en": "Magenta Terracotta",
+      "ja": "赤紫色のテラコッタ"
+    },
+    "light_blue_terracotta": {
+      "en": "Light Blue Terracotta",
+      "ja": "空色のテラコッタ"
+    },
+    "yellow_terracotta": {
+      "en": "Yellow Terracotta",
+      "ja": "黄色のテラコッタ"
+    },
+    "lime_terracotta": {
+      "en": "Lime Terracotta",
+      "ja": "黄緑色のテラコッタ"
+    },
+    "pink_terracotta": {
+      "en": "Pink Terracotta",
+      "ja": "桃色のテラコッタ"
+    },
+    "gray_terracotta": {
+      "en": "Gray Terracotta",
+      "ja": "灰色のテラコッタ"
+    },
+    "light_gray_terracotta": {
+      "en": "Light Gray Terracotta",
+      "ja": "薄灰色のテラコッタ"
+    },
+    "cyan_terracotta": {
+      "en": "Cyan Terracotta",
+      "ja": "青緑色のテラコッタ"
+    },
+    "purple_terracotta": {
+      "en": "Purple Terracotta",
+      "ja": "紫色のテラコッタ"
+    },
+    "blue_terracotta": {
+      "en": "Blue Terracotta",
+      "ja": "青色のテラコッタ"
+    },
+    "brown_terracotta": {
+      "en": "Brown Terracotta",
+      "ja": "茶色のテラコッタ"
+    },
+    "green_terracotta": {
+      "en": "Green Terracotta",
+      "ja": "緑色のテラコッタ"
+    },
+    "red_terracotta": {
+      "en": "Red Terracotta",
+      "ja": "赤色のテラコッタ"
+    },
+    "black_terracotta": {
+      "en": "Black Terracotta",
+      "ja": "黒色のテラコッタ"
+    },
+    "barrier": {
+      "en": "Barrier",
+      "ja": "バリアブロック"
+    },
+    "light": {
+      "en": "Light",
+      "ja": "ライトブロック"
+    },
+    "hay_block": {
+      "en": "Hay Bale",
+      "ja": "干草の俵"
+    },
+    "white_carpet": {
+      "en": "White Carpet",
+      "ja": "白色のカーペット"
+    },
+    "orange_carpet": {
+      "en": "Orange Carpet",
+      "ja": "橙色のカーペット"
+    },
+    "magenta_carpet": {
+      "en": "Magenta Carpet",
+      "ja": "赤紫色のカーペット"
+    },
+    "light_blue_carpet": {
+      "en": "Light Blue Carpet",
+      "ja": "空色のカーペット"
+    },
+    "yellow_carpet": {
+      "en": "Yellow Carpet",
+      "ja": "黄色のカーペット"
+    },
+    "lime_carpet": {
+      "en": "Lime Carpet",
+      "ja": "黄緑色のカーペット"
+    },
+    "pink_carpet": {
+      "en": "Pink Carpet",
+      "ja": "桃色のカーペット"
+    },
+    "gray_carpet": {
+      "en": "Gray Carpet",
+      "ja": "灰色のカーペット"
+    },
+    "light_gray_carpet": {
+      "en": "Light Gray Carpet",
+      "ja": "薄灰色のカーペット"
+    },
+    "cyan_carpet": {
+      "en": "Cyan Carpet",
+      "ja": "青緑色のカーペット"
+    },
+    "purple_carpet": {
+      "en": "Purple Carpet",
+      "ja": "紫色のカーペット"
+    },
+    "blue_carpet": {
+      "en": "Blue Carpet",
+      "ja": "青色のカーペット"
+    },
+    "brown_carpet": {
+      "en": "Brown Carpet",
+      "ja": "茶色のカーペット"
+    },
+    "green_carpet": {
+      "en": "Green Carpet",
+      "ja": "緑色のカーペット"
+    },
+    "red_carpet": {
+      "en": "Red Carpet",
+      "ja": "赤色のカーペット"
+    },
+    "black_carpet": {
+      "en": "Black Carpet",
+      "ja": "黒色のカーペット"
+    },
+    "terracotta": {
+      "en": "Terracotta",
+      "ja": "テラコッタ"
+    },
+    "packed_ice": {
+      "en": "Packed Ice",
+      "ja": "氷塊"
+    },
+    "dirt_path": {
+      "en": "Dirt Path",
+      "ja": "土の道"
+    },
+    "sunflower": {
+      "en": "Sunflower",
+      "ja": "ヒマワリ"
+    },
+    "lilac": {
+      "en": "Lilac",
+      "ja": "ライラック"
+    },
+    "rose_bush": {
+      "en": "Rose Bush",
+      "ja": "バラの低木"
+    },
+    "peony": {
+      "en": "Peony",
+      "ja": "ボタン"
+    },
+    "tall_grass": {
+      "en": "Tall Grass",
+      "ja": "背の高い草"
+    },
+    "large_fern": {
+      "en": "Large Fern",
+      "ja": "大きなシダ"
+    },
+    "white_stained_glass": {
+      "en": "White Stained Glass",
+      "ja": "白色の色付きガラス"
+    },
+    "orange_stained_glass": {
+      "en": "Orange Stained Glass",
+      "ja": "橙色の色付きガラス"
+    },
+    "magenta_stained_glass": {
+      "en": "Magenta Stained Glass",
+      "ja": "赤紫色の色付きガラス"
+    },
+    "light_blue_stained_glass": {
+      "en": "Light Blue Stained Glass",
+      "ja": "空色の色付きガラス"
+    },
+    "yellow_stained_glass": {
+      "en": "Yellow Stained Glass",
+      "ja": "黄色の色付きガラス"
+    },
+    "lime_stained_glass": {
+      "en": "Lime Stained Glass",
+      "ja": "黄緑色の色付きガラス"
+    },
+    "pink_stained_glass": {
+      "en": "Pink Stained Glass",
+      "ja": "桃色の色付きガラス"
+    },
+    "gray_stained_glass": {
+      "en": "Gray Stained Glass",
+      "ja": "灰色の色付きガラス"
+    },
+    "light_gray_stained_glass": {
+      "en": "Light Gray Stained Glass",
+      "ja": "薄灰色の色付きガラス"
+    },
+    "cyan_stained_glass": {
+      "en": "Cyan Stained Glass",
+      "ja": "青緑色の色付きガラス"
+    },
+    "purple_stained_glass": {
+      "en": "Purple Stained Glass",
+      "ja": "紫色の色付きガラス"
+    },
+    "blue_stained_glass": {
+      "en": "Blue Stained Glass",
+      "ja": "青色の色付きガラス"
+    },
+    "brown_stained_glass": {
+      "en": "Brown Stained Glass",
+      "ja": "茶色の色付きガラス"
+    },
+    "green_stained_glass": {
+      "en": "Green Stained Glass",
+      "ja": "緑色の色付きガラス"
+    },
+    "red_stained_glass": {
+      "en": "Red Stained Glass",
+      "ja": "赤色の色付きガラス"
+    },
+    "black_stained_glass": {
+      "en": "Black Stained Glass",
+      "ja": "黒色の色付きガラス"
+    },
+    "white_stained_glass_pane": {
+      "en": "White Stained Glass Pane",
+      "ja": "白色の色付きガラス板"
+    },
+    "orange_stained_glass_pane": {
+      "en": "Orange Stained Glass Pane",
+      "ja": "橙色の色付きガラス板"
+    },
+    "magenta_stained_glass_pane": {
+      "en": "Magenta Stained Glass Pane",
+      "ja": "赤紫色の色付きガラス板"
+    },
+    "light_blue_stained_glass_pane": {
+      "en": "Light Blue Stained Glass Pane",
+      "ja": "空色の色付きガラス板"
+    },
+    "yellow_stained_glass_pane": {
+      "en": "Yellow Stained Glass Pane",
+      "ja": "黄色の色付きガラス板"
+    },
+    "lime_stained_glass_pane": {
+      "en": "Lime Stained Glass Pane",
+      "ja": "黄緑色の色付きガラス板"
+    },
+    "pink_stained_glass_pane": {
+      "en": "Pink Stained Glass Pane",
+      "ja": "桃色の色付きガラス板"
+    },
+    "gray_stained_glass_pane": {
+      "en": "Gray Stained Glass Pane",
+      "ja": "灰色の色付きガラス板"
+    },
+    "light_gray_stained_glass_pane": {
+      "en": "Light Gray Stained Glass Pane",
+      "ja": "薄灰色の色付きガラス板"
+    },
+    "cyan_stained_glass_pane": {
+      "en": "Cyan Stained Glass Pane",
+      "ja": "青緑色の色付きガラス板"
+    },
+    "purple_stained_glass_pane": {
+      "en": "Purple Stained Glass Pane",
+      "ja": "紫色の色付きガラス板"
+    },
+    "blue_stained_glass_pane": {
+      "en": "Blue Stained Glass Pane",
+      "ja": "青色の色付きガラス板"
+    },
+    "brown_stained_glass_pane": {
+      "en": "Brown Stained Glass Pane",
+      "ja": "茶色の色付きガラス板"
+    },
+    "green_stained_glass_pane": {
+      "en": "Green Stained Glass Pane",
+      "ja": "緑色の色付きガラス板"
+    },
+    "red_stained_glass_pane": {
+      "en": "Red Stained Glass Pane",
+      "ja": "赤色の色付きガラス板"
+    },
+    "black_stained_glass_pane": {
+      "en": "Black Stained Glass Pane",
+      "ja": "黒色の色付きガラス板"
+    },
+    "prismarine": {
+      "en": "Prismarine",
+      "ja": "プリズマリン"
+    },
+    "prismarine_bricks": {
+      "en": "Prismarine Bricks",
+      "ja": "プリズマリンレンガ"
+    },
+    "dark_prismarine": {
+      "en": "Dark Prismarine",
+      "ja": "ダークプリズマリン"
+    },
+    "prismarine_stairs": {
+      "en": "Prismarine Stairs",
+      "ja": "プリズマリンの階段"
+    },
+    "prismarine_brick_stairs": {
+      "en": "Prismarine Brick Stairs",
+      "ja": "プリズマリンレンガの階段"
+    },
+    "dark_prismarine_stairs": {
+      "en": "Dark Prismarine Stairs",
+      "ja": "ダークプリズマリンの階段"
+    },
+    "sea_lantern": {
+      "en": "Sea Lantern",
+      "ja": "シーランタン"
+    },
+    "red_sandstone": {
+      "en": "Red Sandstone",
+      "ja": "赤い砂岩"
+    },
+    "chiseled_red_sandstone": {
+      "en": "Chiseled Red Sandstone",
+      "ja": "模様入りの赤い砂岩"
+    },
+    "cut_red_sandstone": {
+      "en": "Cut Red Sandstone",
+      "ja": "研がれた赤い砂岩"
+    },
+    "red_sandstone_stairs": {
+      "en": "Red Sandstone Stairs",
+      "ja": "赤い砂岩の階段"
+    },
+    "repeating_command_block": {
+      "en": "Repeating Command Block",
+      "ja": "リピートコマンドブロック"
+    },
+    "chain_command_block": {
+      "en": "Chain Command Block",
+      "ja": "チェーンコマンドブロック"
+    },
+    "magma_block": {
+      "en": "Magma Block",
+      "ja": "マグマブロック"
+    },
+    "nether_wart_block": {
+      "en": "Nether Wart Block",
+      "ja": "ネザーウォートブロック"
+    },
+    "warped_wart_block": {
+      "en": "Warped Wart Block",
+      "ja": "歪んだウォートブロック"
+    },
+    "red_nether_bricks": {
+      "en": "Red Nether Bricks",
+      "ja": "赤いネザーレンガ"
+    },
+    "bone_block": {
+      "en": "Bone Block",
+      "ja": "骨ブロック"
+    },
+    "structure_void": {
+      "en": "Structure Void",
+      "ja": "ストラクチャーヴォイド"
+    },
+    "shulker_box": {
+      "en": "Shulker Box",
+      "ja": "シュルカーボックス"
+    },
+    "white_shulker_box": {
+      "en": "White Shulker Box",
+      "ja": "白色のシュルカーボックス"
+    },
+    "orange_shulker_box": {
+      "en": "Orange Shulker Box",
+      "ja": "橙色のシュルカーボックス"
+    },
+    "magenta_shulker_box": {
+      "en": "Magenta Shulker Box",
+      "ja": "赤紫色のシュルカーボックス"
+    },
+    "light_blue_shulker_box": {
+      "en": "Light Blue Shulker Box",
+      "ja": "空色のシュルカーボックス"
+    },
+    "yellow_shulker_box": {
+      "en": "Yellow Shulker Box",
+      "ja": "黄色のシュルカーボックス"
+    },
+    "lime_shulker_box": {
+      "en": "Lime Shulker Box",
+      "ja": "黄緑色のシュルカーボックス"
+    },
+    "pink_shulker_box": {
+      "en": "Pink Shulker Box",
+      "ja": "桃色のシュルカーボックス"
+    },
+    "gray_shulker_box": {
+      "en": "Gray Shulker Box",
+      "ja": "灰色のシュルカーボックス"
+    },
+    "light_gray_shulker_box": {
+      "en": "Light Gray Shulker Box",
+      "ja": "薄灰色のシュルカーボックス"
+    },
+    "cyan_shulker_box": {
+      "en": "Cyan Shulker Box",
+      "ja": "青緑色のシュルカーボックス"
+    },
+    "purple_shulker_box": {
+      "en": "Purple Shulker Box",
+      "ja": "紫色のシュルカーボックス"
+    },
+    "blue_shulker_box": {
+      "en": "Blue Shulker Box",
+      "ja": "青色のシュルカーボックス"
+    },
+    "brown_shulker_box": {
+      "en": "Brown Shulker Box",
+      "ja": "茶色のシュルカーボックス"
+    },
+    "green_shulker_box": {
+      "en": "Green Shulker Box",
+      "ja": "緑色のシュルカーボックス"
+    },
+    "red_shulker_box": {
+      "en": "Red Shulker Box",
+      "ja": "赤色のシュルカーボックス"
+    },
+    "black_shulker_box": {
+      "en": "Black Shulker Box",
+      "ja": "黒色のシュルカーボックス"
+    },
+    "white_glazed_terracotta": {
+      "en": "White Glazed Terracotta",
+      "ja": "白色の彩釉テラコッタ"
+    },
+    "orange_glazed_terracotta": {
+      "en": "Orange Glazed Terracotta",
+      "ja": "橙色の彩釉テラコッタ"
+    },
+    "magenta_glazed_terracotta": {
+      "en": "Magenta Glazed Terracotta",
+      "ja": "赤紫色の彩釉テラコッタ"
+    },
+    "light_blue_glazed_terracotta": {
+      "en": "Light Blue Glazed Terracotta",
+      "ja": "空色の彩釉テラコッタ"
+    },
+    "yellow_glazed_terracotta": {
+      "en": "Yellow Glazed Terracotta",
+      "ja": "黄色の彩釉テラコッタ"
+    },
+    "lime_glazed_terracotta": {
+      "en": "Lime Glazed Terracotta",
+      "ja": "黄緑色の彩釉テラコッタ"
+    },
+    "pink_glazed_terracotta": {
+      "en": "Pink Glazed Terracotta",
+      "ja": "桃色の彩釉テラコッタ"
+    },
+    "gray_glazed_terracotta": {
+      "en": "Gray Glazed Terracotta",
+      "ja": "灰色の彩釉テラコッタ"
+    },
+    "light_gray_glazed_terracotta": {
+      "en": "Light Gray Glazed Terracotta",
+      "ja": "薄灰色の彩釉テラコッタ"
+    },
+    "cyan_glazed_terracotta": {
+      "en": "Cyan Glazed Terracotta",
+      "ja": "青緑色の彩釉テラコッタ"
+    },
+    "purple_glazed_terracotta": {
+      "en": "Purple Glazed Terracotta",
+      "ja": "紫色の彩釉テラコッタ"
+    },
+    "blue_glazed_terracotta": {
+      "en": "Blue Glazed Terracotta",
+      "ja": "青色の彩釉テラコッタ"
+    },
+    "brown_glazed_terracotta": {
+      "en": "Brown Glazed Terracotta",
+      "ja": "茶色の彩釉テラコッタ"
+    },
+    "green_glazed_terracotta": {
+      "en": "Green Glazed Terracotta",
+      "ja": "緑色の彩釉テラコッタ"
+    },
+    "red_glazed_terracotta": {
+      "en": "Red Glazed Terracotta",
+      "ja": "赤色の彩釉テラコッタ"
+    },
+    "black_glazed_terracotta": {
+      "en": "Black Glazed Terracotta",
+      "ja": "黒色の彩釉テラコッタ"
+    },
+    "white_concrete": {
+      "en": "White Concrete",
+      "ja": "白色のコンクリート"
+    },
+    "orange_concrete": {
+      "en": "Orange Concrete",
+      "ja": "橙色のコンクリート"
+    },
+    "magenta_concrete": {
+      "en": "Magenta Concrete",
+      "ja": "赤紫色のコンクリート"
+    },
+    "light_blue_concrete": {
+      "en": "Light Blue Concrete",
+      "ja": "空色のコンクリート"
+    },
+    "yellow_concrete": {
+      "en": "Yellow Concrete",
+      "ja": "黄色のコンクリート"
+    },
+    "lime_concrete": {
+      "en": "Lime Concrete",
+      "ja": "黄緑色のコンクリート"
+    },
+    "pink_concrete": {
+      "en": "Pink Concrete",
+      "ja": "桃色のコンクリート"
+    },
+    "gray_concrete": {
+      "en": "Gray Concrete",
+      "ja": "灰色のコンクリート"
+    },
+    "light_gray_concrete": {
+      "en": "Light Gray Concrete",
+      "ja": "薄灰色のコンクリート"
+    },
+    "cyan_concrete": {
+      "en": "Cyan Concrete",
+      "ja": "青緑色のコンクリート"
+    },
+    "purple_concrete": {
+      "en": "Purple Concrete",
+      "ja": "紫色のコンクリート"
+    },
+    "blue_concrete": {
+      "en": "Blue Concrete",
+      "ja": "青色のコンクリート"
+    },
+    "brown_concrete": {
+      "en": "Brown Concrete",
+      "ja": "茶色のコンクリート"
+    },
+    "green_concrete": {
+      "en": "Green Concrete",
+      "ja": "緑色のコンクリート"
+    },
+    "red_concrete": {
+      "en": "Red Concrete",
+      "ja": "赤色のコンクリート"
+    },
+    "black_concrete": {
+      "en": "Black Concrete",
+      "ja": "黒色のコンクリート"
+    },
+    "white_concrete_powder": {
+      "en": "White Concrete Powder",
+      "ja": "白色のコンクリートパウダー"
+    },
+    "orange_concrete_powder": {
+      "en": "Orange Concrete Powder",
+      "ja": "橙色のコンクリートパウダー"
+    },
+    "magenta_concrete_powder": {
+      "en": "Magenta Concrete Powder",
+      "ja": "赤紫色のコンクリートパウダー"
+    },
+    "light_blue_concrete_powder": {
+      "en": "Light Blue Concrete Powder",
+      "ja": "空色のコンクリートパウダー"
+    },
+    "yellow_concrete_powder": {
+      "en": "Yellow Concrete Powder",
+      "ja": "黄色のコンクリートパウダー"
+    },
+    "lime_concrete_powder": {
+      "en": "Lime Concrete Powder",
+      "ja": "黄緑色のコンクリートパウダー"
+    },
+    "pink_concrete_powder": {
+      "en": "Pink Concrete Powder",
+      "ja": "桃色のコンクリートパウダー"
+    },
+    "gray_concrete_powder": {
+      "en": "Gray Concrete Powder",
+      "ja": "灰色のコンクリートパウダー"
+    },
+    "light_gray_concrete_powder": {
+      "en": "Light Gray Concrete Powder",
+      "ja": "薄灰色のコンクリートパウダー"
+    },
+    "cyan_concrete_powder": {
+      "en": "Cyan Concrete Powder",
+      "ja": "青緑色のコンクリートパウダー"
+    },
+    "purple_concrete_powder": {
+      "en": "Purple Concrete Powder",
+      "ja": "紫色のコンクリートパウダー"
+    },
+    "blue_concrete_powder": {
+      "en": "Blue Concrete Powder",
+      "ja": "青色のコンクリートパウダー"
+    },
+    "brown_concrete_powder": {
+      "en": "Brown Concrete Powder",
+      "ja": "茶色のコンクリートパウダー"
+    },
+    "green_concrete_powder": {
+      "en": "Green Concrete Powder",
+      "ja": "緑色のコンクリートパウダー"
+    },
+    "red_concrete_powder": {
+      "en": "Red Concrete Powder",
+      "ja": "赤色のコンクリートパウダー"
+    },
+    "black_concrete_powder": {
+      "en": "Black Concrete Powder",
+      "ja": "黒色のコンクリートパウダー"
+    },
+    "turtle_egg": {
+      "en": "Turtle Egg",
+      "ja": "カメの卵"
+    },
+    "sniffer_egg": {
+      "en": "Sniffer Egg",
+      "ja": "スニッファーの卵"
+    },
+    "dried_ghast": {
+      "en": "Dried Ghast",
+      "ja": "乾燥したガスト"
+    },
+    "dead_tube_coral_block": {
+      "en": "Dead Tube Coral Block",
+      "ja": "死んだクダサンゴブロック"
+    },
+    "dead_brain_coral_block": {
+      "en": "Dead Brain Coral Block",
+      "ja": "死んだノウサンゴブロック"
+    },
+    "dead_bubble_coral_block": {
+      "en": "Dead Bubble Coral Block",
+      "ja": "死んだミズタマサンゴブロック"
+    },
+    "dead_fire_coral_block": {
+      "en": "Dead Fire Coral Block",
+      "ja": "死んだミレポラサンゴブロック"
+    },
+    "dead_horn_coral_block": {
+      "en": "Dead Horn Coral Block",
+      "ja": "死んだシカツノサンゴブロック"
+    },
+    "tube_coral_block": {
+      "en": "Tube Coral Block",
+      "ja": "クダサンゴブロック"
+    },
+    "brain_coral_block": {
+      "en": "Brain Coral Block",
+      "ja": "ノウサンゴブロック"
+    },
+    "bubble_coral_block": {
+      "en": "Bubble Coral Block",
+      "ja": "ミズタマサンゴブロック"
+    },
+    "fire_coral_block": {
+      "en": "Fire Coral Block",
+      "ja": "ミレポラサンゴブロック"
+    },
+    "horn_coral_block": {
+      "en": "Horn Coral Block",
+      "ja": "シカツノサンゴブロック"
+    },
+    "tube_coral": {
+      "en": "Tube Coral",
+      "ja": "クダサンゴ"
+    },
+    "brain_coral": {
+      "en": "Brain Coral",
+      "ja": "ノウサンゴ"
+    },
+    "bubble_coral": {
+      "en": "Bubble Coral",
+      "ja": "ミズタマサンゴ"
+    },
+    "fire_coral": {
+      "en": "Fire Coral",
+      "ja": "ミレポラサンゴ"
+    },
+    "horn_coral": {
+      "en": "Horn Coral",
+      "ja": "シカツノサンゴ"
+    },
+    "dead_brain_coral": {
+      "en": "Dead Brain Coral",
+      "ja": "死んだノウサンゴ"
+    },
+    "dead_bubble_coral": {
+      "en": "Dead Bubble Coral",
+      "ja": "死んだミズタマサンゴ"
+    },
+    "dead_fire_coral": {
+      "en": "Dead Fire Coral",
+      "ja": "死んだミレポラサンゴ"
+    },
+    "dead_horn_coral": {
+      "en": "Dead Horn Coral",
+      "ja": "死んだシカツノサンゴ"
+    },
+    "dead_tube_coral": {
+      "en": "Dead Tube Coral",
+      "ja": "死んだクダサンゴ"
+    },
+    "tube_coral_fan": {
+      "en": "Tube Coral Fan",
+      "ja": "クダウチワサンゴ"
+    },
+    "brain_coral_fan": {
+      "en": "Brain Coral Fan",
+      "ja": "ノウウチワサンゴ"
+    },
+    "bubble_coral_fan": {
+      "en": "Bubble Coral Fan",
+      "ja": "ミズタマウチワサンゴ"
+    },
+    "fire_coral_fan": {
+      "en": "Fire Coral Fan",
+      "ja": "ミレポラウチワサンゴ"
+    },
+    "horn_coral_fan": {
+      "en": "Horn Coral Fan",
+      "ja": "シカツノウチワサンゴ"
+    },
+    "dead_tube_coral_fan": {
+      "en": "Dead Tube Coral Fan",
+      "ja": "死んだクダウチワサンゴ"
+    },
+    "dead_brain_coral_fan": {
+      "en": "Dead Brain Coral Fan",
+      "ja": "死んだノウウチワサンゴ"
+    },
+    "dead_bubble_coral_fan": {
+      "en": "Dead Bubble Coral Fan",
+      "ja": "死んだミズタマウチワサンゴ"
+    },
+    "dead_fire_coral_fan": {
+      "en": "Dead Fire Coral Fan",
+      "ja": "死んだミレポラウチワサンゴ"
+    },
+    "dead_horn_coral_fan": {
+      "en": "Dead Horn Coral Fan",
+      "ja": "死んだシカツノウチワサンゴ"
+    },
+    "blue_ice": {
+      "en": "Blue Ice",
+      "ja": "青氷"
+    },
+    "conduit": {
+      "en": "Conduit",
+      "ja": "コンジット"
+    },
+    "polished_granite_stairs": {
+      "en": "Polished Granite Stairs",
+      "ja": "磨かれた花崗岩の階段"
+    },
+    "smooth_red_sandstone_stairs": {
+      "en": "Smooth Red Sandstone Stairs",
+      "ja": "滑らかな赤い砂岩の階段"
+    },
+    "mossy_stone_brick_stairs": {
+      "en": "Mossy Stone Brick Stairs",
+      "ja": "苔むした石レンガの階段"
+    },
+    "polished_diorite_stairs": {
+      "en": "Polished Diorite Stairs",
+      "ja": "磨かれた閃緑岩の階段"
+    },
+    "mossy_cobblestone_stairs": {
+      "en": "Mossy Cobblestone Stairs",
+      "ja": "苔むした丸石の階段"
+    },
+    "end_stone_brick_stairs": {
+      "en": "End Stone Brick Stairs",
+      "ja": "エンドストーンレンガの階段"
+    },
+    "stone_stairs": {
+      "en": "Stone Stairs",
+      "ja": "石の階段"
+    },
+    "smooth_sandstone_stairs": {
+      "en": "Smooth Sandstone Stairs",
+      "ja": "滑らかな砂岩の階段"
+    },
+    "smooth_quartz_stairs": {
+      "en": "Smooth Quartz Stairs",
+      "ja": "滑らかなクォーツの階段"
+    },
+    "granite_stairs": {
+      "en": "Granite Stairs",
+      "ja": "花崗岩の階段"
+    },
+    "andesite_stairs": {
+      "en": "Andesite Stairs",
+      "ja": "安山岩の階段"
+    },
+    "red_nether_brick_stairs": {
+      "en": "Red Nether Brick Stairs",
+      "ja": "赤いネザーレンガの階段"
+    },
+    "polished_andesite_stairs": {
+      "en": "Polished Andesite Stairs",
+      "ja": "磨かれた安山岩の階段"
+    },
+    "diorite_stairs": {
+      "en": "Diorite Stairs",
+      "ja": "閃緑岩の階段"
+    },
+    "cobbled_deepslate_stairs": {
+      "en": "Cobbled Deepslate Stairs",
+      "ja": "深層岩の丸石の階段"
+    },
+    "polished_deepslate_stairs": {
+      "en": "Polished Deepslate Stairs",
+      "ja": "磨かれた深層岩の階段"
+    },
+    "deepslate_brick_stairs": {
+      "en": "Deepslate Brick Stairs",
+      "ja": "深層岩レンガの階段"
+    },
+    "deepslate_tile_stairs": {
+      "en": "Deepslate Tile Stairs",
+      "ja": "深層岩タイルの階段"
+    },
+    "polished_granite_slab": {
+      "en": "Polished Granite Slab",
+      "ja": "磨かれた花崗岩のハーフブロック"
+    },
+    "smooth_red_sandstone_slab": {
+      "en": "Smooth Red Sandstone Slab",
+      "ja": "滑らかな赤い砂岩のハーフブロック"
+    },
+    "mossy_stone_brick_slab": {
+      "en": "Mossy Stone Brick Slab",
+      "ja": "苔むした石レンガのハーフブロック"
+    },
+    "polished_diorite_slab": {
+      "en": "Polished Diorite Slab",
+      "ja": "磨かれた閃緑岩のハーフブロック"
+    },
+    "mossy_cobblestone_slab": {
+      "en": "Mossy Cobblestone Slab",
+      "ja": "苔むした丸石のハーフブロック"
+    },
+    "end_stone_brick_slab": {
+      "en": "End Stone Brick Slab",
+      "ja": "エンドストーンレンガのハーフブロック"
+    },
+    "smooth_sandstone_slab": {
+      "en": "Smooth Sandstone Slab",
+      "ja": "滑らかな砂岩のハーフブロック"
+    },
+    "smooth_quartz_slab": {
+      "en": "Smooth Quartz Slab",
+      "ja": "滑らかなクォーツのハーフブロック"
+    },
+    "granite_slab": {
+      "en": "Granite Slab",
+      "ja": "花崗岩のハーフブロック"
+    },
+    "andesite_slab": {
+      "en": "Andesite Slab",
+      "ja": "安山岩のハーフブロック"
+    },
+    "red_nether_brick_slab": {
+      "en": "Red Nether Brick Slab",
+      "ja": "赤いネザーレンガのハーフブロック"
+    },
+    "polished_andesite_slab": {
+      "en": "Polished Andesite Slab",
+      "ja": "磨かれた安山岩のハーフブロック"
+    },
+    "diorite_slab": {
+      "en": "Diorite Slab",
+      "ja": "閃緑岩のハーフブロック"
+    },
+    "cobbled_deepslate_slab": {
+      "en": "Cobbled Deepslate Slab",
+      "ja": "深層岩の丸石のハーフブロック"
+    },
+    "polished_deepslate_slab": {
+      "en": "Polished Deepslate Slab",
+      "ja": "磨かれた深層岩のハーフブロック"
+    },
+    "deepslate_brick_slab": {
+      "en": "Deepslate Brick Slab",
+      "ja": "深層岩レンガのハーフブロック"
+    },
+    "deepslate_tile_slab": {
+      "en": "Deepslate Tile Slab",
+      "ja": "深層岩タイルのハーフブロック"
+    },
+    "scaffolding": {
+      "en": "Scaffolding",
+      "ja": "足場"
+    },
+    "redstone": {
+      "en": "Redstone Dust",
+      "ja": "レッドストーンダスト"
+    },
+    "redstone_torch": {
+      "en": "Redstone Torch",
+      "ja": "レッドストーントーチ"
+    },
+    "redstone_block": {
+      "en": "Block of Redstone",
+      "ja": "レッドストーンブロック"
+    },
+    "repeater": {
+      "en": "Redstone Repeater",
+      "ja": "レッドストーンリピーター"
+    },
+    "comparator": {
+      "en": "Redstone Comparator",
+      "ja": "レッドストーンコンパレーター"
+    },
+    "piston": {
+      "en": "Piston",
+      "ja": "ピストン"
+    },
+    "sticky_piston": {
+      "en": "Sticky Piston",
+      "ja": "粘着ピストン"
+    },
+    "slime_block": {
+      "en": "Slime Block",
+      "ja": "スライムブロック"
+    },
+    "honey_block": {
+      "en": "Honey Block",
+      "ja": "ハチミツブロック"
+    },
+    "observer": {
+      "en": "Observer",
+      "ja": "オブザーバー"
+    },
+    "hopper": {
+      "en": "Hopper",
+      "ja": "ホッパー"
+    },
+    "dispenser": {
+      "en": "Dispenser",
+      "ja": "ディスペンサー"
+    },
+    "dropper": {
+      "en": "Dropper",
+      "ja": "ドロッパー"
+    },
+    "lectern": {
+      "en": "Lectern",
+      "ja": "書見台"
+    },
+    "target": {
+      "en": "Target",
+      "ja": "的"
+    },
+    "lever": {
+      "en": "Lever",
+      "ja": "レバー"
+    },
+    "lightning_rod": {
+      "en": "Lightning Rod",
+      "ja": "避雷針"
+    },
+    "exposed_lightning_rod": {
+      "en": "Exposed Lightning Rod",
+      "ja": "風化した避雷針"
+    },
+    "weathered_lightning_rod": {
+      "en": "Weathered Lightning Rod",
+      "ja": "錆びた避雷針"
+    },
+    "oxidized_lightning_rod": {
+      "en": "Oxidized Lightning Rod",
+      "ja": "酸化した避雷針"
+    },
+    "waxed_lightning_rod": {
+      "en": "Waxed Lightning Rod",
+      "ja": "錆止めされた避雷針"
+    },
+    "waxed_exposed_lightning_rod": {
+      "en": "Waxed Exposed Lightning Rod",
+      "ja": "錆止めされた風化した避雷針"
+    },
+    "waxed_weathered_lightning_rod": {
+      "en": "Waxed Weathered Lightning Rod",
+      "ja": "錆止めされた錆びた避雷針"
+    },
+    "waxed_oxidized_lightning_rod": {
+      "en": "Waxed Oxidized Lightning Rod",
+      "ja": "錆止めされた酸化した避雷針"
+    },
+    "daylight_detector": {
+      "en": "Daylight Detector",
+      "ja": "日照センサー"
+    },
+    "sculk_sensor": {
+      "en": "Sculk Sensor",
+      "ja": "スカルクセンサー"
+    },
+    "calibrated_sculk_sensor": {
+      "en": "Calibrated Sculk Sensor",
+      "ja": "調律されたスカルクセンサー"
+    },
+    "tripwire_hook": {
+      "en": "Tripwire Hook",
+      "ja": "トリップワイヤーフック"
+    },
+    "trapped_chest": {
+      "en": "Trapped Chest",
+      "ja": "トラップチェスト"
+    },
+    "tnt": {
+      "en": "TNT",
+      "ja": "TNT"
+    },
+    "redstone_lamp": {
+      "en": "Redstone Lamp",
+      "ja": "レッドストーンランプ"
+    },
+    "note_block": {
+      "en": "Note Block",
+      "ja": "音符ブロック"
+    },
+    "stone_button": {
+      "en": "Stone Button",
+      "ja": "石のボタン"
+    },
+    "polished_blackstone_button": {
+      "en": "Polished Blackstone Button",
+      "ja": "磨かれたブラックストーンのボタン"
+    },
+    "oak_button": {
+      "en": "Oak Button",
+      "ja": "オークのボタン"
+    },
+    "spruce_button": {
+      "en": "Spruce Button",
+      "ja": "トウヒのボタン"
+    },
+    "birch_button": {
+      "en": "Birch Button",
+      "ja": "シラカバのボタン"
+    },
+    "jungle_button": {
+      "en": "Jungle Button",
+      "ja": "ジャングルのボタン"
+    },
+    "acacia_button": {
+      "en": "Acacia Button",
+      "ja": "アカシアのボタン"
+    },
+    "cherry_button": {
+      "en": "Cherry Button",
+      "ja": "サクラのボタン"
+    },
+    "dark_oak_button": {
+      "en": "Dark Oak Button",
+      "ja": "ダークオークのボタン"
+    },
+    "pale_oak_button": {
+      "en": "Pale Oak Button",
+      "ja": "ペールオークのボタン"
+    },
+    "mangrove_button": {
+      "en": "Mangrove Button",
+      "ja": "マングローブのボタン"
+    },
+    "bamboo_button": {
+      "en": "Bamboo Button",
+      "ja": "竹のボタン"
+    },
+    "crimson_button": {
+      "en": "Crimson Button",
+      "ja": "真紅のボタン"
+    },
+    "warped_button": {
+      "en": "Warped Button",
+      "ja": "歪んだボタン"
+    },
+    "stone_pressure_plate": {
+      "en": "Stone Pressure Plate",
+      "ja": "石の感圧板"
+    },
+    "polished_blackstone_pressure_plate": {
+      "en": "Polished Blackstone Pressure Plate",
+      "ja": "磨かれたブラックストーンの感圧板"
+    },
+    "light_weighted_pressure_plate": {
+      "en": "Light Weighted Pressure Plate",
+      "ja": "軽量用感圧板"
+    },
+    "heavy_weighted_pressure_plate": {
+      "en": "Heavy Weighted Pressure Plate",
+      "ja": "重量用感圧板"
+    },
+    "oak_pressure_plate": {
+      "en": "Oak Pressure Plate",
+      "ja": "オークの感圧板"
+    },
+    "spruce_pressure_plate": {
+      "en": "Spruce Pressure Plate",
+      "ja": "トウヒの感圧板"
+    },
+    "birch_pressure_plate": {
+      "en": "Birch Pressure Plate",
+      "ja": "シラカバの感圧板"
+    },
+    "jungle_pressure_plate": {
+      "en": "Jungle Pressure Plate",
+      "ja": "ジャングルの感圧板"
+    },
+    "acacia_pressure_plate": {
+      "en": "Acacia Pressure Plate",
+      "ja": "アカシアの感圧板"
+    },
+    "cherry_pressure_plate": {
+      "en": "Cherry Pressure Plate",
+      "ja": "サクラの感圧板"
+    },
+    "dark_oak_pressure_plate": {
+      "en": "Dark Oak Pressure Plate",
+      "ja": "ダークオークの感圧板"
+    },
+    "pale_oak_pressure_plate": {
+      "en": "Pale Oak Pressure Plate",
+      "ja": "ペールオークの感圧板"
+    },
+    "mangrove_pressure_plate": {
+      "en": "Mangrove Pressure Plate",
+      "ja": "マングローブの感圧板"
+    },
+    "bamboo_pressure_plate": {
+      "en": "Bamboo Pressure Plate",
+      "ja": "竹の感圧板"
+    },
+    "crimson_pressure_plate": {
+      "en": "Crimson Pressure Plate",
+      "ja": "真紅の感圧板"
+    },
+    "warped_pressure_plate": {
+      "en": "Warped Pressure Plate",
+      "ja": "歪んだ感圧板"
+    },
+    "iron_door": {
+      "en": "Iron Door",
+      "ja": "鉄のドア"
+    },
+    "oak_door": {
+      "en": "Oak Door",
+      "ja": "オークのドア"
+    },
+    "spruce_door": {
+      "en": "Spruce Door",
+      "ja": "トウヒのドア"
+    },
+    "birch_door": {
+      "en": "Birch Door",
+      "ja": "シラカバのドア"
+    },
+    "jungle_door": {
+      "en": "Jungle Door",
+      "ja": "ジャングルのドア"
+    },
+    "acacia_door": {
+      "en": "Acacia Door",
+      "ja": "アカシアのドア"
+    },
+    "cherry_door": {
+      "en": "Cherry Door",
+      "ja": "サクラのドア"
+    },
+    "dark_oak_door": {
+      "en": "Dark Oak Door",
+      "ja": "ダークオークのドア"
+    },
+    "pale_oak_door": {
+      "en": "Pale Oak Door",
+      "ja": "ペールオークのドア"
+    },
+    "mangrove_door": {
+      "en": "Mangrove Door",
+      "ja": "マングローブのドア"
+    },
+    "bamboo_door": {
+      "en": "Bamboo Door",
+      "ja": "竹のドア"
+    },
+    "crimson_door": {
+      "en": "Crimson Door",
+      "ja": "真紅のドア"
+    },
+    "warped_door": {
+      "en": "Warped Door",
+      "ja": "歪んだドア"
+    },
+    "copper_door": {
+      "en": "Copper Door",
+      "ja": "銅のドア"
+    },
+    "exposed_copper_door": {
+      "en": "Exposed Copper Door",
+      "ja": "風化した銅のドア"
+    },
+    "weathered_copper_door": {
+      "en": "Weathered Copper Door",
+      "ja": "錆びた銅のドア"
+    },
+    "oxidized_copper_door": {
+      "en": "Oxidized Copper Door",
+      "ja": "酸化した銅のドア"
+    },
+    "waxed_copper_door": {
+      "en": "Waxed Copper Door",
+      "ja": "錆止めされた銅のドア"
+    },
+    "waxed_exposed_copper_door": {
+      "en": "Waxed Exposed Copper Door",
+      "ja": "錆止めされた風化した銅のドア"
+    },
+    "waxed_weathered_copper_door": {
+      "en": "Waxed Weathered Copper Door",
+      "ja": "錆止めされた錆びた銅のドア"
+    },
+    "waxed_oxidized_copper_door": {
+      "en": "Waxed Oxidized Copper Door",
+      "ja": "錆止めされた酸化した銅のドア"
+    },
+    "iron_trapdoor": {
+      "en": "Iron Trapdoor",
+      "ja": "鉄のトラップドア"
+    },
+    "oak_trapdoor": {
+      "en": "Oak Trapdoor",
+      "ja": "オークのトラップドア"
+    },
+    "spruce_trapdoor": {
+      "en": "Spruce Trapdoor",
+      "ja": "トウヒのトラップドア"
+    },
+    "birch_trapdoor": {
+      "en": "Birch Trapdoor",
+      "ja": "シラカバのトラップドア"
+    },
+    "jungle_trapdoor": {
+      "en": "Jungle Trapdoor",
+      "ja": "ジャングルのトラップドア"
+    },
+    "acacia_trapdoor": {
+      "en": "Acacia Trapdoor",
+      "ja": "アカシアのトラップドア"
+    },
+    "cherry_trapdoor": {
+      "en": "Cherry Trapdoor",
+      "ja": "サクラのトラップドア"
+    },
+    "dark_oak_trapdoor": {
+      "en": "Dark Oak Trapdoor",
+      "ja": "ダークオークのトラップドア"
+    },
+    "pale_oak_trapdoor": {
+      "en": "Pale Oak Trapdoor",
+      "ja": "ペールオークのトラップドア"
+    },
+    "mangrove_trapdoor": {
+      "en": "Mangrove Trapdoor",
+      "ja": "マングローブのトラップドア"
+    },
+    "bamboo_trapdoor": {
+      "en": "Bamboo Trapdoor",
+      "ja": "竹のトラップドア"
+    },
+    "crimson_trapdoor": {
+      "en": "Crimson Trapdoor",
+      "ja": "真紅のトラップドア"
+    },
+    "warped_trapdoor": {
+      "en": "Warped Trapdoor",
+      "ja": "歪んだトラップドア"
+    },
+    "copper_trapdoor": {
+      "en": "Copper Trapdoor",
+      "ja": "銅のトラップドア"
+    },
+    "exposed_copper_trapdoor": {
+      "en": "Exposed Copper Trapdoor",
+      "ja": "風化した銅のトラップドア"
+    },
+    "weathered_copper_trapdoor": {
+      "en": "Weathered Copper Trapdoor",
+      "ja": "錆びた銅のトラップドア"
+    },
+    "oxidized_copper_trapdoor": {
+      "en": "Oxidized Copper Trapdoor",
+      "ja": "酸化した銅のトラップドア"
+    },
+    "waxed_copper_trapdoor": {
+      "en": "Waxed Copper Trapdoor",
+      "ja": "錆止めされた銅のトラップドア"
+    },
+    "waxed_exposed_copper_trapdoor": {
+      "en": "Waxed Exposed Copper Trapdoor",
+      "ja": "錆止めされた風化した銅のトラップドア"
+    },
+    "waxed_weathered_copper_trapdoor": {
+      "en": "Waxed Weathered Copper Trapdoor",
+      "ja": "錆止めされた錆びた銅のトラップドア"
+    },
+    "waxed_oxidized_copper_trapdoor": {
+      "en": "Waxed Oxidized Copper Trapdoor",
+      "ja": "錆止めされた酸化した銅のトラップドア"
+    },
+    "oak_fence_gate": {
+      "en": "Oak Fence Gate",
+      "ja": "オークのフェンスゲート"
+    },
+    "spruce_fence_gate": {
+      "en": "Spruce Fence Gate",
+      "ja": "トウヒのフェンスゲート"
+    },
+    "birch_fence_gate": {
+      "en": "Birch Fence Gate",
+      "ja": "シラカバのフェンスゲート"
+    },
+    "jungle_fence_gate": {
+      "en": "Jungle Fence Gate",
+      "ja": "ジャングルのフェンスゲート"
+    },
+    "acacia_fence_gate": {
+      "en": "Acacia Fence Gate",
+      "ja": "アカシアのフェンスゲート"
+    },
+    "cherry_fence_gate": {
+      "en": "Cherry Fence Gate",
+      "ja": "サクラのフェンスゲート"
+    },
+    "dark_oak_fence_gate": {
+      "en": "Dark Oak Fence Gate",
+      "ja": "ダークオークのフェンスゲート"
+    },
+    "pale_oak_fence_gate": {
+      "en": "Pale Oak Fence Gate",
+      "ja": "ペールオークのフェンスゲート"
+    },
+    "mangrove_fence_gate": {
+      "en": "Mangrove Fence Gate",
+      "ja": "マングローブのフェンスゲート"
+    },
+    "bamboo_fence_gate": {
+      "en": "Bamboo Fence Gate",
+      "ja": "竹のフェンスゲート"
+    },
+    "crimson_fence_gate": {
+      "en": "Crimson Fence Gate",
+      "ja": "真紅のフェンスゲート"
+    },
+    "warped_fence_gate": {
+      "en": "Warped Fence Gate",
+      "ja": "歪んだフェンスゲート"
+    },
+    "powered_rail": {
+      "en": "Powered Rail",
+      "ja": "パワードレール"
+    },
+    "detector_rail": {
+      "en": "Detector Rail",
+      "ja": "ディテクターレール"
+    },
+    "rail": {
+      "en": "Rail",
+      "ja": "レール"
+    },
+    "activator_rail": {
+      "en": "Activator Rail",
+      "ja": "アクティベーターレール"
+    },
+    "saddle": {
+      "en": "Saddle",
+      "ja": "鞍"
+    },
+    "white_harness": {
+      "en": "White Harness",
+      "ja": "白色のハーネス"
+    },
+    "orange_harness": {
+      "en": "Orange Harness",
+      "ja": "橙色のハーネス"
+    },
+    "magenta_harness": {
+      "en": "Magenta Harness",
+      "ja": "赤紫色のハーネス"
+    },
+    "light_blue_harness": {
+      "en": "Light Blue Harness",
+      "ja": "空色のハーネス"
+    },
+    "yellow_harness": {
+      "en": "Yellow Harness",
+      "ja": "黄色のハーネス"
+    },
+    "lime_harness": {
+      "en": "Lime Harness",
+      "ja": "黄緑色のハーネス"
+    },
+    "pink_harness": {
+      "en": "Pink Harness",
+      "ja": "桃色のハーネス"
+    },
+    "gray_harness": {
+      "en": "Gray Harness",
+      "ja": "灰色のハーネス"
+    },
+    "light_gray_harness": {
+      "en": "Light Gray Harness",
+      "ja": "薄灰色のハーネス"
+    },
+    "cyan_harness": {
+      "en": "Cyan Harness",
+      "ja": "青緑色のハーネス"
+    },
+    "purple_harness": {
+      "en": "Purple Harness",
+      "ja": "紫色のハーネス"
+    },
+    "blue_harness": {
+      "en": "Blue Harness",
+      "ja": "青色のハーネス"
+    },
+    "brown_harness": {
+      "en": "Brown Harness",
+      "ja": "茶色のハーネス"
+    },
+    "green_harness": {
+      "en": "Green Harness",
+      "ja": "緑色のハーネス"
+    },
+    "red_harness": {
+      "en": "Red Harness",
+      "ja": "赤色のハーネス"
+    },
+    "black_harness": {
+      "en": "Black Harness",
+      "ja": "黒色のハーネス"
+    },
+    "minecart": {
+      "en": "Minecart",
+      "ja": "トロッコ"
+    },
+    "chest_minecart": {
+      "en": "Minecart with Chest",
+      "ja": "チェスト付きのトロッコ"
+    },
+    "furnace_minecart": {
+      "en": "Minecart with Furnace",
+      "ja": "かまど付きのトロッコ"
+    },
+    "tnt_minecart": {
+      "en": "Minecart with TNT",
+      "ja": "TNT付きのトロッコ"
+    },
+    "hopper_minecart": {
+      "en": "Minecart with Hopper",
+      "ja": "ホッパー付きのトロッコ"
+    },
+    "carrot_on_a_stick": {
+      "en": "Carrot on a Stick",
+      "ja": "ニンジン付きの棒"
+    },
+    "warped_fungus_on_a_stick": {
+      "en": "Warped Fungus on a Stick",
+      "ja": "歪んだキノコ付きの棒"
+    },
+    "phantom_membrane": {
+      "en": "Phantom Membrane",
+      "ja": "ファントムの皮膜"
+    },
+    "elytra": {
+      "en": "Elytra",
+      "ja": "エリトラ"
+    },
+    "oak_boat": {
+      "en": "Oak Boat",
+      "ja": "オークのボート"
+    },
+    "oak_chest_boat": {
+      "en": "Oak Boat with Chest",
+      "ja": "チェスト付きのオークのボート"
+    },
+    "spruce_boat": {
+      "en": "Spruce Boat",
+      "ja": "トウヒのボート"
+    },
+    "spruce_chest_boat": {
+      "en": "Spruce Boat with Chest",
+      "ja": "チェスト付きのトウヒのボート"
+    },
+    "birch_boat": {
+      "en": "Birch Boat",
+      "ja": "シラカバのボート"
+    },
+    "birch_chest_boat": {
+      "en": "Birch Boat with Chest",
+      "ja": "チェスト付きのシラカバのボート"
+    },
+    "jungle_boat": {
+      "en": "Jungle Boat",
+      "ja": "ジャングルのボート"
+    },
+    "jungle_chest_boat": {
+      "en": "Jungle Boat with Chest",
+      "ja": "チェスト付きのジャングルのボート"
+    },
+    "acacia_boat": {
+      "en": "Acacia Boat",
+      "ja": "アカシアのボート"
+    },
+    "acacia_chest_boat": {
+      "en": "Acacia Boat with Chest",
+      "ja": "チェスト付きのアカシアのボート"
+    },
+    "cherry_boat": {
+      "en": "Cherry Boat",
+      "ja": "サクラのボート"
+    },
+    "cherry_chest_boat": {
+      "en": "Cherry Boat with Chest",
+      "ja": "チェスト付きのサクラのボート"
+    },
+    "dark_oak_boat": {
+      "en": "Dark Oak Boat",
+      "ja": "ダークオークのボート"
+    },
+    "dark_oak_chest_boat": {
+      "en": "Dark Oak Boat with Chest",
+      "ja": "チェスト付きのダークオークのボート"
+    },
+    "pale_oak_boat": {
+      "en": "Pale Oak Boat",
+      "ja": "ペールオークのボート"
+    },
+    "pale_oak_chest_boat": {
+      "en": "Pale Oak Boat with Chest",
+      "ja": "チェスト付きのペールオークのボート"
+    },
+    "mangrove_boat": {
+      "en": "Mangrove Boat",
+      "ja": "マングローブのボート"
+    },
+    "mangrove_chest_boat": {
+      "en": "Mangrove Boat with Chest",
+      "ja": "チェスト付きのマングローブのボート"
+    },
+    "bamboo_raft": {
+      "en": "Bamboo Raft",
+      "ja": "竹のイカダ"
+    },
+    "bamboo_chest_raft": {
+      "en": "Bamboo Raft with Chest",
+      "ja": "チェスト付きの竹のイカダ"
+    },
+    "structure_block": {
+      "en": "Structure Block",
+      "ja": "ストラクチャーブロック"
+    },
+    "jigsaw": {
+      "en": "Jigsaw Block",
+      "ja": "ジグソーブロック"
+    },
+    "test_block": {
+      "en": "Test Block",
+      "ja": "テストブロック"
+    },
+    "test_instance_block": {
+      "en": "Test Instance Block",
+      "ja": "テストインスタンスブロック"
+    },
+    "turtle_helmet": {
+      "en": "Turtle Shell",
+      "ja": "カメの甲羅"
+    },
+    "turtle_scute": {
+      "en": "Turtle Scute",
+      "ja": "カメのウロコ"
+    },
+    "armadillo_scute": {
+      "en": "Armadillo Scute",
+      "ja": "アルマジロのウロコ"
+    },
+    "wolf_armor": {
+      "en": "Wolf Armor",
+      "ja": "オオカミの鎧"
+    },
+    "flint_and_steel": {
+      "en": "Flint and Steel",
+      "ja": "火打石と打ち金"
+    },
+    "bowl": {
+      "en": "Bowl",
+      "ja": "ボウル"
+    },
+    "apple": {
+      "en": "Apple",
+      "ja": "リンゴ"
+    },
+    "bow": {
+      "en": "Bow",
+      "ja": "弓"
+    },
+    "arrow": {
+      "en": "Arrow",
+      "ja": "矢"
+    },
+    "coal": {
+      "en": "Coal",
+      "ja": "石炭"
+    },
+    "charcoal": {
+      "en": "Charcoal",
+      "ja": "木炭"
+    },
+    "diamond": {
+      "en": "Diamond",
+      "ja": "ダイヤモンド"
+    },
+    "emerald": {
+      "en": "Emerald",
+      "ja": "エメラルド"
+    },
+    "lapis_lazuli": {
+      "en": "Lapis Lazuli",
+      "ja": "ラピスラズリ"
+    },
+    "quartz": {
+      "en": "Nether Quartz",
+      "ja": "ネザークォーツ"
+    },
+    "amethyst_shard": {
+      "en": "Amethyst Shard",
+      "ja": "アメジストの欠片"
+    },
+    "raw_iron": {
+      "en": "Raw Iron",
+      "ja": "鉄の原石"
+    },
+    "iron_ingot": {
+      "en": "Iron Ingot",
+      "ja": "鉄インゴット"
+    },
+    "raw_copper": {
+      "en": "Raw Copper",
+      "ja": "銅の原石"
+    },
+    "copper_ingot": {
+      "en": "Copper Ingot",
+      "ja": "銅インゴット"
+    },
+    "raw_gold": {
+      "en": "Raw Gold",
+      "ja": "金の原石"
+    },
+    "gold_ingot": {
+      "en": "Gold Ingot",
+      "ja": "金インゴット"
+    },
+    "netherite_ingot": {
+      "en": "Netherite Ingot",
+      "ja": "ネザライトインゴット"
+    },
+    "netherite_scrap": {
+      "en": "Netherite Scrap",
+      "ja": "ネザライトの欠片"
+    },
+    "wooden_sword": {
+      "en": "Wooden Sword",
+      "ja": "木の剣"
+    },
+    "wooden_shovel": {
+      "en": "Wooden Shovel",
+      "ja": "木のシャベル"
+    },
+    "wooden_pickaxe": {
+      "en": "Wooden Pickaxe",
+      "ja": "木のツルハシ"
+    },
+    "wooden_axe": {
+      "en": "Wooden Axe",
+      "ja": "木の斧"
+    },
+    "wooden_hoe": {
+      "en": "Wooden Hoe",
+      "ja": "木のクワ"
+    },
+    "copper_sword": {
+      "en": "Copper Sword",
+      "ja": "銅の剣"
+    },
+    "copper_shovel": {
+      "en": "Copper Shovel",
+      "ja": "銅のシャベル"
+    },
+    "copper_pickaxe": {
+      "en": "Copper Pickaxe",
+      "ja": "銅のツルハシ"
+    },
+    "copper_axe": {
+      "en": "Copper Axe",
+      "ja": "銅の斧"
+    },
+    "copper_hoe": {
+      "en": "Copper Hoe",
+      "ja": "銅のクワ"
+    },
+    "stone_sword": {
+      "en": "Stone Sword",
+      "ja": "石の剣"
+    },
+    "stone_shovel": {
+      "en": "Stone Shovel",
+      "ja": "石のシャベル"
+    },
+    "stone_pickaxe": {
+      "en": "Stone Pickaxe",
+      "ja": "石のツルハシ"
+    },
+    "stone_axe": {
+      "en": "Stone Axe",
+      "ja": "石の斧"
+    },
+    "stone_hoe": {
+      "en": "Stone Hoe",
+      "ja": "石のクワ"
+    },
+    "golden_sword": {
+      "en": "Golden Sword",
+      "ja": "金の剣"
+    },
+    "golden_shovel": {
+      "en": "Golden Shovel",
+      "ja": "金のシャベル"
+    },
+    "golden_pickaxe": {
+      "en": "Golden Pickaxe",
+      "ja": "金のツルハシ"
+    },
+    "golden_axe": {
+      "en": "Golden Axe",
+      "ja": "金の斧"
+    },
+    "golden_hoe": {
+      "en": "Golden Hoe",
+      "ja": "金のクワ"
+    },
+    "iron_sword": {
+      "en": "Iron Sword",
+      "ja": "鉄の剣"
+    },
+    "iron_shovel": {
+      "en": "Iron Shovel",
+      "ja": "鉄のシャベル"
+    },
+    "iron_pickaxe": {
+      "en": "Iron Pickaxe",
+      "ja": "鉄のツルハシ"
+    },
+    "iron_axe": {
+      "en": "Iron Axe",
+      "ja": "鉄の斧"
+    },
+    "iron_hoe": {
+      "en": "Iron Hoe",
+      "ja": "鉄のクワ"
+    },
+    "diamond_sword": {
+      "en": "Diamond Sword",
+      "ja": "ダイヤモンドの剣"
+    },
+    "diamond_shovel": {
+      "en": "Diamond Shovel",
+      "ja": "ダイヤモンドのシャベル"
+    },
+    "diamond_pickaxe": {
+      "en": "Diamond Pickaxe",
+      "ja": "ダイヤモンドのツルハシ"
+    },
+    "diamond_axe": {
+      "en": "Diamond Axe",
+      "ja": "ダイヤモンドの斧"
+    },
+    "diamond_hoe": {
+      "en": "Diamond Hoe",
+      "ja": "ダイヤモンドのクワ"
+    },
+    "netherite_sword": {
+      "en": "Netherite Sword",
+      "ja": "ネザライトの剣"
+    },
+    "netherite_shovel": {
+      "en": "Netherite Shovel",
+      "ja": "ネザライトのシャベル"
+    },
+    "netherite_pickaxe": {
+      "en": "Netherite Pickaxe",
+      "ja": "ネザライトのツルハシ"
+    },
+    "netherite_axe": {
+      "en": "Netherite Axe",
+      "ja": "ネザライトの斧"
+    },
+    "netherite_hoe": {
+      "en": "Netherite Hoe",
+      "ja": "ネザライトのクワ"
+    },
+    "stick": {
+      "en": "Stick",
+      "ja": "棒"
+    },
+    "mushroom_stew": {
+      "en": "Mushroom Stew",
+      "ja": "キノコシチュー"
+    },
+    "string": {
+      "en": "String",
+      "ja": "糸"
+    },
+    "feather": {
+      "en": "Feather",
+      "ja": "羽根"
+    },
+    "gunpowder": {
+      "en": "Gunpowder",
+      "ja": "火薬"
+    },
+    "wheat_seeds": {
+      "en": "Wheat Seeds",
+      "ja": "小麦の種"
+    },
+    "wheat": {
+      "en": "Wheat",
+      "ja": "小麦"
+    },
+    "bread": {
+      "en": "Bread",
+      "ja": "パン"
+    },
+    "leather_helmet": {
+      "en": "Leather Cap",
+      "ja": "革の帽子"
+    },
+    "leather_chestplate": {
+      "en": "Leather Tunic",
+      "ja": "革の上着"
+    },
+    "leather_leggings": {
+      "en": "Leather Pants",
+      "ja": "革のズボン"
+    },
+    "leather_boots": {
+      "en": "Leather Boots",
+      "ja": "革のブーツ"
+    },
+    "copper_helmet": {
+      "en": "Copper Helmet",
+      "ja": "銅のヘルメット"
+    },
+    "copper_chestplate": {
+      "en": "Copper Chestplate",
+      "ja": "銅のチェストプレート"
+    },
+    "copper_leggings": {
+      "en": "Copper Leggings",
+      "ja": "銅のレギンス"
+    },
+    "copper_boots": {
+      "en": "Copper Boots",
+      "ja": "銅のブーツ"
+    },
+    "chainmail_helmet": {
+      "en": "Chainmail Helmet",
+      "ja": "チェーンのヘルメット"
+    },
+    "chainmail_chestplate": {
+      "en": "Chainmail Chestplate",
+      "ja": "チェーンのチェストプレート"
+    },
+    "chainmail_leggings": {
+      "en": "Chainmail Leggings",
+      "ja": "チェーンのレギンス"
+    },
+    "chainmail_boots": {
+      "en": "Chainmail Boots",
+      "ja": "チェーンのブーツ"
+    },
+    "iron_helmet": {
+      "en": "Iron Helmet",
+      "ja": "鉄のヘルメット"
+    },
+    "iron_chestplate": {
+      "en": "Iron Chestplate",
+      "ja": "鉄のチェストプレート"
+    },
+    "iron_leggings": {
+      "en": "Iron Leggings",
+      "ja": "鉄のレギンス"
+    },
+    "iron_boots": {
+      "en": "Iron Boots",
+      "ja": "鉄のブーツ"
+    },
+    "diamond_helmet": {
+      "en": "Diamond Helmet",
+      "ja": "ダイヤモンドのヘルメット"
+    },
+    "diamond_chestplate": {
+      "en": "Diamond Chestplate",
+      "ja": "ダイヤモンドのチェストプレート"
+    },
+    "diamond_leggings": {
+      "en": "Diamond Leggings",
+      "ja": "ダイヤモンドのレギンス"
+    },
+    "diamond_boots": {
+      "en": "Diamond Boots",
+      "ja": "ダイヤモンドのブーツ"
+    },
+    "golden_helmet": {
+      "en": "Golden Helmet",
+      "ja": "金のヘルメット"
+    },
+    "golden_chestplate": {
+      "en": "Golden Chestplate",
+      "ja": "金のチェストプレート"
+    },
+    "golden_leggings": {
+      "en": "Golden Leggings",
+      "ja": "金のレギンス"
+    },
+    "golden_boots": {
+      "en": "Golden Boots",
+      "ja": "金のブーツ"
+    },
+    "netherite_helmet": {
+      "en": "Netherite Helmet",
+      "ja": "ネザライトのヘルメット"
+    },
+    "netherite_chestplate": {
+      "en": "Netherite Chestplate",
+      "ja": "ネザライトのチェストプレート"
+    },
+    "netherite_leggings": {
+      "en": "Netherite Leggings",
+      "ja": "ネザライトのレギンス"
+    },
+    "netherite_boots": {
+      "en": "Netherite Boots",
+      "ja": "ネザライトのブーツ"
+    },
+    "flint": {
+      "en": "Flint",
+      "ja": "火打石"
+    },
+    "porkchop": {
+      "en": "Raw Porkchop",
+      "ja": "生の豚肉"
+    },
+    "cooked_porkchop": {
+      "en": "Cooked Porkchop",
+      "ja": "焼き豚"
+    },
+    "painting": {
+      "en": "Painting",
+      "ja": "絵画"
+    },
+    "golden_apple": {
+      "en": "Golden Apple",
+      "ja": "金のリンゴ"
+    },
+    "enchanted_golden_apple": {
+      "en": "Enchanted Golden Apple",
+      "ja": "エンチャントされた金のリンゴ"
+    },
+    "oak_sign": {
+      "en": "Oak Sign",
+      "ja": "オークの看板"
+    },
+    "spruce_sign": {
+      "en": "Spruce Sign",
+      "ja": "トウヒの看板"
+    },
+    "birch_sign": {
+      "en": "Birch Sign",
+      "ja": "シラカバの看板"
+    },
+    "jungle_sign": {
+      "en": "Jungle Sign",
+      "ja": "ジャングルの看板"
+    },
+    "acacia_sign": {
+      "en": "Acacia Sign",
+      "ja": "アカシアの看板"
+    },
+    "cherry_sign": {
+      "en": "Cherry Sign",
+      "ja": "サクラの看板"
+    },
+    "dark_oak_sign": {
+      "en": "Dark Oak Sign",
+      "ja": "ダークオークの看板"
+    },
+    "pale_oak_sign": {
+      "en": "Pale Oak Sign",
+      "ja": "ペールオークの看板"
+    },
+    "mangrove_sign": {
+      "en": "Mangrove Sign",
+      "ja": "マングローブの看板"
+    },
+    "bamboo_sign": {
+      "en": "Bamboo Sign",
+      "ja": "竹の看板"
+    },
+    "crimson_sign": {
+      "en": "Crimson Sign",
+      "ja": "真紅の看板"
+    },
+    "warped_sign": {
+      "en": "Warped Sign",
+      "ja": "歪んだ看板"
+    },
+    "oak_hanging_sign": {
+      "en": "Oak Hanging Sign",
+      "ja": "オークの吊り看板"
+    },
+    "spruce_hanging_sign": {
+      "en": "Spruce Hanging Sign",
+      "ja": "トウヒの吊り看板"
+    },
+    "birch_hanging_sign": {
+      "en": "Birch Hanging Sign",
+      "ja": "シラカバの吊り看板"
+    },
+    "jungle_hanging_sign": {
+      "en": "Jungle Hanging Sign",
+      "ja": "ジャングルの吊り看板"
+    },
+    "acacia_hanging_sign": {
+      "en": "Acacia Hanging Sign",
+      "ja": "アカシアの吊り看板"
+    },
+    "cherry_hanging_sign": {
+      "en": "Cherry Hanging Sign",
+      "ja": "サクラの吊り看板"
+    },
+    "dark_oak_hanging_sign": {
+      "en": "Dark Oak Hanging Sign",
+      "ja": "ダークオークの吊り看板"
+    },
+    "pale_oak_hanging_sign": {
+      "en": "Pale Oak Hanging Sign",
+      "ja": "ペールオークの吊り看板"
+    },
+    "mangrove_hanging_sign": {
+      "en": "Mangrove Hanging Sign",
+      "ja": "マングローブの吊り看板"
+    },
+    "bamboo_hanging_sign": {
+      "en": "Bamboo Hanging Sign",
+      "ja": "竹の吊り看板"
+    },
+    "crimson_hanging_sign": {
+      "en": "Crimson Hanging Sign",
+      "ja": "真紅の吊り看板"
+    },
+    "warped_hanging_sign": {
+      "en": "Warped Hanging Sign",
+      "ja": "歪んだ吊り看板"
+    },
+    "bucket": {
+      "en": "Bucket",
+      "ja": "バケツ"
+    },
+    "water_bucket": {
+      "en": "Water Bucket",
+      "ja": "水入りバケツ"
+    },
+    "lava_bucket": {
+      "en": "Lava Bucket",
+      "ja": "溶岩入りバケツ"
+    },
+    "powder_snow_bucket": {
+      "en": "Powder Snow Bucket",
+      "ja": "粉雪入りバケツ"
+    },
+    "snowball": {
+      "en": "Snowball",
+      "ja": "雪玉"
+    },
+    "leather": {
+      "en": "Leather",
+      "ja": "革"
+    },
+    "milk_bucket": {
+      "en": "Milk Bucket",
+      "ja": "ミルク入りバケツ"
+    },
+    "pufferfish_bucket": {
+      "en": "Bucket of Pufferfish",
+      "ja": "フグ入りバケツ"
+    },
+    "salmon_bucket": {
+      "en": "Bucket of Salmon",
+      "ja": "サケ入りバケツ"
+    },
+    "cod_bucket": {
+      "en": "Bucket of Cod",
+      "ja": "タラ入りバケツ"
+    },
+    "tropical_fish_bucket": {
+      "en": "Bucket of Tropical Fish",
+      "ja": "熱帯魚入りバケツ"
+    },
+    "axolotl_bucket": {
+      "en": "Bucket of Axolotl",
+      "ja": "ウーパールーパー入りバケツ"
+    },
+    "tadpole_bucket": {
+      "en": "Bucket of Tadpole",
+      "ja": "オタマジャクシ入りバケツ"
+    },
+    "brick": {
+      "en": "Brick",
+      "ja": "レンガ"
+    },
+    "clay_ball": {
+      "en": "Clay Ball",
+      "ja": "粘土玉"
+    },
+    "dried_kelp_block": {
+      "en": "Dried Kelp Block",
+      "ja": "乾燥した昆布ブロック"
+    },
+    "paper": {
+      "en": "Paper",
+      "ja": "紙"
+    },
+    "book": {
+      "en": "Book",
+      "ja": "本"
+    },
+    "slime_ball": {
+      "en": "Slimeball",
+      "ja": "スライムボール"
+    },
+    "egg": {
+      "en": "Egg",
+      "ja": "卵"
+    },
+    "blue_egg": {
+      "en": "Blue Egg",
+      "ja": "青色の卵"
+    },
+    "brown_egg": {
+      "en": "Brown Egg",
+      "ja": "茶色の卵"
+    },
+    "compass": {
+      "en": "Compass",
+      "ja": "コンパス"
+    },
+    "recovery_compass": {
+      "en": "Recovery Compass",
+      "ja": "リカバリーコンパス"
+    },
+    "bundle": {
+      "en": "Bundle",
+      "ja": "バンドル"
+    },
+    "white_bundle": {
+      "en": "White Bundle",
+      "ja": "白色のバンドル"
+    },
+    "orange_bundle": {
+      "en": "Orange Bundle",
+      "ja": "橙色のバンドル"
+    },
+    "magenta_bundle": {
+      "en": "Magenta Bundle",
+      "ja": "赤紫色のバンドル"
+    },
+    "light_blue_bundle": {
+      "en": "Light Blue Bundle",
+      "ja": "空色のバンドル"
+    },
+    "yellow_bundle": {
+      "en": "Yellow Bundle",
+      "ja": "黄色のバンドル"
+    },
+    "lime_bundle": {
+      "en": "Lime Bundle",
+      "ja": "黄緑色のバンドル"
+    },
+    "pink_bundle": {
+      "en": "Pink Bundle",
+      "ja": "桃色のバンドル"
+    },
+    "gray_bundle": {
+      "en": "Gray Bundle",
+      "ja": "灰色のバンドル"
+    },
+    "light_gray_bundle": {
+      "en": "Light Gray Bundle",
+      "ja": "薄灰色のバンドル"
+    },
+    "cyan_bundle": {
+      "en": "Cyan Bundle",
+      "ja": "青緑色のバンドル"
+    },
+    "purple_bundle": {
+      "en": "Purple Bundle",
+      "ja": "紫色のバンドル"
+    },
+    "blue_bundle": {
+      "en": "Blue Bundle",
+      "ja": "青色のバンドル"
+    },
+    "brown_bundle": {
+      "en": "Brown Bundle",
+      "ja": "茶色のバンドル"
+    },
+    "green_bundle": {
+      "en": "Green Bundle",
+      "ja": "緑色のバンドル"
+    },
+    "red_bundle": {
+      "en": "Red Bundle",
+      "ja": "赤色のバンドル"
+    },
+    "black_bundle": {
+      "en": "Black Bundle",
+      "ja": "黒色のバンドル"
+    },
+    "fishing_rod": {
+      "en": "Fishing Rod",
+      "ja": "釣竿"
+    },
+    "clock": {
+      "en": "Clock",
+      "ja": "時計"
+    },
+    "spyglass": {
+      "en": "Spyglass",
+      "ja": "望遠鏡"
+    },
+    "glowstone_dust": {
+      "en": "Glowstone Dust",
+      "ja": "グロウストーンダスト"
+    },
+    "cod": {
+      "en": "Raw Cod",
+      "ja": "生鱈"
+    },
+    "salmon": {
+      "en": "Raw Salmon",
+      "ja": "生鮭"
+    },
+    "tropical_fish": {
+      "en": "Tropical Fish",
+      "ja": "熱帯魚"
+    },
+    "pufferfish": {
+      "en": "Pufferfish",
+      "ja": "フグ"
+    },
+    "cooked_cod": {
+      "en": "Cooked Cod",
+      "ja": "焼き鱈"
+    },
+    "cooked_salmon": {
+      "en": "Cooked Salmon",
+      "ja": "焼き鮭"
+    },
+    "ink_sac": {
+      "en": "Ink Sac",
+      "ja": "イカスミ"
+    },
+    "glow_ink_sac": {
+      "en": "Glow Ink Sac",
+      "ja": "輝くイカスミ"
+    },
+    "cocoa_beans": {
+      "en": "Cocoa Beans",
+      "ja": "カカオ豆"
+    },
+    "white_dye": {
+      "en": "White Dye",
+      "ja": "白色の染料"
+    },
+    "orange_dye": {
+      "en": "Orange Dye",
+      "ja": "橙色の染料"
+    },
+    "magenta_dye": {
+      "en": "Magenta Dye",
+      "ja": "赤紫色の染料"
+    },
+    "light_blue_dye": {
+      "en": "Light Blue Dye",
+      "ja": "空色の染料"
+    },
+    "yellow_dye": {
+      "en": "Yellow Dye",
+      "ja": "黄色の染料"
+    },
+    "lime_dye": {
+      "en": "Lime Dye",
+      "ja": "黄緑色の染料"
+    },
+    "pink_dye": {
+      "en": "Pink Dye",
+      "ja": "桃色の染料"
+    },
+    "gray_dye": {
+      "en": "Gray Dye",
+      "ja": "灰色の染料"
+    },
+    "light_gray_dye": {
+      "en": "Light Gray Dye",
+      "ja": "薄灰色の染料"
+    },
+    "cyan_dye": {
+      "en": "Cyan Dye",
+      "ja": "青緑色の染料"
+    },
+    "purple_dye": {
+      "en": "Purple Dye",
+      "ja": "紫色の染料"
+    },
+    "blue_dye": {
+      "en": "Blue Dye",
+      "ja": "青色の染料"
+    },
+    "brown_dye": {
+      "en": "Brown Dye",
+      "ja": "茶色の染料"
+    },
+    "green_dye": {
+      "en": "Green Dye",
+      "ja": "緑色の染料"
+    },
+    "red_dye": {
+      "en": "Red Dye",
+      "ja": "赤色の染料"
+    },
+    "black_dye": {
+      "en": "Black Dye",
+      "ja": "黒色の染料"
+    },
+    "bone_meal": {
+      "en": "Bone Meal",
+      "ja": "骨粉"
+    },
+    "bone": {
+      "en": "Bone",
+      "ja": "骨"
+    },
+    "sugar": {
+      "en": "Sugar",
+      "ja": "砂糖"
+    },
+    "cake": {
+      "en": "Cake",
+      "ja": "ケーキ"
+    },
+    "white_bed": {
+      "en": "White Bed",
+      "ja": "白色のベッド"
+    },
+    "orange_bed": {
+      "en": "Orange Bed",
+      "ja": "橙色のベッド"
+    },
+    "magenta_bed": {
+      "en": "Magenta Bed",
+      "ja": "赤紫色のベッド"
+    },
+    "light_blue_bed": {
+      "en": "Light Blue Bed",
+      "ja": "空色のベッド"
+    },
+    "yellow_bed": {
+      "en": "Yellow Bed",
+      "ja": "黄色のベッド"
+    },
+    "lime_bed": {
+      "en": "Lime Bed",
+      "ja": "黄緑色のベッド"
+    },
+    "pink_bed": {
+      "en": "Pink Bed",
+      "ja": "桃色のベッド"
+    },
+    "gray_bed": {
+      "en": "Gray Bed",
+      "ja": "灰色のベッド"
+    },
+    "light_gray_bed": {
+      "en": "Light Gray Bed",
+      "ja": "薄灰色のベッド"
+    },
+    "cyan_bed": {
+      "en": "Cyan Bed",
+      "ja": "青緑色のベッド"
+    },
+    "purple_bed": {
+      "en": "Purple Bed",
+      "ja": "紫色のベッド"
+    },
+    "blue_bed": {
+      "en": "Blue Bed",
+      "ja": "青色のベッド"
+    },
+    "brown_bed": {
+      "en": "Brown Bed",
+      "ja": "茶色のベッド"
+    },
+    "green_bed": {
+      "en": "Green Bed",
+      "ja": "緑色のベッド"
+    },
+    "red_bed": {
+      "en": "Red Bed",
+      "ja": "赤色のベッド"
+    },
+    "black_bed": {
+      "en": "Black Bed",
+      "ja": "黒色のベッド"
+    },
+    "cookie": {
+      "en": "Cookie",
+      "ja": "クッキー"
+    },
+    "crafter": {
+      "en": "Crafter",
+      "ja": "自動作業台"
+    },
+    "filled_map": {
+      "en": "Map",
+      "ja": "地図"
+    },
+    "shears": {
+      "en": "Shears",
+      "ja": "ハサミ"
+    },
+    "melon_slice": {
+      "en": "Melon Slice",
+      "ja": "スイカの薄切り"
+    },
+    "dried_kelp": {
+      "en": "Dried Kelp",
+      "ja": "乾燥した昆布"
+    },
+    "pumpkin_seeds": {
+      "en": "Pumpkin Seeds",
+      "ja": "カボチャの種"
+    },
+    "melon_seeds": {
+      "en": "Melon Seeds",
+      "ja": "スイカの種"
+    },
+    "beef": {
+      "en": "Raw Beef",
+      "ja": "生の牛肉"
+    },
+    "cooked_beef": {
+      "en": "Steak",
+      "ja": "ステーキ"
+    },
+    "chicken": {
+      "en": "Raw Chicken",
+      "ja": "生の鶏肉"
+    },
+    "cooked_chicken": {
+      "en": "Cooked Chicken",
+      "ja": "焼き鳥"
+    },
+    "rotten_flesh": {
+      "en": "Rotten Flesh",
+      "ja": "腐った肉"
+    },
+    "ender_pearl": {
+      "en": "Ender Pearl",
+      "ja": "エンダーパール"
+    },
+    "blaze_rod": {
+      "en": "Blaze Rod",
+      "ja": "ブレイズロッド"
+    },
+    "ghast_tear": {
+      "en": "Ghast Tear",
+      "ja": "ガストの涙"
+    },
+    "gold_nugget": {
+      "en": "Gold Nugget",
+      "ja": "金塊"
+    },
+    "nether_wart": {
+      "en": "Nether Wart",
+      "ja": "ネザーウォート"
+    },
+    "glass_bottle": {
+      "en": "Glass Bottle",
+      "ja": "ガラス瓶"
+    },
+    "potion": {
+      "en": "Potion",
+      "ja": "ポーション"
+    },
+    "spider_eye": {
+      "en": "Spider Eye",
+      "ja": "クモの目"
+    },
+    "fermented_spider_eye": {
+      "en": "Fermented Spider Eye",
+      "ja": "発酵したクモの目"
+    },
+    "blaze_powder": {
+      "en": "Blaze Powder",
+      "ja": "ブレイズパウダー"
+    },
+    "magma_cream": {
+      "en": "Magma Cream",
+      "ja": "マグマクリーム"
+    },
+    "brewing_stand": {
+      "en": "Brewing Stand",
+      "ja": "醸造台"
+    },
+    "cauldron": {
+      "en": "Cauldron",
+      "ja": "大釜"
+    },
+    "ender_eye": {
+      "en": "Eye of Ender",
+      "ja": "エンダーアイ"
+    },
+    "glistering_melon_slice": {
+      "en": "Glistering Melon Slice",
+      "ja": "きらめくスイカの薄切り"
+    },
+    "chicken_spawn_egg": {
+      "en": "Chicken Spawn Egg",
+      "ja": "ニワトリのスポーンエッグ"
+    },
+    "cow_spawn_egg": {
+      "en": "Cow Spawn Egg",
+      "ja": "ウシのスポーンエッグ"
+    },
+    "pig_spawn_egg": {
+      "en": "Pig Spawn Egg",
+      "ja": "ブタのスポーンエッグ"
+    },
+    "sheep_spawn_egg": {
+      "en": "Sheep Spawn Egg",
+      "ja": "ヒツジのスポーンエッグ"
+    },
+    "camel_spawn_egg": {
+      "en": "Camel Spawn Egg",
+      "ja": "ラクダのスポーンエッグ"
+    },
+    "donkey_spawn_egg": {
+      "en": "Donkey Spawn Egg",
+      "ja": "ロバのスポーンエッグ"
+    },
+    "horse_spawn_egg": {
+      "en": "Horse Spawn Egg",
+      "ja": "ウマのスポーンエッグ"
+    },
+    "mule_spawn_egg": {
+      "en": "Mule Spawn Egg",
+      "ja": "ラバのスポーンエッグ"
+    },
+    "cat_spawn_egg": {
+      "en": "Cat Spawn Egg",
+      "ja": "ネコのスポーンエッグ"
+    },
+    "parrot_spawn_egg": {
+      "en": "Parrot Spawn Egg",
+      "ja": "オウムのスポーンエッグ"
+    },
+    "wolf_spawn_egg": {
+      "en": "Wolf Spawn Egg",
+      "ja": "オオカミのスポーンエッグ"
+    },
+    "armadillo_spawn_egg": {
+      "en": "Armadillo Spawn Egg",
+      "ja": "アルマジロのスポーンエッグ"
+    },
+    "bat_spawn_egg": {
+      "en": "Bat Spawn Egg",
+      "ja": "コウモリのスポーンエッグ"
+    },
+    "bee_spawn_egg": {
+      "en": "Bee Spawn Egg",
+      "ja": "ミツバチのスポーンエッグ"
+    },
+    "fox_spawn_egg": {
+      "en": "Fox Spawn Egg",
+      "ja": "キツネのスポーンエッグ"
+    },
+    "goat_spawn_egg": {
+      "en": "Goat Spawn Egg",
+      "ja": "ヤギのスポーンエッグ"
+    },
+    "llama_spawn_egg": {
+      "en": "Llama Spawn Egg",
+      "ja": "ラマのスポーンエッグ"
+    },
+    "ocelot_spawn_egg": {
+      "en": "Ocelot Spawn Egg",
+      "ja": "ヤマネコのスポーンエッグ"
+    },
+    "panda_spawn_egg": {
+      "en": "Panda Spawn Egg",
+      "ja": "パンダのスポーンエッグ"
+    },
+    "polar_bear_spawn_egg": {
+      "en": "Polar Bear Spawn Egg",
+      "ja": "シロクマのスポーンエッグ"
+    },
+    "rabbit_spawn_egg": {
+      "en": "Rabbit Spawn Egg",
+      "ja": "ウサギのスポーンエッグ"
+    },
+    "axolotl_spawn_egg": {
+      "en": "Axolotl Spawn Egg",
+      "ja": "ウーパールーパーのスポーンエッグ"
+    },
+    "cod_spawn_egg": {
+      "en": "Cod Spawn Egg",
+      "ja": "タラのスポーンエッグ"
+    },
+    "dolphin_spawn_egg": {
+      "en": "Dolphin Spawn Egg",
+      "ja": "イルカのスポーンエッグ"
+    },
+    "frog_spawn_egg": {
+      "en": "Frog Spawn Egg",
+      "ja": "カエルのスポーンエッグ"
+    },
+    "glow_squid_spawn_egg": {
+      "en": "Glow Squid Spawn Egg",
+      "ja": "ヒカリイカのスポーンエッグ"
+    },
+    "nautilus_spawn_egg": {
+      "en": "Nautilus Spawn Egg",
+      "ja": "オウムガイのスポーンエッグ"
+    },
+    "pufferfish_spawn_egg": {
+      "en": "Pufferfish Spawn Egg",
+      "ja": "フグのスポーンエッグ"
+    },
+    "salmon_spawn_egg": {
+      "en": "Salmon Spawn Egg",
+      "ja": "サケのスポーンエッグ"
+    },
+    "squid_spawn_egg": {
+      "en": "Squid Spawn Egg",
+      "ja": "イカのスポーンエッグ"
+    },
+    "tadpole_spawn_egg": {
+      "en": "Tadpole Spawn Egg",
+      "ja": "オタマジャクシのスポーンエッグ"
+    },
+    "tropical_fish_spawn_egg": {
+      "en": "Tropical Fish Spawn Egg",
+      "ja": "熱帯魚のスポーンエッグ"
+    },
+    "turtle_spawn_egg": {
+      "en": "Turtle Spawn Egg",
+      "ja": "カメのスポーンエッグ"
+    },
+    "allay_spawn_egg": {
+      "en": "Allay Spawn Egg",
+      "ja": "アレイのスポーンエッグ"
+    },
+    "mooshroom_spawn_egg": {
+      "en": "Mooshroom Spawn Egg",
+      "ja": "ムーシュルームのスポーンエッグ"
+    },
+    "sniffer_spawn_egg": {
+      "en": "Sniffer Spawn Egg",
+      "ja": "スニッファーのスポーンエッグ"
+    },
+    "copper_golem_spawn_egg": {
+      "en": "Copper Golem Spawn Egg",
+      "ja": "カッパーゴーレムのスポーンエッグ"
+    },
+    "iron_golem_spawn_egg": {
+      "en": "Iron Golem Spawn Egg",
+      "ja": "アイアンゴーレムのスポーンエッグ"
+    },
+    "snow_golem_spawn_egg": {
+      "en": "Snow Golem Spawn Egg",
+      "ja": "スノウゴーレムのスポーンエッグ"
+    },
+    "trader_llama_spawn_egg": {
+      "en": "Trader Llama Spawn Egg",
+      "ja": "商人のラマのスポーンエッグ"
+    },
+    "villager_spawn_egg": {
+      "en": "Villager Spawn Egg",
+      "ja": "村人のスポーンエッグ"
+    },
+    "wandering_trader_spawn_egg": {
+      "en": "Wandering Trader Spawn Egg",
+      "ja": "行商人のスポーンエッグ"
+    },
+    "bogged_spawn_egg": {
+      "en": "Bogged Spawn Egg",
+      "ja": "ボグドのスポーンエッグ"
+    },
+    "camel_husk_spawn_egg": {
+      "en": "Camel Husk Spawn Egg",
+      "ja": "ラクダハスクのスポーンエッグ"
+    },
+    "drowned_spawn_egg": {
+      "en": "Drowned Spawn Egg",
+      "ja": "ドラウンドのスポーンエッグ"
+    },
+    "husk_spawn_egg": {
+      "en": "Husk Spawn Egg",
+      "ja": "ハスクのスポーンエッグ"
+    },
+    "parched_spawn_egg": {
+      "en": "Parched Spawn Egg",
+      "ja": "パーチドのスポーンエッグ"
+    },
+    "skeleton_spawn_egg": {
+      "en": "Skeleton Spawn Egg",
+      "ja": "スケルトンのスポーンエッグ"
+    },
+    "skeleton_horse_spawn_egg": {
+      "en": "Skeleton Horse Spawn Egg",
+      "ja": "スケルトンホースのスポーンエッグ"
+    },
+    "stray_spawn_egg": {
+      "en": "Stray Spawn Egg",
+      "ja": "ストレイのスポーンエッグ"
+    },
+    "wither_spawn_egg": {
+      "en": "Wither Spawn Egg",
+      "ja": "ウィザーのスポーンエッグ"
+    },
+    "wither_skeleton_spawn_egg": {
+      "en": "Wither Skeleton Spawn Egg",
+      "ja": "ウィザースケルトンのスポーンエッグ"
+    },
+    "zombie_spawn_egg": {
+      "en": "Zombie Spawn Egg",
+      "ja": "ゾンビのスポーンエッグ"
+    },
+    "zombie_horse_spawn_egg": {
+      "en": "Zombie Horse Spawn Egg",
+      "ja": "ゾンビホースのスポーンエッグ"
+    },
+    "zombie_nautilus_spawn_egg": {
+      "en": "Zombie Nautilus Spawn Egg",
+      "ja": "ゾンビオウムガイのスポーンエッグ"
+    },
+    "zombie_villager_spawn_egg": {
+      "en": "Zombie Villager Spawn Egg",
+      "ja": "村人ゾンビのスポーンエッグ"
+    },
+    "cave_spider_spawn_egg": {
+      "en": "Cave Spider Spawn Egg",
+      "ja": "洞窟グモのスポーンエッグ"
+    },
+    "spider_spawn_egg": {
+      "en": "Spider Spawn Egg",
+      "ja": "クモのスポーンエッグ"
+    },
+    "breeze_spawn_egg": {
+      "en": "Breeze Spawn Egg",
+      "ja": "ブリーズのスポーンエッグ"
+    },
+    "creaking_spawn_egg": {
+      "en": "Creaking Spawn Egg",
+      "ja": "クリーキングのスポーンエッグ"
+    },
+    "creeper_spawn_egg": {
+      "en": "Creeper Spawn Egg",
+      "ja": "クリーパーのスポーンエッグ"
+    },
+    "elder_guardian_spawn_egg": {
+      "en": "Elder Guardian Spawn Egg",
+      "ja": "エルダーガーディアンのスポーンエッグ"
+    },
+    "guardian_spawn_egg": {
+      "en": "Guardian Spawn Egg",
+      "ja": "ガーディアンのスポーンエッグ"
+    },
+    "phantom_spawn_egg": {
+      "en": "Phantom Spawn Egg",
+      "ja": "ファントムのスポーンエッグ"
+    },
+    "silverfish_spawn_egg": {
+      "en": "Silverfish Spawn Egg",
+      "ja": "シルバーフィッシュのスポーンエッグ"
+    },
+    "slime_spawn_egg": {
+      "en": "Slime Spawn Egg",
+      "ja": "スライムのスポーンエッグ"
+    },
+    "warden_spawn_egg": {
+      "en": "Warden Spawn Egg",
+      "ja": "ウォーデンのスポーンエッグ"
+    },
+    "witch_spawn_egg": {
+      "en": "Witch Spawn Egg",
+      "ja": "ウィッチのスポーンエッグ"
+    },
+    "evoker_spawn_egg": {
+      "en": "Evoker Spawn Egg",
+      "ja": "エヴォーカーのスポーンエッグ"
+    },
+    "pillager_spawn_egg": {
+      "en": "Pillager Spawn Egg",
+      "ja": "ピリジャーのスポーンエッグ"
+    },
+    "ravager_spawn_egg": {
+      "en": "Ravager Spawn Egg",
+      "ja": "ラヴェジャーのスポーンエッグ"
+    },
+    "vindicator_spawn_egg": {
+      "en": "Vindicator Spawn Egg",
+      "ja": "ヴィンディケーターのスポーンエッグ"
+    },
+    "vex_spawn_egg": {
+      "en": "Vex Spawn Egg",
+      "ja": "ヴェックスのスポーンエッグ"
+    },
+    "blaze_spawn_egg": {
+      "en": "Blaze Spawn Egg",
+      "ja": "ブレイズのスポーンエッグ"
+    },
+    "ghast_spawn_egg": {
+      "en": "Ghast Spawn Egg",
+      "ja": "ガストのスポーンエッグ"
+    },
+    "happy_ghast_spawn_egg": {
+      "en": "Happy Ghast Spawn Egg",
+      "ja": "ハッピーガストのスポーンエッグ"
+    },
+    "hoglin_spawn_egg": {
+      "en": "Hoglin Spawn Egg",
+      "ja": "ホグリンのスポーンエッグ"
+    },
+    "magma_cube_spawn_egg": {
+      "en": "Magma Cube Spawn Egg",
+      "ja": "マグマキューブのスポーンエッグ"
+    },
+    "piglin_spawn_egg": {
+      "en": "Piglin Spawn Egg",
+      "ja": "ピグリンのスポーンエッグ"
+    },
+    "piglin_brute_spawn_egg": {
+      "en": "Piglin Brute Spawn Egg",
+      "ja": "ピグリンブルートのスポーンエッグ"
+    },
+    "strider_spawn_egg": {
+      "en": "Strider Spawn Egg",
+      "ja": "ストライダーのスポーンエッグ"
+    },
+    "zoglin_spawn_egg": {
+      "en": "Zoglin Spawn Egg",
+      "ja": "ゾグリンのスポーンエッグ"
+    },
+    "zombified_piglin_spawn_egg": {
+      "en": "Zombified Piglin Spawn Egg",
+      "ja": "ゾンビピグリンのスポーンエッグ"
+    },
+    "ender_dragon_spawn_egg": {
+      "en": "Ender Dragon Spawn Egg",
+      "ja": "エンダードラゴンのスポーンエッグ"
+    },
+    "enderman_spawn_egg": {
+      "en": "Enderman Spawn Egg",
+      "ja": "エンダーマンのスポーンエッグ"
+    },
+    "endermite_spawn_egg": {
+      "en": "Endermite Spawn Egg",
+      "ja": "エンダーマイトのスポーンエッグ"
+    },
+    "shulker_spawn_egg": {
+      "en": "Shulker Spawn Egg",
+      "ja": "シュルカーのスポーンエッグ"
+    },
+    "experience_bottle": {
+      "en": "Bottle o' Enchanting",
+      "ja": "エンチャントの瓶"
+    },
+    "fire_charge": {
+      "en": "Fire Charge",
+      "ja": "ファイヤーチャージ"
+    },
+    "wind_charge": {
+      "en": "Wind Charge",
+      "ja": "ウィンドチャージ"
+    },
+    "writable_book": {
+      "en": "Book and Quill",
+      "ja": "本と羽根ペン"
+    },
+    "written_book": {
+      "en": "Written Book",
+      "ja": "記入済みの本"
+    },
+    "breeze_rod": {
+      "en": "Breeze Rod",
+      "ja": "ブリーズロッド"
+    },
+    "mace": {
+      "en": "Mace",
+      "ja": "メイス"
+    },
+    "item_frame": {
+      "en": "Item Frame",
+      "ja": "額縁"
+    },
+    "glow_item_frame": {
+      "en": "Glow Item Frame",
+      "ja": "輝く額縁"
+    },
+    "flower_pot": {
+      "en": "Flower Pot",
+      "ja": "植木鉢"
+    },
+    "carrot": {
+      "en": "Carrot",
+      "ja": "ニンジン"
+    },
+    "potato": {
+      "en": "Potato",
+      "ja": "ジャガイモ"
+    },
+    "baked_potato": {
+      "en": "Baked Potato",
+      "ja": "ベイクドポテト"
+    },
+    "poisonous_potato": {
+      "en": "Poisonous Potato",
+      "ja": "青くなったジャガイモ"
+    },
+    "map": {
+      "en": "Empty Map",
+      "ja": "白紙の地図"
+    },
+    "golden_carrot": {
+      "en": "Golden Carrot",
+      "ja": "金のニンジン"
+    },
+    "skeleton_skull": {
+      "en": "Skeleton Skull",
+      "ja": "スケルトンの頭蓋骨"
+    },
+    "wither_skeleton_skull": {
+      "en": "Wither Skeleton Skull",
+      "ja": "ウィザースケルトンの頭蓋骨"
+    },
+    "player_head": {
+      "en": "Player Head",
+      "ja": "プレイヤーの頭"
+    },
+    "zombie_head": {
+      "en": "Zombie Head",
+      "ja": "ゾンビの頭"
+    },
+    "creeper_head": {
+      "en": "Creeper Head",
+      "ja": "クリーパーの頭"
+    },
+    "dragon_head": {
+      "en": "Dragon Head",
+      "ja": "ドラゴンの頭"
+    },
+    "piglin_head": {
+      "en": "Piglin Head",
+      "ja": "ピグリンの頭"
+    },
+    "nether_star": {
+      "en": "Nether Star",
+      "ja": "ネザースター"
+    },
+    "pumpkin_pie": {
+      "en": "Pumpkin Pie",
+      "ja": "パンプキンパイ"
+    },
+    "firework_rocket": {
+      "en": "Firework Rocket",
+      "ja": "ロケット花火"
+    },
+    "firework_star": {
+      "en": "Firework Star",
+      "ja": "花火の星"
+    },
+    "enchanted_book": {
+      "en": "Enchanted Book",
+      "ja": "エンチャントの本"
+    },
+    "nether_brick": {
+      "en": "Nether Brick",
+      "ja": "ネザーレンガ"
+    },
+    "resin_brick": {
+      "en": "Resin Brick",
+      "ja": "樹脂レンガ"
+    },
+    "prismarine_shard": {
+      "en": "Prismarine Shard",
+      "ja": "プリズマリンの欠片"
+    },
+    "prismarine_crystals": {
+      "en": "Prismarine Crystals",
+      "ja": "プリズマリンクリスタル"
+    },
+    "rabbit": {
+      "en": "Raw Rabbit",
+      "ja": "生の兎肉"
+    },
+    "cooked_rabbit": {
+      "en": "Cooked Rabbit",
+      "ja": "焼き兎肉"
+    },
+    "rabbit_stew": {
+      "en": "Rabbit Stew",
+      "ja": "ウサギシチュー"
+    },
+    "rabbit_foot": {
+      "en": "Rabbit's Foot",
+      "ja": "ウサギの足"
+    },
+    "rabbit_hide": {
+      "en": "Rabbit Hide",
+      "ja": "ウサギの皮"
+    },
+    "armor_stand": {
+      "en": "Armor Stand",
+      "ja": "防具立て"
+    },
+    "copper_horse_armor": {
+      "en": "Copper Horse Armor",
+      "ja": "銅の馬鎧"
+    },
+    "iron_horse_armor": {
+      "en": "Iron Horse Armor",
+      "ja": "鉄の馬鎧"
+    },
+    "golden_horse_armor": {
+      "en": "Golden Horse Armor",
+      "ja": "金の馬鎧"
+    },
+    "diamond_horse_armor": {
+      "en": "Diamond Horse Armor",
+      "ja": "ダイヤモンドの馬鎧"
+    },
+    "netherite_horse_armor": {
+      "en": "Netherite Horse Armor",
+      "ja": "ネザライトの馬鎧"
+    },
+    "leather_horse_armor": {
+      "en": "Leather Horse Armor",
+      "ja": "革の馬鎧"
+    },
+    "lead": {
+      "en": "Lead",
+      "ja": "リード"
+    },
+    "name_tag": {
+      "en": "Name Tag",
+      "ja": "名札"
+    },
+    "command_block_minecart": {
+      "en": "Minecart with Command Block",
+      "ja": "コマンドブロック付きのトロッコ"
+    },
+    "mutton": {
+      "en": "Raw Mutton",
+      "ja": "生の羊肉"
+    },
+    "cooked_mutton": {
+      "en": "Cooked Mutton",
+      "ja": "焼き羊肉"
+    },
+    "white_banner": {
+      "en": "White Banner",
+      "ja": "白色の旗"
+    },
+    "orange_banner": {
+      "en": "Orange Banner",
+      "ja": "橙色の旗"
+    },
+    "magenta_banner": {
+      "en": "Magenta Banner",
+      "ja": "赤紫色の旗"
+    },
+    "light_blue_banner": {
+      "en": "Light Blue Banner",
+      "ja": "空色の旗"
+    },
+    "yellow_banner": {
+      "en": "Yellow Banner",
+      "ja": "黄色の旗"
+    },
+    "lime_banner": {
+      "en": "Lime Banner",
+      "ja": "黄緑色の旗"
+    },
+    "pink_banner": {
+      "en": "Pink Banner",
+      "ja": "桃色の旗"
+    },
+    "gray_banner": {
+      "en": "Gray Banner",
+      "ja": "灰色の旗"
+    },
+    "light_gray_banner": {
+      "en": "Light Gray Banner",
+      "ja": "薄灰色の旗"
+    },
+    "cyan_banner": {
+      "en": "Cyan Banner",
+      "ja": "青緑色の旗"
+    },
+    "purple_banner": {
+      "en": "Purple Banner",
+      "ja": "紫色の旗"
+    },
+    "blue_banner": {
+      "en": "Blue Banner",
+      "ja": "青色の旗"
+    },
+    "brown_banner": {
+      "en": "Brown Banner",
+      "ja": "茶色の旗"
+    },
+    "green_banner": {
+      "en": "Green Banner",
+      "ja": "緑色の旗"
+    },
+    "red_banner": {
+      "en": "Red Banner",
+      "ja": "赤色の旗"
+    },
+    "black_banner": {
+      "en": "Black Banner",
+      "ja": "黒色の旗"
+    },
+    "end_crystal": {
+      "en": "End Crystal",
+      "ja": "エンドクリスタル"
+    },
+    "chorus_fruit": {
+      "en": "Chorus Fruit",
+      "ja": "コーラスフルーツ"
+    },
+    "popped_chorus_fruit": {
+      "en": "Popped Chorus Fruit",
+      "ja": "焼いたコーラスフルーツ"
+    },
+    "torchflower_seeds": {
+      "en": "Torchflower Seeds",
+      "ja": "トーチフラワーの種"
+    },
+    "pitcher_pod": {
+      "en": "Pitcher Pod",
+      "ja": "ウツボカズラのさや"
+    },
+    "beetroot": {
+      "en": "Beetroot",
+      "ja": "ビートルート"
+    },
+    "beetroot_seeds": {
+      "en": "Beetroot Seeds",
+      "ja": "ビートルートの種"
+    },
+    "beetroot_soup": {
+      "en": "Beetroot Soup",
+      "ja": "ビートルートスープ"
+    },
+    "dragon_breath": {
+      "en": "Dragon's Breath",
+      "ja": "ドラゴンブレス"
+    },
+    "splash_potion": {
+      "en": "Splash Potion",
+      "ja": "スプラッシュポーション"
+    },
+    "spectral_arrow": {
+      "en": "Spectral Arrow",
+      "ja": "光の矢"
+    },
+    "tipped_arrow": {
+      "en": "Tipped Arrow",
+      "ja": "効能付きの矢"
+    },
+    "lingering_potion": {
+      "en": "Lingering Potion",
+      "ja": "残留ポーション"
+    },
+    "shield": {
+      "en": "Shield",
+      "ja": "盾"
+    },
+    "wooden_spear": {
+      "en": "Wooden Spear",
+      "ja": "木の槍"
+    },
+    "stone_spear": {
+      "en": "Stone Spear",
+      "ja": "石の槍"
+    },
+    "copper_spear": {
+      "en": "Copper Spear",
+      "ja": "銅の槍"
+    },
+    "iron_spear": {
+      "en": "Iron Spear",
+      "ja": "鉄の槍"
+    },
+    "golden_spear": {
+      "en": "Golden Spear",
+      "ja": "金の槍"
+    },
+    "diamond_spear": {
+      "en": "Diamond Spear",
+      "ja": "ダイヤモンドの槍"
+    },
+    "netherite_spear": {
+      "en": "Netherite Spear",
+      "ja": "ネザライトの槍"
+    },
+    "totem_of_undying": {
+      "en": "Totem of Undying",
+      "ja": "不死のトーテム"
+    },
+    "shulker_shell": {
+      "en": "Shulker Shell",
+      "ja": "シュルカーの殻"
+    },
+    "iron_nugget": {
+      "en": "Iron Nugget",
+      "ja": "鉄塊"
+    },
+    "copper_nugget": {
+      "en": "Copper Nugget",
+      "ja": "銅塊"
+    },
+    "knowledge_book": {
+      "en": "Knowledge Book",
+      "ja": "知恵の本"
+    },
+    "debug_stick": {
+      "en": "Debug Stick",
+      "ja": "デバッグ棒"
+    },
+    "music_disc_13": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_cat": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_blocks": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_chirp": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_creator": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_creator_music_box": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_far": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_lava_chicken": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_mall": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_mellohi": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_stal": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_strad": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_ward": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_11": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_wait": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_otherside": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_relic": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_5": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_pigstep": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_precipice": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "music_disc_tears": {
+      "en": "Music Disc",
+      "ja": "レコード"
+    },
+    "disc_fragment_5": {
+      "en": "Disc Fragment",
+      "ja": "レコードの破片"
+    },
+    "trident": {
+      "en": "Trident",
+      "ja": "トライデント"
+    },
+    "nautilus_shell": {
+      "en": "Nautilus Shell",
+      "ja": "オウムガイの殻"
+    },
+    "iron_nautilus_armor": {
+      "en": "Iron Nautilus Armor",
+      "ja": "鉄のオウムガイの鎧"
+    },
+    "golden_nautilus_armor": {
+      "en": "Golden Nautilus Armor",
+      "ja": "金のオウムガイの鎧"
+    },
+    "diamond_nautilus_armor": {
+      "en": "Diamond Nautilus Armor",
+      "ja": "ダイヤモンドのオウムガイの鎧"
+    },
+    "netherite_nautilus_armor": {
+      "en": "Netherite Nautilus Armor",
+      "ja": "ネザライトのオウムガイの鎧"
+    },
+    "copper_nautilus_armor": {
+      "en": "Copper Nautilus Armor",
+      "ja": "銅のオウムガイの鎧"
+    },
+    "heart_of_the_sea": {
+      "en": "Heart of the Sea",
+      "ja": "海洋の心"
+    },
+    "crossbow": {
+      "en": "Crossbow",
+      "ja": "クロスボウ"
+    },
+    "suspicious_stew": {
+      "en": "Suspicious Stew",
+      "ja": "怪しげなシチュー"
+    },
+    "loom": {
+      "en": "Loom",
+      "ja": "機織り機"
+    },
+    "flower_banner_pattern": {
+      "en": "Flower Charge Banner Pattern",
+      "ja": "旗の模様"
+    },
+    "creeper_banner_pattern": {
+      "en": "Creeper Charge Banner Pattern",
+      "ja": "旗の模様"
+    },
+    "skull_banner_pattern": {
+      "en": "Skull Charge Banner Pattern",
+      "ja": "旗の模様"
+    },
+    "mojang_banner_pattern": {
+      "en": "Thing Banner Pattern",
+      "ja": "旗の模様"
+    },
+    "globe_banner_pattern": {
+      "en": "Globe Banner Pattern",
+      "ja": "旗の模様"
+    },
+    "piglin_banner_pattern": {
+      "en": "Snout Banner Pattern",
+      "ja": "旗の模様"
+    },
+    "flow_banner_pattern": {
+      "en": "Flow Banner Pattern",
+      "ja": "旗の模様"
+    },
+    "guster_banner_pattern": {
+      "en": "Guster Banner Pattern",
+      "ja": "旗の模様"
+    },
+    "field_masoned_banner_pattern": {
+      "en": "Field Masoned Banner Pattern",
+      "ja": "レンガの旗の模様"
+    },
+    "bordure_indented_banner_pattern": {
+      "en": "Bordure Indented Banner Pattern",
+      "ja": "山形波の縁取りの旗の模様"
+    },
+    "goat_horn": {
+      "en": "Goat Horn",
+      "ja": "ヤギの角笛"
+    },
+    "composter": {
+      "en": "Composter",
+      "ja": "コンポスター"
+    },
+    "barrel": {
+      "en": "Barrel",
+      "ja": "樽"
+    },
+    "smoker": {
+      "en": "Smoker",
+      "ja": "燻製器"
+    },
+    "blast_furnace": {
+      "en": "Blast Furnace",
+      "ja": "溶鉱炉"
+    },
+    "cartography_table": {
+      "en": "Cartography Table",
+      "ja": "製図台"
+    },
+    "fletching_table": {
+      "en": "Fletching Table",
+      "ja": "矢細工台"
+    },
+    "grindstone": {
+      "en": "Grindstone",
+      "ja": "砥石"
+    },
+    "smithing_table": {
+      "en": "Smithing Table",
+      "ja": "鍛冶台"
+    },
+    "stonecutter": {
+      "en": "Stonecutter",
+      "ja": "石切台"
+    },
+    "bell": {
+      "en": "Bell",
+      "ja": "鐘"
+    },
+    "lantern": {
+      "en": "Lantern",
+      "ja": "ランタン"
+    },
+    "soul_lantern": {
+      "en": "Soul Lantern",
+      "ja": "魂のランタン"
+    },
+    "copper_lantern": {
+      "en": "Copper Lantern",
+      "ja": "銅のランタン"
+    },
+    "exposed_copper_lantern": {
+      "en": "Exposed Copper Lantern",
+      "ja": "風化した銅のランタン"
+    },
+    "weathered_copper_lantern": {
+      "en": "Weathered Copper Lantern",
+      "ja": "錆びた銅のランタン"
+    },
+    "oxidized_copper_lantern": {
+      "en": "Oxidized Copper Lantern",
+      "ja": "酸化した銅のランタン"
+    },
+    "waxed_copper_lantern": {
+      "en": "Waxed Copper Lantern",
+      "ja": "錆止めされた銅のランタン"
+    },
+    "waxed_exposed_copper_lantern": {
+      "en": "Waxed Exposed Copper Lantern",
+      "ja": "錆止めされた風化した銅のランタン"
+    },
+    "waxed_weathered_copper_lantern": {
+      "en": "Waxed Weathered Copper Lantern",
+      "ja": "錆止めされた錆びた銅のランタン"
+    },
+    "waxed_oxidized_copper_lantern": {
+      "en": "Waxed Oxidized Copper Lantern",
+      "ja": "錆止めされた酸化した銅のランタン"
+    },
+    "sweet_berries": {
+      "en": "Sweet Berries",
+      "ja": "スイートベリー"
+    },
+    "glow_berries": {
+      "en": "Glow Berries",
+      "ja": "グロウベリー"
+    },
+    "campfire": {
+      "en": "Campfire",
+      "ja": "焚き火"
+    },
+    "soul_campfire": {
+      "en": "Soul Campfire",
+      "ja": "魂の焚き火"
+    },
+    "shroomlight": {
+      "en": "Shroomlight",
+      "ja": "シュルームライト"
+    },
+    "honeycomb": {
+      "en": "Honeycomb",
+      "ja": "ハニカム"
+    },
+    "bee_nest": {
+      "en": "Bee Nest",
+      "ja": "ミツバチの巣"
+    },
+    "beehive": {
+      "en": "Beehive",
+      "ja": "養蜂箱"
+    },
+    "honey_bottle": {
+      "en": "Honey Bottle",
+      "ja": "ハチミツ入りの瓶"
+    },
+    "honeycomb_block": {
+      "en": "Honeycomb Block",
+      "ja": "ハニカムブロック"
+    },
+    "lodestone": {
+      "en": "Lodestone",
+      "ja": "ロードストーン"
+    },
+    "crying_obsidian": {
+      "en": "Crying Obsidian",
+      "ja": "泣く黒曜石"
+    },
+    "blackstone": {
+      "en": "Blackstone",
+      "ja": "ブラックストーン"
+    },
+    "blackstone_slab": {
+      "en": "Blackstone Slab",
+      "ja": "ブラックストーンのハーフブロック"
+    },
+    "blackstone_stairs": {
+      "en": "Blackstone Stairs",
+      "ja": "ブラックストーンの階段"
+    },
+    "gilded_blackstone": {
+      "en": "Gilded Blackstone",
+      "ja": "きらめくブラックストーン"
+    },
+    "polished_blackstone": {
+      "en": "Polished Blackstone",
+      "ja": "磨かれたブラックストーン"
+    },
+    "polished_blackstone_slab": {
+      "en": "Polished Blackstone Slab",
+      "ja": "磨かれたブラックストーンのハーフブロック"
+    },
+    "polished_blackstone_stairs": {
+      "en": "Polished Blackstone Stairs",
+      "ja": "磨かれたブラックストーンの階段"
+    },
+    "chiseled_polished_blackstone": {
+      "en": "Chiseled Polished Blackstone",
+      "ja": "模様入りの磨かれたブラックストーン"
+    },
+    "polished_blackstone_bricks": {
+      "en": "Polished Blackstone Bricks",
+      "ja": "磨かれたブラックストーンレンガ"
+    },
+    "polished_blackstone_brick_slab": {
+      "en": "Polished Blackstone Brick Slab",
+      "ja": "磨かれたブラックストーンレンガのハーフブロック"
+    },
+    "polished_blackstone_brick_stairs": {
+      "en": "Polished Blackstone Brick Stairs",
+      "ja": "磨かれたブラックストーンレンガの階段"
+    },
+    "cracked_polished_blackstone_bricks": {
+      "en": "Cracked Polished Blackstone Bricks",
+      "ja": "ひび割れた磨かれたブラックストーンレンガ"
+    },
+    "respawn_anchor": {
+      "en": "Respawn Anchor",
+      "ja": "リスポーンアンカー"
+    },
+    "candle": {
+      "en": "Candle",
+      "ja": "ろうそく"
+    },
+    "white_candle": {
+      "en": "White Candle",
+      "ja": "白色のろうそく"
+    },
+    "orange_candle": {
+      "en": "Orange Candle",
+      "ja": "橙色のろうそく"
+    },
+    "magenta_candle": {
+      "en": "Magenta Candle",
+      "ja": "赤紫色のろうそく"
+    },
+    "light_blue_candle": {
+      "en": "Light Blue Candle",
+      "ja": "空色のろうそく"
+    },
+    "yellow_candle": {
+      "en": "Yellow Candle",
+      "ja": "黄色のろうそく"
+    },
+    "lime_candle": {
+      "en": "Lime Candle",
+      "ja": "黄緑色のろうそく"
+    },
+    "pink_candle": {
+      "en": "Pink Candle",
+      "ja": "桃色のろうそく"
+    },
+    "gray_candle": {
+      "en": "Gray Candle",
+      "ja": "灰色のろうそく"
+    },
+    "light_gray_candle": {
+      "en": "Light Gray Candle",
+      "ja": "薄灰色のろうそく"
+    },
+    "cyan_candle": {
+      "en": "Cyan Candle",
+      "ja": "青緑色のろうそく"
+    },
+    "purple_candle": {
+      "en": "Purple Candle",
+      "ja": "紫色のろうそく"
+    },
+    "blue_candle": {
+      "en": "Blue Candle",
+      "ja": "青色のろうそく"
+    },
+    "brown_candle": {
+      "en": "Brown Candle",
+      "ja": "茶色のろうそく"
+    },
+    "green_candle": {
+      "en": "Green Candle",
+      "ja": "緑色のろうそく"
+    },
+    "red_candle": {
+      "en": "Red Candle",
+      "ja": "赤色のろうそく"
+    },
+    "black_candle": {
+      "en": "Black Candle",
+      "ja": "黒色のろうそく"
+    },
+    "small_amethyst_bud": {
+      "en": "Small Amethyst Bud",
+      "ja": "小さなアメジストの芽"
+    },
+    "medium_amethyst_bud": {
+      "en": "Medium Amethyst Bud",
+      "ja": "中くらいのアメジストの芽"
+    },
+    "large_amethyst_bud": {
+      "en": "Large Amethyst Bud",
+      "ja": "大きなアメジストの芽"
+    },
+    "amethyst_cluster": {
+      "en": "Amethyst Cluster",
+      "ja": "アメジストの塊"
+    },
+    "pointed_dripstone": {
+      "en": "Pointed Dripstone",
+      "ja": "鍾乳石"
+    },
+    "ochre_froglight": {
+      "en": "Ochre Froglight",
+      "ja": "黄土色のフロッグライト"
+    },
+    "verdant_froglight": {
+      "en": "Verdant Froglight",
+      "ja": "新緑色のフロッグライト"
+    },
+    "pearlescent_froglight": {
+      "en": "Pearlescent Froglight",
+      "ja": "真珠色のフロッグライト"
+    },
+    "frogspawn": {
+      "en": "Frogspawn",
+      "ja": "カエルの卵"
+    },
+    "echo_shard": {
+      "en": "Echo Shard",
+      "ja": "残響の欠片"
+    },
+    "brush": {
+      "en": "Brush",
+      "ja": "ブラシ"
+    },
+    "netherite_upgrade_smithing_template": {
+      "en": "Netherite Upgrade",
+      "ja": "鍛冶型"
+    },
+    "sentry_armor_trim_smithing_template": {
+      "en": "Sentry Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "dune_armor_trim_smithing_template": {
+      "en": "Dune Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "coast_armor_trim_smithing_template": {
+      "en": "Coast Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "wild_armor_trim_smithing_template": {
+      "en": "Wild Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "ward_armor_trim_smithing_template": {
+      "en": "Ward Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "eye_armor_trim_smithing_template": {
+      "en": "Eye Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "vex_armor_trim_smithing_template": {
+      "en": "Vex Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "tide_armor_trim_smithing_template": {
+      "en": "Tide Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "snout_armor_trim_smithing_template": {
+      "en": "Snout Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "rib_armor_trim_smithing_template": {
+      "en": "Rib Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "spire_armor_trim_smithing_template": {
+      "en": "Spire Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "wayfinder_armor_trim_smithing_template": {
+      "en": "Wayfinder Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "shaper_armor_trim_smithing_template": {
+      "en": "Shaper Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "silence_armor_trim_smithing_template": {
+      "en": "Silence Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "raiser_armor_trim_smithing_template": {
+      "en": "Raiser Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "host_armor_trim_smithing_template": {
+      "en": "Host Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "flow_armor_trim_smithing_template": {
+      "en": "Flow Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "bolt_armor_trim_smithing_template": {
+      "en": "Bolt Armor Trim",
+      "ja": "鍛冶型"
+    },
+    "angler_pottery_sherd": {
+      "en": "Angler Pottery Sherd",
+      "ja": "釣り人の壺の欠片"
+    },
+    "archer_pottery_sherd": {
+      "en": "Archer Pottery Sherd",
+      "ja": "射手の壺の欠片"
+    },
+    "arms_up_pottery_sherd": {
+      "en": "Arms Up Pottery Sherd",
+      "ja": "両腕を上げた人の壺の欠片"
+    },
+    "blade_pottery_sherd": {
+      "en": "Blade Pottery Sherd",
+      "ja": "剣の壺の欠片"
+    },
+    "brewer_pottery_sherd": {
+      "en": "Brewer Pottery Sherd",
+      "ja": "醸造家の壺の欠片"
+    },
+    "burn_pottery_sherd": {
+      "en": "Burn Pottery Sherd",
+      "ja": "炎の壺の欠片"
+    },
+    "danger_pottery_sherd": {
+      "en": "Danger Pottery Sherd",
+      "ja": "脅威の壺の欠片"
+    },
+    "explorer_pottery_sherd": {
+      "en": "Explorer Pottery Sherd",
+      "ja": "探検家の壺の欠片"
+    },
+    "flow_pottery_sherd": {
+      "en": "Flow Pottery Sherd",
+      "ja": "渦巻きの壺の欠片"
+    },
+    "friend_pottery_sherd": {
+      "en": "Friend Pottery Sherd",
+      "ja": "友の壺の欠片"
+    },
+    "guster_pottery_sherd": {
+      "en": "Guster Pottery Sherd",
+      "ja": "風巻く者の壺の欠片"
+    },
+    "heart_pottery_sherd": {
+      "en": "Heart Pottery Sherd",
+      "ja": "心の壺の欠片"
+    },
+    "heartbreak_pottery_sherd": {
+      "en": "Heartbreak Pottery Sherd",
+      "ja": "傷心の壺の欠片"
+    },
+    "howl_pottery_sherd": {
+      "en": "Howl Pottery Sherd",
+      "ja": "遠吠えの壺の欠片"
+    },
+    "miner_pottery_sherd": {
+      "en": "Miner Pottery Sherd",
+      "ja": "鉱夫の壺の欠片"
+    },
+    "mourner_pottery_sherd": {
+      "en": "Mourner Pottery Sherd",
+      "ja": "哀悼者の壺の欠片"
+    },
+    "plenty_pottery_sherd": {
+      "en": "Plenty Pottery Sherd",
+      "ja": "富の壺の欠片"
+    },
+    "prize_pottery_sherd": {
+      "en": "Prize Pottery Sherd",
+      "ja": "宝物の壺の欠片"
+    },
+    "scrape_pottery_sherd": {
+      "en": "Scrape Pottery Sherd",
+      "ja": "斧の壺の欠片"
+    },
+    "sheaf_pottery_sherd": {
+      "en": "Sheaf Pottery Sherd",
+      "ja": "麦束の壺の欠片"
+    },
+    "shelter_pottery_sherd": {
+      "en": "Shelter Pottery Sherd",
+      "ja": "木陰の壺の欠片"
+    },
+    "skull_pottery_sherd": {
+      "en": "Skull Pottery Sherd",
+      "ja": "頭蓋骨の壺の欠片"
+    },
+    "snort_pottery_sherd": {
+      "en": "Snort Pottery Sherd",
+      "ja": "鼻を鳴らす動物の壺の欠片"
+    },
+    "copper_grate": {
+      "en": "Copper Grate",
+      "ja": "銅の金網"
+    },
+    "exposed_copper_grate": {
+      "en": "Exposed Copper Grate",
+      "ja": "風化した銅の金網"
+    },
+    "weathered_copper_grate": {
+      "en": "Weathered Copper Grate",
+      "ja": "錆びた銅の金網"
+    },
+    "oxidized_copper_grate": {
+      "en": "Oxidized Copper Grate",
+      "ja": "酸化した銅の金網"
+    },
+    "waxed_copper_grate": {
+      "en": "Waxed Copper Grate",
+      "ja": "錆止めされた銅の金網"
+    },
+    "waxed_exposed_copper_grate": {
+      "en": "Waxed Exposed Copper Grate",
+      "ja": "錆止めされた風化した銅の金網"
+    },
+    "waxed_weathered_copper_grate": {
+      "en": "Waxed Weathered Copper Grate",
+      "ja": "錆止めされた錆びた銅の金網"
+    },
+    "waxed_oxidized_copper_grate": {
+      "en": "Waxed Oxidized Copper Grate",
+      "ja": "錆止めされた酸化した銅の金網"
+    },
+    "copper_bulb": {
+      "en": "Copper Bulb",
+      "ja": "銅の電球"
+    },
+    "exposed_copper_bulb": {
+      "en": "Exposed Copper Bulb",
+      "ja": "風化した銅の電球"
+    },
+    "weathered_copper_bulb": {
+      "en": "Weathered Copper Bulb",
+      "ja": "錆びた銅の電球"
+    },
+    "oxidized_copper_bulb": {
+      "en": "Oxidized Copper Bulb",
+      "ja": "酸化した銅の電球"
+    },
+    "waxed_copper_bulb": {
+      "en": "Waxed Copper Bulb",
+      "ja": "錆止めされた銅の電球"
+    },
+    "waxed_exposed_copper_bulb": {
+      "en": "Waxed Exposed Copper Bulb",
+      "ja": "錆止めされた風化した銅の電球"
+    },
+    "waxed_weathered_copper_bulb": {
+      "en": "Waxed Weathered Copper Bulb",
+      "ja": "錆止めされた錆びた銅の電球"
+    },
+    "waxed_oxidized_copper_bulb": {
+      "en": "Waxed Oxidized Copper Bulb",
+      "ja": "錆止めされた酸化した銅の電球"
+    },
+    "copper_chest": {
+      "en": "Copper Chest",
+      "ja": "銅のチェスト"
+    },
+    "exposed_copper_chest": {
+      "en": "Exposed Copper Chest",
+      "ja": "風化した銅のチェスト"
+    },
+    "weathered_copper_chest": {
+      "en": "Weathered Copper Chest",
+      "ja": "錆びた銅のチェスト"
+    },
+    "oxidized_copper_chest": {
+      "en": "Oxidized Copper Chest",
+      "ja": "酸化した銅のチェスト"
+    },
+    "waxed_copper_chest": {
+      "en": "Waxed Copper Chest",
+      "ja": "錆止めされた銅のチェスト"
+    },
+    "waxed_exposed_copper_chest": {
+      "en": "Waxed Exposed Copper Chest",
+      "ja": "錆止めされた風化した銅のチェスト"
+    },
+    "waxed_weathered_copper_chest": {
+      "en": "Waxed Weathered Copper Chest",
+      "ja": "錆止めされた錆びた銅のチェスト"
+    },
+    "waxed_oxidized_copper_chest": {
+      "en": "Waxed Oxidized Copper Chest",
+      "ja": "錆止めされた酸化した銅のチェスト"
+    },
+    "copper_golem_statue": {
+      "en": "Copper Golem Statue",
+      "ja": "カッパーゴーレムの像"
+    },
+    "exposed_copper_golem_statue": {
+      "en": "Exposed Copper Golem Statue",
+      "ja": "風化したカッパーゴーレムの像"
+    },
+    "weathered_copper_golem_statue": {
+      "en": "Weathered Copper Golem Statue",
+      "ja": "錆びたカッパーゴーレムの像"
+    },
+    "oxidized_copper_golem_statue": {
+      "en": "Oxidized Copper Golem Statue",
+      "ja": "酸化したカッパーゴーレムの像"
+    },
+    "waxed_copper_golem_statue": {
+      "en": "Waxed Copper Golem Statue",
+      "ja": "錆止めされたカッパーゴーレムの像"
+    },
+    "waxed_exposed_copper_golem_statue": {
+      "en": "Waxed Exposed Copper Golem Statue",
+      "ja": "錆止めされた風化したカッパーゴーレムの像"
+    },
+    "waxed_weathered_copper_golem_statue": {
+      "en": "Waxed Weathered Copper Golem Statue",
+      "ja": "錆止めされた錆びたカッパーゴーレムの像"
+    },
+    "waxed_oxidized_copper_golem_statue": {
+      "en": "Waxed Oxidized Copper Golem Statue",
+      "ja": "錆止めされた酸化したカッパーゴーレムの像"
+    },
+    "trial_spawner": {
+      "en": "Trial Spawner",
+      "ja": "試練のスポナー"
+    },
+    "trial_key": {
+      "en": "Trial Key",
+      "ja": "試練の鍵"
+    },
+    "ominous_trial_key": {
+      "en": "Ominous Trial Key",
+      "ja": "不吉な試練の鍵"
+    },
+    "vault": {
+      "en": "Vault",
+      "ja": "宝物庫"
+    },
+    "ominous_bottle": {
+      "en": "Ominous Bottle",
+      "ja": "不吉な瓶"
+    },
+    "chain": {
+      "en": "Chain",
+      "ja": "鎖"
+    },
+    "scute": {
+      "en": "Turtle Scute",
+      "ja": "カメのウロコ"
+    }
+  },
+  "entities": {
+    "acacia_boat": {
+      "en": "Acacia Boat",
+      "ja": "アカシアのボート"
+    },
+    "acacia_chest_boat": {
+      "en": "Acacia Boat with Chest",
+      "ja": "チェスト付きのアカシアのボート"
+    },
+    "allay": {
+      "en": "Allay",
+      "ja": "アレイ"
+    },
+    "area_effect_cloud": {
+      "en": "Area Effect Cloud",
+      "ja": "エリアエフェクトクラウド"
+    },
+    "armadillo": {
+      "en": "Armadillo",
+      "ja": "アルマジロ"
+    },
+    "armor_stand": {
+      "en": "Armor Stand",
+      "ja": "防具立て"
+    },
+    "arrow": {
+      "en": "Arrow",
+      "ja": "矢"
+    },
+    "axolotl": {
+      "en": "Axolotl",
+      "ja": "ウーパールーパー"
+    },
+    "bamboo_chest_raft": {
+      "en": "Bamboo Raft with Chest",
+      "ja": "チェスト付きの竹のイカダ"
+    },
+    "bamboo_raft": {
+      "en": "Bamboo Raft",
+      "ja": "竹のイカダ"
+    },
+    "bat": {
+      "en": "Bat",
+      "ja": "コウモリ"
+    },
+    "bee": {
+      "en": "Bee",
+      "ja": "ミツバチ"
+    },
+    "birch_boat": {
+      "en": "Birch Boat",
+      "ja": "シラカバのボート"
+    },
+    "birch_chest_boat": {
+      "en": "Birch Boat with Chest",
+      "ja": "チェスト付きのシラカバのボート"
+    },
+    "blaze": {
+      "en": "Blaze",
+      "ja": "ブレイズ"
+    },
+    "block_display": {
+      "en": "Block Display",
+      "ja": "ブロック表示エンティティ"
+    },
+    "bogged": {
+      "en": "Bogged",
+      "ja": "ボグド"
+    },
+    "breeze": {
+      "en": "Breeze",
+      "ja": "ブリーズ"
+    },
+    "breeze_wind_charge": {
+      "en": "Wind Charge",
+      "ja": "ウィンドチャージ"
+    },
+    "camel": {
+      "en": "Camel",
+      "ja": "ラクダ"
+    },
+    "camel_husk": {
+      "en": "Camel Husk",
+      "ja": "ラクダハスク"
+    },
+    "cat": {
+      "en": "Cat",
+      "ja": "ネコ"
+    },
+    "cave_spider": {
+      "en": "Cave Spider",
+      "ja": "洞窟グモ"
+    },
+    "cherry_boat": {
+      "en": "Cherry Boat",
+      "ja": "サクラのボート"
+    },
+    "cherry_chest_boat": {
+      "en": "Cherry Boat with Chest",
+      "ja": "チェスト付きのサクラのボート"
+    },
+    "chest_minecart": {
+      "en": "Minecart with Chest",
+      "ja": "チェスト付きのトロッコ"
+    },
+    "chicken": {
+      "en": "Chicken",
+      "ja": "ニワトリ"
+    },
+    "cod": {
+      "en": "Cod",
+      "ja": "タラ"
+    },
+    "copper_golem": {
+      "en": "Copper Golem",
+      "ja": "カッパーゴーレム"
+    },
+    "command_block_minecart": {
+      "en": "Minecart with Command Block",
+      "ja": "コマンドブロック付きのトロッコ"
+    },
+    "cow": {
+      "en": "Cow",
+      "ja": "ウシ"
+    },
+    "creaking": {
+      "en": "Creaking",
+      "ja": "クリーキング"
+    },
+    "creeper": {
+      "en": "Creeper",
+      "ja": "クリーパー"
+    },
+    "dark_oak_boat": {
+      "en": "Dark Oak Boat",
+      "ja": "ダークオークのボート"
+    },
+    "dark_oak_chest_boat": {
+      "en": "Dark Oak Boat with Chest",
+      "ja": "チェスト付きのダークオークのボート"
+    },
+    "dolphin": {
+      "en": "Dolphin",
+      "ja": "イルカ"
+    },
+    "donkey": {
+      "en": "Donkey",
+      "ja": "ロバ"
+    },
+    "dragon_fireball": {
+      "en": "Dragon Fireball",
+      "ja": "ドラゴンの火の玉"
+    },
+    "drowned": {
+      "en": "Drowned",
+      "ja": "ドラウンド"
+    },
+    "egg": {
+      "en": "Thrown Egg",
+      "ja": "投げられた卵"
+    },
+    "elder_guardian": {
+      "en": "Elder Guardian",
+      "ja": "エルダーガーディアン"
+    },
+    "enderman": {
+      "en": "Enderman",
+      "ja": "エンダーマン"
+    },
+    "endermite": {
+      "en": "Endermite",
+      "ja": "エンダーマイト"
+    },
+    "ender_dragon": {
+      "en": "Ender Dragon",
+      "ja": "エンダードラゴン"
+    },
+    "ender_pearl": {
+      "en": "Thrown Ender Pearl",
+      "ja": "投げられたエンダーパール"
+    },
+    "end_crystal": {
+      "en": "End Crystal",
+      "ja": "エンドクリスタル"
+    },
+    "evoker": {
+      "en": "Evoker",
+      "ja": "エヴォーカー"
+    },
+    "evoker_fangs": {
+      "en": "Evoker Fangs",
+      "ja": "エヴォーカーの牙"
+    },
+    "experience_bottle": {
+      "en": "Thrown Bottle o' Enchanting",
+      "ja": "投げられたエンチャントの瓶"
+    },
+    "experience_orb": {
+      "en": "Experience Orb",
+      "ja": "経験値オーブ"
+    },
+    "eye_of_ender": {
+      "en": "Eye of Ender",
+      "ja": "エンダーアイ"
+    },
+    "falling_block": {
+      "en": "Falling Block",
+      "ja": "落下中のブロック"
+    },
+    "fireball": {
+      "en": "Fireball",
+      "ja": "火の玉"
+    },
+    "firework_rocket": {
+      "en": "Firework Rocket",
+      "ja": "ロケット花火"
+    },
+    "fox": {
+      "en": "Fox",
+      "ja": "キツネ"
+    },
+    "frog": {
+      "en": "Frog",
+      "ja": "カエル"
+    },
+    "furnace_minecart": {
+      "en": "Minecart with Furnace",
+      "ja": "かまど付きのトロッコ"
+    },
+    "ghast": {
+      "en": "Ghast",
+      "ja": "ガスト"
+    },
+    "happy_ghast": {
+      "en": "Happy Ghast",
+      "ja": "ハッピーガスト"
+    },
+    "giant": {
+      "en": "Giant",
+      "ja": "ジャイアント"
+    },
+    "glow_item_frame": {
+      "en": "Glow Item Frame",
+      "ja": "輝く額縁"
+    },
+    "glow_squid": {
+      "en": "Glow Squid",
+      "ja": "ヒカリイカ"
+    },
+    "goat": {
+      "en": "Goat",
+      "ja": "ヤギ"
+    },
+    "guardian": {
+      "en": "Guardian",
+      "ja": "ガーディアン"
+    },
+    "hoglin": {
+      "en": "Hoglin",
+      "ja": "ホグリン"
+    },
+    "hopper_minecart": {
+      "en": "Minecart with Hopper",
+      "ja": "ホッパー付きのトロッコ"
+    },
+    "horse": {
+      "en": "Horse",
+      "ja": "ウマ"
+    },
+    "husk": {
+      "en": "Husk",
+      "ja": "ハスク"
+    },
+    "illusioner": {
+      "en": "Illusioner",
+      "ja": "イリュージョナー"
+    },
+    "interaction": {
+      "en": "Interaction",
+      "ja": "操作記録エンティティ"
+    },
+    "iron_golem": {
+      "en": "Iron Golem",
+      "ja": "アイアンゴーレム"
+    },
+    "item": {
+      "en": "Item",
+      "ja": "アイテム"
+    },
+    "item_display": {
+      "en": "Item Display",
+      "ja": "アイテム表示エンティティ"
+    },
+    "item_frame": {
+      "en": "Item Frame",
+      "ja": "額縁"
+    },
+    "jungle_boat": {
+      "en": "Jungle Boat",
+      "ja": "ジャングルのボート"
+    },
+    "jungle_chest_boat": {
+      "en": "Jungle Boat with Chest",
+      "ja": "チェスト付きのジャングルのボート"
+    },
+    "leash_knot": {
+      "en": "Leash Knot",
+      "ja": "リードの結び目"
+    },
+    "lightning_bolt": {
+      "en": "Lightning Bolt",
+      "ja": "雷"
+    },
+    "llama": {
+      "en": "Llama",
+      "ja": "ラマ"
+    },
+    "llama_spit": {
+      "en": "Llama Spit",
+      "ja": "ラマの唾"
+    },
+    "magma_cube": {
+      "en": "Magma Cube",
+      "ja": "マグマキューブ"
+    },
+    "mangrove_boat": {
+      "en": "Mangrove Boat",
+      "ja": "マングローブのボート"
+    },
+    "mangrove_chest_boat": {
+      "en": "Mangrove Boat with Chest",
+      "ja": "チェスト付きのマングローブのボート"
+    },
+    "mannequin": {
+      "en": "Mannequin",
+      "ja": "マネキン"
+    },
+    "marker": {
+      "en": "Marker",
+      "ja": "マーカー"
+    },
+    "minecart": {
+      "en": "Minecart",
+      "ja": "トロッコ"
+    },
+    "mooshroom": {
+      "en": "Mooshroom",
+      "ja": "ムーシュルーム"
+    },
+    "mule": {
+      "en": "Mule",
+      "ja": "ラバ"
+    },
+    "nautilus": {
+      "en": "Nautilus",
+      "ja": "オウムガイ"
+    },
+    "oak_boat": {
+      "en": "Oak Boat",
+      "ja": "オークのボート"
+    },
+    "oak_chest_boat": {
+      "en": "Oak Boat with Chest",
+      "ja": "チェスト付きのオークのボート"
+    },
+    "ocelot": {
+      "en": "Ocelot",
+      "ja": "ヤマネコ"
+    },
+    "ominous_item_spawner": {
+      "en": "Ominous Item Spawner",
+      "ja": "不吉なアイテムスポナー"
+    },
+    "painting": {
+      "en": "Painting",
+      "ja": "絵画"
+    },
+    "pale_oak_boat": {
+      "en": "Pale Oak Boat",
+      "ja": "ペールオークのボート"
+    },
+    "pale_oak_chest_boat": {
+      "en": "Pale Oak Boat with Chest",
+      "ja": "チェスト付きのペールオークのボート"
+    },
+    "panda": {
+      "en": "Panda",
+      "ja": "パンダ"
+    },
+    "parched": {
+      "en": "Parched",
+      "ja": "パーチド"
+    },
+    "parrot": {
+      "en": "Parrot",
+      "ja": "オウム"
+    },
+    "phantom": {
+      "en": "Phantom",
+      "ja": "ファントム"
+    },
+    "pig": {
+      "en": "Pig",
+      "ja": "ブタ"
+    },
+    "piglin": {
+      "en": "Piglin",
+      "ja": "ピグリン"
+    },
+    "piglin_brute": {
+      "en": "Piglin Brute",
+      "ja": "ピグリンブルート"
+    },
+    "pillager": {
+      "en": "Pillager",
+      "ja": "ピリジャー"
+    },
+    "polar_bear": {
+      "en": "Polar Bear",
+      "ja": "シロクマ"
+    },
+    "splash_potion": {
+      "en": "Splash Potion",
+      "ja": "スプラッシュポーション"
+    },
+    "lingering_potion": {
+      "en": "Lingering Potion",
+      "ja": "残留ポーション"
+    },
+    "pufferfish": {
+      "en": "Pufferfish",
+      "ja": "フグ"
+    },
+    "rabbit": {
+      "en": "Rabbit",
+      "ja": "ウサギ"
+    },
+    "ravager": {
+      "en": "Ravager",
+      "ja": "ラヴェジャー"
+    },
+    "salmon": {
+      "en": "Salmon",
+      "ja": "サケ"
+    },
+    "sheep": {
+      "en": "Sheep",
+      "ja": "ヒツジ"
+    },
+    "shulker": {
+      "en": "Shulker",
+      "ja": "シュルカー"
+    },
+    "shulker_bullet": {
+      "en": "Shulker Bullet",
+      "ja": "シュルカーの弾"
+    },
+    "silverfish": {
+      "en": "Silverfish",
+      "ja": "シルバーフィッシュ"
+    },
+    "skeleton": {
+      "en": "Skeleton",
+      "ja": "スケルトン"
+    },
+    "skeleton_horse": {
+      "en": "Skeleton Horse",
+      "ja": "スケルトンホース"
+    },
+    "slime": {
+      "en": "Slime",
+      "ja": "スライム"
+    },
+    "small_fireball": {
+      "en": "Small Fireball",
+      "ja": "小さな火の玉"
+    },
+    "sniffer": {
+      "en": "Sniffer",
+      "ja": "スニッファー"
+    },
+    "snowball": {
+      "en": "Snowball",
+      "ja": "雪玉"
+    },
+    "snow_golem": {
+      "en": "Snow Golem",
+      "ja": "スノウゴーレム"
+    },
+    "spawner_minecart": {
+      "en": "Minecart with Monster Spawner",
+      "ja": "モンスタースポナー付きのトロッコ"
+    },
+    "spectral_arrow": {
+      "en": "Spectral Arrow",
+      "ja": "光の矢"
+    },
+    "spider": {
+      "en": "Spider",
+      "ja": "クモ"
+    },
+    "spruce_boat": {
+      "en": "Spruce Boat",
+      "ja": "トウヒのボート"
+    },
+    "spruce_chest_boat": {
+      "en": "Spruce Boat with Chest",
+      "ja": "チェスト付きのトウヒのボート"
+    },
+    "squid": {
+      "en": "Squid",
+      "ja": "イカ"
+    },
+    "stray": {
+      "en": "Stray",
+      "ja": "ストレイ"
+    },
+    "strider": {
+      "en": "Strider",
+      "ja": "ストライダー"
+    },
+    "tadpole": {
+      "en": "Tadpole",
+      "ja": "オタマジャクシ"
+    },
+    "text_display": {
+      "en": "Text Display",
+      "ja": "テキスト表示エンティティ"
+    },
+    "tnt": {
+      "en": "Primed TNT",
+      "ja": "着火されたTNT"
+    },
+    "tnt_minecart": {
+      "en": "Minecart with TNT",
+      "ja": "TNT付きのトロッコ"
+    },
+    "trader_llama": {
+      "en": "Trader Llama",
+      "ja": "商人のラマ"
+    },
+    "trident": {
+      "en": "Trident",
+      "ja": "トライデント"
+    },
+    "tropical_fish": {
+      "en": "Tropical Fish",
+      "ja": "熱帯魚"
+    },
+    "turtle": {
+      "en": "Turtle",
+      "ja": "カメ"
+    },
+    "vex": {
+      "en": "Vex",
+      "ja": "ヴェックス"
+    },
+    "villager": {
+      "en": "Villager",
+      "ja": "村人"
+    },
+    "vindicator": {
+      "en": "Vindicator",
+      "ja": "ヴィンディケーター"
+    },
+    "wandering_trader": {
+      "en": "Wandering Trader",
+      "ja": "行商人"
+    },
+    "warden": {
+      "en": "Warden",
+      "ja": "ウォーデン"
+    },
+    "wind_charge": {
+      "en": "Wind Charge",
+      "ja": "ウィンドチャージ"
+    },
+    "witch": {
+      "en": "Witch",
+      "ja": "ウィッチ"
+    },
+    "wither": {
+      "en": "Wither",
+      "ja": "ウィザー"
+    },
+    "wither_skeleton": {
+      "en": "Wither Skeleton",
+      "ja": "ウィザースケルトン"
+    },
+    "wither_skull": {
+      "en": "Wither Skull",
+      "ja": "ウィザーの頭蓋骨"
+    },
+    "wolf": {
+      "en": "Wolf",
+      "ja": "オオカミ"
+    },
+    "zoglin": {
+      "en": "Zoglin",
+      "ja": "ゾグリン"
+    },
+    "zombie": {
+      "en": "Zombie",
+      "ja": "ゾンビ"
+    },
+    "zombie_horse": {
+      "en": "Zombie Horse",
+      "ja": "ゾンビホース"
+    },
+    "zombie_nautilus": {
+      "en": "Zombie Nautilus",
+      "ja": "ゾンビオウムガイ"
+    },
+    "zombie_villager": {
+      "en": "Zombie Villager",
+      "ja": "村人ゾンビ"
+    },
+    "zombified_piglin": {
+      "en": "Zombified Piglin",
+      "ja": "ゾンビピグリン"
+    },
+    "player": {
+      "en": "Player",
+      "ja": "プレイヤー"
+    },
+    "fishing_bobber": {
+      "en": "Fishing Bobber",
+      "ja": "浮き"
+    },
+    "boat": {
+      "en": "Boat",
+      "ja": "ボート"
+    },
+    "chest_boat": {
+      "en": "Boat with Chest",
+      "ja": "チェスト付きボート"
+    },
+    "potion": {
+      "en": "Potion",
+      "ja": "ポーション"
+    }
+  },
+  "biomes": {
+    "badlands": {
+      "en": "Badlands",
+      "ja": "荒野"
+    },
+    "bamboo_jungle": {
+      "en": "Bamboo Jungle",
+      "ja": "竹林"
+    },
+    "basalt_deltas": {
+      "en": "Basalt Deltas",
+      "ja": "玄武岩の三角州"
+    },
+    "beach": {
+      "en": "Beach",
+      "ja": "砂浜"
+    },
+    "birch_forest": {
+      "en": "Birch Forest",
+      "ja": "シラカバの森"
+    },
+    "cherry_grove": {
+      "en": "Cherry Grove",
+      "ja": "サクラの林"
+    },
+    "cold_ocean": {
+      "en": "Cold Ocean",
+      "ja": "冷たい海"
+    },
+    "crimson_forest": {
+      "en": "Crimson Forest",
+      "ja": "真紅の森"
+    },
+    "dark_forest": {
+      "en": "Dark Forest",
+      "ja": "暗い森"
+    },
+    "deep_cold_ocean": {
+      "en": "Deep Cold Ocean",
+      "ja": "冷たい深海"
+    },
+    "deep_dark": {
+      "en": "Deep Dark",
+      "ja": "ディープダーク"
+    },
+    "deep_frozen_ocean": {
+      "en": "Deep Frozen Ocean",
+      "ja": "凍った深海"
+    },
+    "deep_lukewarm_ocean": {
+      "en": "Deep Lukewarm Ocean",
+      "ja": "ぬるい深海"
+    },
+    "deep_ocean": {
+      "en": "Deep Ocean",
+      "ja": "深海"
+    },
+    "desert": {
+      "en": "Desert",
+      "ja": "砂漠"
+    },
+    "dripstone_caves": {
+      "en": "Dripstone Caves",
+      "ja": "鍾乳洞"
+    },
+    "end_barrens": {
+      "en": "End Barrens",
+      "ja": "エンドのやせ地"
+    },
+    "end_highlands": {
+      "en": "End Highlands",
+      "ja": "エンドの高地"
+    },
+    "end_midlands": {
+      "en": "End Midlands",
+      "ja": "エンドの内陸部"
+    },
+    "eroded_badlands": {
+      "en": "Eroded Badlands",
+      "ja": "侵食された荒野"
+    },
+    "flower_forest": {
+      "en": "Flower Forest",
+      "ja": "花の森"
+    },
+    "forest": {
+      "en": "Forest",
+      "ja": "森林"
+    },
+    "frozen_ocean": {
+      "en": "Frozen Ocean",
+      "ja": "凍った海"
+    },
+    "frozen_peaks": {
+      "en": "Frozen Peaks",
+      "ja": "凍った山頂"
+    },
+    "frozen_river": {
+      "en": "Frozen River",
+      "ja": "凍った川"
+    },
+    "grove": {
+      "en": "Grove",
+      "ja": "林"
+    },
+    "ice_spikes": {
+      "en": "Ice Spikes",
+      "ja": "氷樹"
+    },
+    "jagged_peaks": {
+      "en": "Jagged Peaks",
+      "ja": "尖った山頂"
+    },
+    "jungle": {
+      "en": "Jungle",
+      "ja": "ジャングル"
+    },
+    "lukewarm_ocean": {
+      "en": "Lukewarm Ocean",
+      "ja": "ぬるい海"
+    },
+    "lush_caves": {
+      "en": "Lush Caves",
+      "ja": "繁茂した洞窟"
+    },
+    "mangrove_swamp": {
+      "en": "Mangrove Swamp",
+      "ja": "マングローブの沼地"
+    },
+    "meadow": {
+      "en": "Meadow",
+      "ja": "草地"
+    },
+    "mushroom_fields": {
+      "en": "Mushroom Fields",
+      "ja": "キノコ島"
+    },
+    "nether_wastes": {
+      "en": "Nether Wastes",
+      "ja": "ネザーの荒地"
+    },
+    "ocean": {
+      "en": "Ocean",
+      "ja": "海洋"
+    },
+    "old_growth_birch_forest": {
+      "en": "Old Growth Birch Forest",
+      "ja": "シラカバの原生林"
+    },
+    "old_growth_pine_taiga": {
+      "en": "Old Growth Pine Taiga",
+      "ja": "マツの原生林"
+    },
+    "old_growth_spruce_taiga": {
+      "en": "Old Growth Spruce Taiga",
+      "ja": "トウヒの原生林"
+    },
+    "pale_garden": {
+      "en": "Pale Garden",
+      "ja": "ペールガーデン"
+    },
+    "plains": {
+      "en": "Plains",
+      "ja": "平原"
+    },
+    "river": {
+      "en": "River",
+      "ja": "河川"
+    },
+    "savanna": {
+      "en": "Savanna",
+      "ja": "サバンナ"
+    },
+    "savanna_plateau": {
+      "en": "Savanna Plateau",
+      "ja": "サバンナの高原"
+    },
+    "small_end_islands": {
+      "en": "Small End Islands",
+      "ja": "小さなエンド島"
+    },
+    "snowy_beach": {
+      "en": "Snowy Beach",
+      "ja": "雪の砂浜"
+    },
+    "snowy_plains": {
+      "en": "Snowy Plains",
+      "ja": "雪原"
+    },
+    "snowy_slopes": {
+      "en": "Snowy Slopes",
+      "ja": "雪の斜面"
+    },
+    "snowy_taiga": {
+      "en": "Snowy Taiga",
+      "ja": "雪のタイガ"
+    },
+    "soul_sand_valley": {
+      "en": "Soul Sand Valley",
+      "ja": "ソウルサンドの谷"
+    },
+    "sparse_jungle": {
+      "en": "Sparse Jungle",
+      "ja": "まばらなジャングル"
+    },
+    "stony_peaks": {
+      "en": "Stony Peaks",
+      "ja": "石だらけの山頂"
+    },
+    "stony_shore": {
+      "en": "Stony Shore",
+      "ja": "石だらけの海岸"
+    },
+    "sunflower_plains": {
+      "en": "Sunflower Plains",
+      "ja": "ヒマワリ平原"
+    },
+    "swamp": {
+      "en": "Swamp",
+      "ja": "沼地"
+    },
+    "taiga": {
+      "en": "Taiga",
+      "ja": "タイガ"
+    },
+    "the_end": {
+      "en": "The End",
+      "ja": "ジ・エンド"
+    },
+    "the_void": {
+      "en": "The Void",
+      "ja": "奈落"
+    },
+    "warm_ocean": {
+      "en": "Warm Ocean",
+      "ja": "暖かい海"
+    },
+    "warped_forest": {
+      "en": "Warped Forest",
+      "ja": "歪んだ森"
+    },
+    "windswept_forest": {
+      "en": "Windswept Forest",
+      "ja": "吹きさらしの森"
+    },
+    "windswept_gravelly_hills": {
+      "en": "Windswept Gravelly Hills",
+      "ja": "吹きさらしの砂利の丘"
+    },
+    "windswept_hills": {
+      "en": "Windswept Hills",
+      "ja": "吹きさらしの丘"
+    },
+    "windswept_savanna": {
+      "en": "Windswept Savanna",
+      "ja": "吹きさらしのサバンナ"
+    },
+    "wooded_badlands": {
+      "en": "Wooded Badlands",
+      "ja": "森のある荒野"
+    }
+  }
+}

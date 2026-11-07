@@ -186,7 +186,7 @@ export class AutoGuard extends EventEmitter {
     }
   }
 
-  private stopDefending(): void {
+  public stopDefending(): void {
     this.isDefending = false;
     this.currentTarget = null;
     if (this.combatTimeoutHandle) {

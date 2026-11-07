@@ -10,6 +10,8 @@ export class AutonomousAgent extends EventEmitter {
   private isProcessing: boolean = false;
   private currentTask: string | null = null;
   private abortController: AbortController | null = null;
+  private currentExecutionPromise: Promise<void> | null = null;
+  private instructionQueue: Promise<void> = Promise.resolve();
 
   constructor(botWrapper: MinecraftBot) {
     super();
@@ -26,44 +28,58 @@ export class AutonomousAgent extends EventEmitter {
    * 指示の受付と自律実行ループの開始
    */
   public async handleInstruction(instruction: string, requester: string = 'Player'): Promise<void> {
-    if (this.isProcessing) {
-      // 進行中のタスクがある場合は停止して新しいタスクを受け付ける
-      console.log(`[Agent] Interrupting previous task for new instruction: "${instruction}"`);
-      await this.cancelTask();
-    }
+    const runNext = async () => {
+      if (this.isProcessing) {
+        console.log(`[Agent] Interrupting previous task for new instruction: "${instruction}"`);
+        await this.cancelTask();
+      }
 
-    this.isProcessing = true;
-    this.currentTask = instruction;
-    this.abortController = new AbortController();
+      this.isProcessing = true;
+      this.currentTask = instruction;
+      const abortCtrl = new AbortController();
+      this.abortController = abortCtrl;
 
-    this.emit('taskStarted', { task: instruction, requester });
-    console.log(`\n========================================`);
-    console.log(`[Agent] New Goal from ${requester}: "${instruction}"`);
-    console.log(`========================================\n`);
+      this.emit('taskStarted', { task: instruction, requester });
+      console.log(`\n========================================`);
+      console.log(`[Agent] New Goal from ${requester}: "${instruction}"`);
+      console.log(`========================================\n`);
 
-    try {
-      await this.runReActLoop(instruction, requester);
-    } catch (err: any) {
-      console.error('[Agent] Task failed with error:', err.message);
-      const failLog: AgentStepLog = {
-        timestamp: new Date().toLocaleTimeString(),
-        stepNumber: 0,
-        observation: `エラーが発生しました: ${err.message}`,
-        status: 'failure',
-      };
-      this.emit('stepLog', failLog);
-      await this.botWrapper.skills.chat(`申し訳ありません、タスク中にエラーが発生しました: ${err.message}`);
-    } finally {
-      this.isProcessing = false;
-      this.currentTask = null;
-      this.emit('taskFinished', { task: instruction });
-    }
+      const executionPromise = (async () => {
+        try {
+          await this.runReActLoop(instruction, requester, abortCtrl.signal);
+        } catch (err: any) {
+          if (abortCtrl.signal.aborted) {
+            console.log(`[Agent] Task "${instruction}" was interrupted.`);
+            return;
+          }
+          console.error('[Agent] Task failed with error:', err.message);
+          const failLog: AgentStepLog = {
+            timestamp: new Date().toLocaleTimeString(),
+            stepNumber: 0,
+            observation: `エラーが発生しました: ${err.message}`,
+            status: 'failure',
+          };
+          this.emit('stepLog', failLog);
+          await this.botWrapper.skills.chat(`申し訳ありません、タスク中にエラーが発生しました: ${err.message}`);
+        } finally {
+          if (this.abortController === abortCtrl) {
+            this.isProcessing = false;
+            this.currentTask = null;
+            this.currentExecutionPromise = null;
+            this.emit('taskFinished', { task: instruction });
+          }
+        }
+      })();
+
+      this.currentExecutionPromise = executionPromise;
+      await executionPromise;
+    };
+
+    this.instructionQueue = this.instructionQueue.then(runNext, runNext);
+    await this.instructionQueue;
   }
 
-  /**
-   * 自律ReAct実行ループ
-   */
-  private async runReActLoop(goal: string, requester: string): Promise<void> {
+  private async runReActLoop(goal: string, requester: string, signal: AbortSignal): Promise<void> {
     const maxSteps = this.botWrapper.config.maxAgentSteps;
     const history: Array<{ role: 'user' | 'model' | 'assistant'; content: string }> = [];
 
@@ -111,7 +127,7 @@ export class AutonomousAgent extends EventEmitter {
     let taskCompleted = false;
 
     for (let step = 1; step <= maxSteps; step++) {
-      if (this.abortController?.signal.aborted) {
+      if (signal.aborted) {
         console.log('[Agent] Task was aborted.');
         break;
       }
@@ -246,7 +262,7 @@ ${currentEnv}
       await new Promise(r => setTimeout(r, 1500));
     }
 
-    if (!taskCompleted && !this.abortController?.signal.aborted) {
+    if (!taskCompleted && !signal.aborted) {
       const message = `最大${maxSteps}ステップに到達したため停止しました。目標は未完了です。タスクを続けるには新しい指示を送ってください。`;
       await this.botWrapper.skills.chat(message);
       this.emit('stepLog', {
@@ -265,9 +281,21 @@ ${currentEnv}
     if (this.abortController) {
       this.abortController.abort();
     }
+    try {
+      if (this.botWrapper.guard && typeof this.botWrapper.guard.stopDefending === 'function') {
+        this.botWrapper.guard.stopDefending();
+      }
+    } catch { }
     await this.botWrapper.skills.stopActions();
+    if (this.currentExecutionPromise) {
+      await Promise.race([
+        this.currentExecutionPromise,
+        new Promise(r => setTimeout(r, 1000)),
+      ]).catch(() => {});
+    }
     this.isProcessing = false;
     this.currentTask = null;
+    this.currentExecutionPromise = null;
     this.emit('taskCancelled');
   }
 

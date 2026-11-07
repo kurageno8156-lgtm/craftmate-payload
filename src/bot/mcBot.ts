@@ -145,20 +145,45 @@ export class MinecraftBot extends EventEmitter {
     }
 
     // プレイヤーからのチャット受信
-    this.bot.on('chat', (username: string, message: string) => {
-      if (this.bot !== connectedBot) return;
-      if (username === this.bot.username) return; // 自分の発言は無視
-
-      console.log(`[Chat] <${username}>: ${message}`);
+    const handledMessages = new Set<string>();
+    const emitChatMessage = (sender: string, text: string) => {
+      if (!text || sender === this.bot.username) return;
+      const dedupeKey = `${sender}:${text}:${Math.floor(Date.now() / 1500)}`;
+      if (handledMessages.has(dedupeKey)) return;
+      handledMessages.add(dedupeKey);
+      if (handledMessages.size > 200) {
+        const iter = handledMessages.values();
+        for (let i = 0; i < 50; i++) handledMessages.delete(iter.next().value!);
+      }
+      console.log(`[Chat] <${sender}>: ${text}`);
       const chatMsg: ChatMessage = {
         id: Math.random().toString(36).substring(2, 9),
-        sender: username,
-        text: message,
+        sender,
+        text,
         timestamp: new Date().toLocaleTimeString(),
         isBot: false,
       };
-
       this.emit('playerMessage', chatMsg);
+    };
+
+    this.bot.on('chat', (username: string, message: string) => {
+      if (this.bot !== connectedBot) return;
+      emitChatMessage(username, message);
+    });
+
+    this.bot.on('messagestr', (messageStr: string) => {
+      if (this.bot !== connectedBot) return;
+      if (!messageStr) return;
+      const trimmed = messageStr.trim();
+      const chatMatch = trimmed.match(/^<([^>]+)>\s+(.+)$/);
+      if (chatMatch) {
+        emitChatMessage(chatMatch[1], chatMatch[2]);
+        return;
+      }
+      const whisperMatch = trimmed.match(/^([^\s:]+)\s+(?:whispers to you|whispers|が囁きました):\s*(.+)$/i);
+      if (whisperMatch) {
+        emitChatMessage(whisperMatch[1], whisperMatch[2]);
+      }
     });
 
     // 体力・満腹度変化
