@@ -11,6 +11,13 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path $PSScriptRoot).Path
 Set-Location $projectRoot
 
+try {
+    & git fetch --quiet --no-progress --tags origin
+}
+catch {
+    Write-Warning 'Could not fetch tags from origin; release notes may use local tags only.'
+}
+
 foreach ($tool in @('git', 'gh', 'npm')) {
     if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
         throw "Required command was not found: $tool"
