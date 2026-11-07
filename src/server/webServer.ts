@@ -316,7 +316,7 @@ export class WebServer {
       });
     });
 
-    this.app.post('/api/settings', (req, res) => {
+    this.app.post('/api/settings', async (req, res) => {
       const { mcPort, username, webPort, provider, model, aiApiKey } = req.body || {};
       const parsedMcPort = Number(mcPort);
       const parsedWebPort = Number(webPort);
@@ -359,7 +359,7 @@ export class WebServer {
       if (keyName && trimmedKey) updates[keyName] = trimmedKey;
 
       try {
-        this.writeEnvUpdates(updates);
+        await this.writeEnvUpdates(updates);
       } catch (error) {
         console.error('[Settings] Could not save .env:', error);
         return res.status(500).json({ error: 'Could not save settings to .env.' });
@@ -457,7 +457,7 @@ export class WebServer {
     }
   }
 
-  private writeEnvUpdates(updates: Record<string, string>): void {
+  private async writeEnvUpdates(updates: Record<string, string>): Promise<void> {
     const envPath = this.envPath;
     let content = '';
     try {
@@ -472,9 +472,20 @@ export class WebServer {
       const index = lines.findIndex(existing => new RegExp(`^\\s*${key}\\s*=`).test(existing));
       if (index >= 0) lines[index] = line;
       else lines.push(line);
-      process.env[key] = value;
     }
-    fs.writeFileSync(envPath, `${lines.filter((line, index) => index < lines.length - 1 || line !== '').join('\n').trimEnd()}\n`, 'utf8');
+    const output = `${lines.filter((line, index) => index < lines.length - 1 || line !== '').join('\n').trimEnd()}\n`;
+    const retryDelays = [50, 100, 150];
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        fs.writeFileSync(envPath, output, 'utf8');
+        break;
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code || '';
+        if (!['EPERM', 'EACCES', 'EBUSY'].includes(code) || attempt >= retryDelays.length) throw error;
+        await new Promise(resolve => setTimeout(resolve, retryDelays[attempt]));
+      }
+    }
+    for (const [key, value] of Object.entries(updates)) process.env[key] = value;
   }
 
   private async renameFileWithRetry(source: string, destination: string): Promise<void> {
