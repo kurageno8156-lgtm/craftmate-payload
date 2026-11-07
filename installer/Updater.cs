@@ -85,6 +85,13 @@ namespace CraftMateUpdater
 
     internal sealed class UpdaterForm : Form
     {
+        private enum UpdateOutcome
+        {
+            UpToDate,
+            Declined,
+            Updated
+        }
+
         private const string Repository = "kurageno8156-lgtm/craftmate-payload";
         private const long MaximumArchiveBytes = 512L * 1024L * 1024L;
         private readonly string _installDirectory;
@@ -164,7 +171,7 @@ namespace CraftMateUpdater
         private void UpdateWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = (BackgroundWorker)sender;
-            ApplyLatestUpdate(worker);
+            e.Result = ApplyLatestUpdate(worker);
         }
 
         private void UpdateWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -186,10 +193,20 @@ namespace CraftMateUpdater
                 _log.AppendText(DateTime.Now.ToString("HH:mm:ss") + "  エラー: " + e.Error.Message + Environment.NewLine);
                 _status.ForeColor = System.Drawing.Color.DarkRed;
             }
+            else if (e.Result is UpdateOutcome && (UpdateOutcome)e.Result == UpdateOutcome.Updated)
+            {
+                _progress.Value = 100;
+                _status.Text = "アップデートが完了し、CraftMateを再起動しました。";
+                _status.ForeColor = System.Drawing.Color.DarkGreen;
+            }
+            else if (e.Result is UpdateOutcome && (UpdateOutcome)e.Result == UpdateOutcome.Declined)
+            {
+                _status.Text = "アップデートをキャンセルしました。";
+            }
             else
             {
                 _progress.Value = 100;
-                _status.Text = "アップデートが完了しました。CraftMate.exe を再起動してください。";
+                _status.Text = "CraftMate は最新バージョンです。";
                 _status.ForeColor = System.Drawing.Color.DarkGreen;
             }
             _closeButton.Enabled = true;
@@ -200,7 +217,7 @@ namespace CraftMateUpdater
             worker.ReportProgress(Math.Max(0, Math.Min(100, percent)), message);
         }
 
-        private void ApplyLatestUpdate(BackgroundWorker worker)
+        private UpdateOutcome ApplyLatestUpdate(BackgroundWorker worker)
         {
             ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;
             if (!Directory.Exists(_installDirectory)) throw new DirectoryNotFoundException("インストール先が見つかりません: " + _installDirectory);
@@ -231,7 +248,13 @@ namespace CraftMateUpdater
             if (CompareVersions(latestVersion, installedVersion) <= 0)
             {
                 Report(worker, 100, "CraftMate は最新バージョンです (v" + installedVersion + ")。");
-                return;
+                return UpdateOutcome.UpToDate;
+            }
+
+            if (!ConfirmUpdate(latestVersion, installedVersion))
+            {
+                Report(worker, 100, "アップデートをキャンセルしました。");
+                return UpdateOutcome.Declined;
             }
 
             string downloadUrl = FindPayloadUrl(release);
@@ -257,6 +280,7 @@ namespace CraftMateUpdater
                     if (!File.Exists(Path.Combine(stageDirectory, required))) throw new FileNotFoundException("更新ファイルが不足しています: " + required);
 
                 StopInstalledNode(worker);
+                StopInstalledLauncher(worker);
                 string[] updateItems = new string[] { "dist", "public", "node_modules", "CraftMate.exe", "CraftMate_Updater.exe", "node.exe", ".env.example", "package.json", "package-lock.json", "README.md", "Uninstall.exe" };
                 int total = updateItems.Length;
                 for (int i = 0; i < updateItems.Length; i++)
@@ -283,7 +307,9 @@ namespace CraftMateUpdater
                 Dictionary<string, object> verifiedPackage = DeserializeObject(File.ReadAllText(packagePath));
                 string verifiedVersion = Convert.ToString(verifiedPackage["version"]);
                 if (CompareVersions(verifiedVersion, latestVersion) != 0) throw new InvalidDataException("更新後のバージョン確認に失敗しました。");
+                StartInstalledLauncher();
                 Report(worker, 100, "アップデートが完了しました (v" + verifiedVersion + ")。");
+                return UpdateOutcome.Updated;
             }
             catch
             {
@@ -294,6 +320,23 @@ namespace CraftMateUpdater
             {
                 try { Directory.Delete(workDirectory, true); } catch { }
             }
+        }
+
+        private bool ConfirmUpdate(string latestVersion, string installedVersion)
+        {
+            bool confirmed = false;
+            Invoke(new MethodInvoker(delegate
+            {
+                DialogResult answer = MessageBox.Show(
+                    this,
+                    "CraftMate の新しいバージョン v" + latestVersion + " があります (現在 v" + installedVersion + ")。\r\n本当にアップデートしますか？",
+                    "CraftMate Updater",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question,
+                    MessageBoxDefaultButton.Button2);
+                confirmed = answer == DialogResult.Yes;
+            }));
+            return confirmed;
         }
 
         private static Dictionary<string, object> DeserializeObject(string json)
@@ -411,6 +454,40 @@ namespace CraftMateUpdater
                 finally { process.Dispose(); }
             }
             Thread.Sleep(500);
+        }
+
+        private void StopInstalledLauncher(BackgroundWorker worker)
+        {
+            string expectedLauncher = Path.GetFullPath(Path.Combine(_installDirectory, "CraftMate.exe"));
+            Report(worker, 64, "起動中の CraftMate を終了しています...");
+            foreach (Process process in Process.GetProcessesByName("CraftMate"))
+            {
+                try
+                {
+                    string executable = process.MainModule.FileName;
+                    if (!String.Equals(Path.GetFullPath(executable), expectedLauncher, StringComparison.OrdinalIgnoreCase)) continue;
+                    process.Kill();
+                    if (!process.WaitForExit(15000)) throw new IOException("起動中の CraftMate を終了できませんでした。");
+                }
+                catch (InvalidOperationException) { }
+                catch (System.ComponentModel.Win32Exception error)
+                {
+                    throw new IOException("起動中の CraftMate を終了できません: " + error.Message);
+                }
+                finally { process.Dispose(); }
+            }
+            Thread.Sleep(500);
+        }
+
+        private void StartInstalledLauncher()
+        {
+            string launcherPath = Path.Combine(_installDirectory, "CraftMate.exe");
+            if (!File.Exists(launcherPath)) throw new FileNotFoundException("更新後の CraftMate.exe が見つかりません。", launcherPath);
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.FileName = launcherPath;
+            startInfo.WorkingDirectory = _installDirectory;
+            startInfo.UseShellExecute = true;
+            Process.Start(startInfo);
         }
 
         private static void RollBack(List<FileChange> changes)

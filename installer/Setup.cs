@@ -201,16 +201,16 @@ namespace CraftMateSetup
     public class InstallerForm : Form
     {
         private string _lang;
-        private Label _lblTitle, _lblPath, _lblStatus, _lblUpdate;
+        private Label _lblTitle, _lblPath, _lblStatus, _lblUpdate, _lblRecommendation;
         private TextBox _txtPath, _txtLog;
         private Button _btnBrowse, _btnInstall;
         private CheckBox _chkLaunch;
         private ProgressBar _progressBar;
         private PictureBox _picAppIcon;
 
-        private const string CurrentVersion = "1.3.26";
+        private const string CurrentVersion = "1.3.27";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.26/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.27/app_payload.zip";
 
         public InstallerForm(string lang)
         {
@@ -260,7 +260,10 @@ namespace CraftMateSetup
             _txtPath = new TextBox();
             _txtPath.Location = new Point(20, 115);
             _txtPath.Width = 450;
-            _txtPath.Text = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            _txtPath.Text = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Programs",
+                "CraftMate");
 
             _btnBrowse = new Button();
             _btnBrowse.Text = _lang == "ja" ? "参照..." : "Browse...";
@@ -272,10 +275,18 @@ namespace CraftMateSetup
                 }
             };
 
+            _lblRecommendation = new Label();
+            _lblRecommendation.Text = _lang == "ja"
+                ? "推奨: 書き込み可能なユーザーフォルダにインストールしてください"
+                : "Recommended: Install in a user-writable folder.";
+            _lblRecommendation.Location = new Point(20, 145);
+            _lblRecommendation.AutoSize = true;
+            _lblRecommendation.ForeColor = Color.DarkSlateGray;
+
             // 起動チェックボックス
             _chkLaunch = new CheckBox();
             _chkLaunch.Text = _lang == "ja" ? "インストール後にCraftMateを起動する" : "Launch CraftMate after installation";
-            _chkLaunch.Location = new Point(20, 155);
+            _chkLaunch.Location = new Point(20, 170);
             _chkLaunch.AutoSize = true;
             _chkLaunch.Checked = true;
 
@@ -319,6 +330,7 @@ namespace CraftMateSetup
             Controls.Add(_lblTitle);
             Controls.Add(_lblUpdate);
             Controls.Add(_lblPath); Controls.Add(_txtPath); Controls.Add(_btnBrowse);
+            Controls.Add(_lblRecommendation);
             Controls.Add(_chkLaunch);
             Controls.Add(_btnInstall);
             Controls.Add(_lblStatus);
