@@ -95,43 +95,203 @@ namespace CraftMateSetup
     // =================================================================
     public class LanguageForm : Form
     {
-        public string SelectedLanguage = "en";
+        private ComboBox _languageList;
+
+        public string SelectedLanguage { get; private set; }
+
         public LanguageForm()
         {
-            Text = "Select Language";
-            Size = new Size(300, 150);
+            SelectedLanguage = "en";
+
+            Text = "\u0043\u0072\u0061\u0066\u0074\u004d\u0061\u0074\u0065 \u0053\u0065\u0074\u0075\u0070 - \u8a00\u8a9e\u9078\u629e";
+            Size = new Size(420, 280);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false; MinimizeBox = false;
-            BackColor = Color.FromArgb(245, 245, 245);
+            MaximizeBox = false;
+            MinimizeBox = false;
             ShowInTaskbar = true;
             InstallerIcon.Apply(this);
 
-            Label lbl = new Label();
-            lbl.Text = "Please select a language:";
-            lbl.Location = new Point(20, 20);
-            lbl.AutoSize = true;
-            Controls.Add(lbl);
+            var lblInstruction = new Label();
+            lblInstruction.Text = "\u8a00\u8a9e\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
+            lblInstruction.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+            lblInstruction.Location = new Point(24, 24);
+            lblInstruction.AutoSize = true;
+            lblInstruction.Width = 360;
 
-            ComboBox combo = new ComboBox();
-            combo.Location = new Point(20, 50);
-            combo.Width = 240;
-            combo.DropDownStyle = ComboBoxStyle.DropDownList;
-            combo.Items.Add("English");
-            combo.Items.Add("\u65e5\u672c\u8a9e");
-            combo.SelectedIndex = 0;
-            Controls.Add(combo);
+            _languageList = new ComboBox();
+            _languageList.DropDownStyle = ComboBoxStyle.DropDownList;
+            _languageList.Location = new Point(24, 64);
+            _languageList.Width = 360;
+            _languageList.Items.Add(new LanguageItem("\u65e5\u672c\u8a9e", "ja"));
+            _languageList.Items.Add(new LanguageItem("\u0045\u006e\u0067\u006c\u0069\u0073\u0068", "en"));
+            _languageList.Items.Add(new LanguageItem("\ud55c\uad6d\uc5b4", "ko"));
+            _languageList.Items.Add(new LanguageItem("\u0045\u0073\u0070\u0061\u00f1\u006f\u006c", "es"));
+            _languageList.Items.Add(new LanguageItem("\u0042\u0061\u0068\u0061\u0073\u0061 \u0049\u006e\u0064\u006f\u006e\u0065\u0073\u0069\u0061", "id"));
+            _languageList.Items.Add(new LanguageItem("\u4e2d\u6587 (\u7b80\u4f53)", "zh"));
+            _languageList.Items.Add(new LanguageItem("\u0939\u093f\u0928\u094d\u0926\u0940", "hi"));
+            _languageList.SelectedIndex = 0;
 
-            Button btn = new Button();
-            btn.Text = "OK";
-            btn.Location = new Point(180, 80);
-            btn.DialogResult = DialogResult.OK;
-            btn.Click += delegate {
-                SelectedLanguage = combo.SelectedIndex == 1 ? "ja" : "en";
-                DialogResult = System.Windows.Forms.DialogResult.OK;
+            var btnOk = new Button();
+            btnOk.Text = "\u004f\u004b";
+            btnOk.Location = new Point(300, 156);
+            btnOk.Width = 84;
+            btnOk.DialogResult = DialogResult.OK;
+            btnOk.Click += delegate
+            {
+                SelectedLanguage = ((LanguageItem)_languageList.SelectedItem).Code;
                 Close();
             };
-            Controls.Add(btn);
+
+            AcceptButton = btnOk;
+
+            Controls.Add(lblInstruction);
+            Controls.Add(_languageList);
+            Controls.Add(btnOk);
+        }
+
+        private sealed class LanguageItem
+        {
+            public string Display { get; private set; }
+            public string Code { get; private set; }
+
+            public LanguageItem(string display, string code)
+            {
+                Display = display;
+                Code = code;
+            }
+
+            public override string ToString()
+            {
+                return Display;
+            }
+        }
+    }
+
+
+    // =================================================================
+    // UIテキスト多言語辞書
+    // =================================================================
+    internal static class UITexts
+    {
+        private static readonly Dictionary<string, Dictionary<string, string>> _texts =
+            new Dictionary<string, Dictionary<string, string>>
+            {
+                {
+                    "ja", new Dictionary<string, string>
+                    {
+                        { "Header", "\u0043\u0072\u0061\u0066\u0074\u004d\u0061\u0074\u0065\u0020セットアップ" },
+                        { "SelectFolder", "インストール先の親フォルダー\u003a" },
+                        { "Browse", "参照\u2026" },
+                        { "Install", "インストール" },
+                        { "LogHeader", "\u003e\u003e\u003e\u0020ログ出力" },
+                        { "Downloading", "\u003e\u003e\u003e\u0020ダウンロード中\u2026" },
+                        { "Extracting", "\u003e\u003e\u003e\u0020抽出中\u2026" },
+                        { "Completed", "インストールが完了しました。" },
+                        { "CreatingShortcuts", "\u003e\u003e\u003e\u0020ショートカットを作成中\u2026" },
+                        { "ShortcutsCreated", "\u003e\u003e\u003e\u0020ショートカットの作成が完了しました。" }
+                    }
+                },
+                {
+                    "en", new Dictionary<string, string>
+                    {
+                        { "Header", "\u0043\u0072\u0061\u0066\u0074\u004d\u0061\u0074\u0065\u0020\u0053\u0065\u0074\u0075\u0070" },
+                        { "SelectFolder", "\u0049\u006e\u0073\u0074\u0061\u006c\u006c\u0020\u0042\u0061\u0073\u0065\u0020\u0046\u006f\u006c\u0064\u0065\u0072\u003a" },
+                        { "Browse", "\u0042\u0072\u006f\u0077\u0073\u0065\u002e\u002e\u002e" },
+                        { "Install", "\u0049\u006e\u0073\u0074\u0061\u006c\u006c" },
+                        { "LogHeader", "\u003e\u003e\u003e\u0020\u004c\u006f\u0067\u0020\u006f\u0075\u0074\u0070\u0075\u0074" },
+                        { "Downloading", "\u003e\u003e\u003e\u0020\u0044\u006f\u0077\u006e\u006c\u006f\u0061\u0064\u0069\u006e\u0067\u002e\u002e\u002e" },
+                        { "Extracting", "\u003e\u003e\u003e\u0020\u0045\u0078\u0074\u0072\u0061\u0063\u0074\u0069\u006e\u0067\u002e\u002e\u002e" },
+                        { "Completed", "\u0049\u006e\u0073\u0074\u0061\u006c\u006c\u0061\u0074\u0069\u006f\u006e\u0020\u0063\u006f\u006d\u0070\u006c\u0065\u0074\u0065\u002e" },
+                        { "CreatingShortcuts", "\u003e\u003e\u003e\u0020\u0043\u0072\u0065\u0061\u0074\u0069\u006e\u0067\u0020\u0073\u0068\u006f\u0072\u0074\u0063\u0075\u0074\u0073\u002e\u002e\u002e" },
+                        { "ShortcutsCreated", "\u003e\u003e\u003e\u0020\u0053\u0068\u006f\u0072\u0074\u0063\u0075\u0074\u0073\u0020\u0063\u0072\u0065\u0061\u0074\u0065\u0064\u002e" }
+                    }
+                },
+                {
+                    "ko", new Dictionary<string, string>
+                    {
+                        { "Header", "\ud06c\ub798\ud504\ud2b8\uba54\uc774\ud2b8\u0020\uc124\uce58" },
+                        { "SelectFolder", "\uc124\uce58\ud560\u0020\uae30\ubcf8\u0020\ud3f4\ub354\u003a" },
+                        { "Browse", "\ucc3e\uc544\ubcf4\uae30\u002e\u002e\u002e" },
+                        { "Install", "\uc124\uce58" },
+                        { "LogHeader", "\u003e\u003e\u003e\u0020\ub85c\uadf8\u0020\ucd9c\ub825" },
+                        { "Downloading", "\u003e\u003e\u003e\u0020\ub2e4\uc6b4\ub85c\ub4dc\u0020\uc911\u002e\u002e\u002e" },
+                        { "Extracting", "\u003e\u003e\u003e\u0020\uc555\ucd95\u0020\ud574\uc81c\u0020\uc911\u002e\u002e\u002e" },
+                        { "Completed", "\uc124\uce58\uac00\u0020\uc644\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4\u002e" },
+                        { "CreatingShortcuts", "\u003e\u003e\u003e\u0020\ubc14\ub85c\uac00\uae30\u0020\ub9cc\ub4e4\uae30\u0020\uc911\u002e\u002e\u002e" },
+                        { "ShortcutsCreated", "\u003e\u003e\u003e\u0020\ubc14\ub85c\uac00\uae30\u0020\uc0dd\uc131\uc774\u0020\uc644\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4\u002e" }
+                    }
+                },
+                {
+                    "es", new Dictionary<string, string>
+                    {
+                        { "Header", "\u0043\u006f\u006e\u0066\u0069\u0067\u0075\u0072\u0061\u0063\u0069\u00f3\u006e\u0020\u0064\u0065\u0020\u0043\u0072\u0061\u0066\u0074\u004d\u0061\u0074\u0065" },
+                        { "SelectFolder", "\u0043\u0061\u0072\u0070\u0065\u0074\u0061\u0020\u0064\u0065\u0020\u0069\u006e\u0073\u0074\u0061\u006c\u0061\u0063\u0069\u00f3\u006e\u0020\u0062\u0061\u0073\u0065\u003a" },
+                        { "Browse", "\u0045\u0078\u0061\u006d\u0069\u006e\u0061\u0072\u002e\u002e\u002e" },
+                        { "Install", "\u0049\u006e\u0073\u0074\u0061\u006c\u0061\u0072" },
+                        { "LogHeader", "\u003e\u003e\u003e\u0020\u0053\u0061\u006c\u0069\u0064\u0061\u0020\u0064\u0065\u006c\u0020\u0072\u0065\u0067\u0069\u0073\u0074\u0072\u006f" },
+                        { "Downloading", "\u003e\u003e\u003e\u0020\u0044\u0065\u0073\u0063\u0061\u0072\u0067\u0061\u006e\u0064\u006f\u002e\u002e\u002e" },
+                        { "Extracting", "\u003e\u003e\u003e\u0020\u0045\u0078\u0074\u0072\u0061\u0079\u0065\u006e\u0064\u006f\u002e\u002e\u002e" },
+                        { "Completed", "\u0049\u006e\u0073\u0074\u0061\u006c\u0061\u0063\u0069\u00f3\u006e\u0020\u0063\u006f\u006d\u0070\u006c\u0065\u0074\u0061\u002e" },
+                        { "CreatingShortcuts", "\u003e\u003e\u003e\u0020\u0043\u0072\u0065\u0061\u006e\u0064\u006f\u0020\u0061\u0063\u0063\u0065\u0073\u006f\u0073\u0020\u0064\u0069\u0072\u0065\u0063\u0074\u006f\u0073\u002e\u002e\u002e" },
+                        { "ShortcutsCreated", "\u003e\u003e\u003e\u0020\u0041\u0063\u0063\u0065\u0073\u006f\u0073\u0020\u0064\u0069\u0072\u0065\u0063\u0074\u006f\u0073\u0020\u0063\u0072\u0065\u0061\u0064\u006f\u0073\u002e" }
+                    }
+                },
+                {
+                    "id", new Dictionary<string, string>
+                    {
+                        { "Header", "\u0050\u0065\u006e\u0067\u0061\u0074\u0075\u0072\u0061\u006e\u0020\u0043\u0072\u0061\u0066\u0074\u004d\u0061\u0074\u0065" },
+                        { "SelectFolder", "\u0046\u006f\u006c\u0064\u0065\u0072\u0020\u0069\u006e\u0073\u0074\u0061\u006c\u0061\u0073\u0069\u0020\u0064\u0061\u0073\u0061\u0072\u003a" },
+                        { "Browse", "\u0054\u0065\u006c\u0075\u0073\u0075\u0072\u0069\u002e\u002e\u002e" },
+                        { "Install", "\u0049\u006e\u0073\u0074\u0061\u006c" },
+                        { "LogHeader", "\u003e\u003e\u003e\u0020\u004b\u0065\u006c\u0075\u0061\u0072\u0061\u006e\u0020\u006c\u006f\u0067" },
+                        { "Downloading", "\u003e\u003e\u003e\u0020\u004d\u0065\u006e\u0067\u0075\u006e\u0064\u0075\u0068\u002e\u002e\u002e" },
+                        { "Extracting", "\u003e\u003e\u003e\u0020\u004d\u0065\u006e\u0067\u0065\u006b\u0073\u0074\u0072\u0061\u006b\u002e\u002e\u002e" },
+                        { "Completed", "\u0049\u006e\u0073\u0074\u0061\u006c\u0061\u0073\u0069\u0020\u0073\u0065\u006c\u0065\u0073\u0061\u0069\u002e" },
+                        { "CreatingShortcuts", "\u003e\u003e\u003e\u0020\u004d\u0065\u006d\u0062\u0075\u0061\u0074\u0020\u0070\u0069\u006e\u0074\u0061\u0073\u0061\u006e\u002e\u002e\u002e" },
+                        { "ShortcutsCreated", "\u003e\u003e\u003e\u0020\u0050\u0069\u006e\u0074\u0061\u0073\u0061\u006e\u0020\u0074\u0065\u006c\u0061\u0068\u0020\u0064\u0069\u0062\u0075\u0061\u0074\u002e" }
+                    }
+                },
+                {
+                    "zh", new Dictionary<string, string>
+                    {
+                        { "Header", "\u0043\u0072\u0061\u0066\u0074\u004d\u0061\u0074\u0065\u0020\u8bbe\u7f6e" },
+                        { "SelectFolder", "\u5b89\u88c5\u57fa\u6587\u4ef6\u5939\u003a" },
+                        { "Browse", "\u6d4f\u89c8\u002e\u002e\u002e" },
+                        { "Install", "\u5b89\u88c5" },
+                        { "LogHeader", "\u003e\u003e\u003e\u0020\u65e5\u5fd7\u8f93\u51fa" },
+                        { "Downloading", "\u003e\u003e\u003e\u0020\u6b63\u5728\u4e0b\u8f7d\u002e\u002e\u002e" },
+                        { "Extracting", "\u003e\u003e\u003e\u0020\u6b63\u5728\u89e3\u538b\u002e\u002e\u002e" },
+                        { "Completed", "\u5b89\u88c5\u5b8c\u6210\u3002" },
+                        { "CreatingShortcuts", "\u003e\u003e\u003e\u0020\u6b63\u5728\u521b\u5efa\u5feb\u6377\u65b9\u5f0f\u002e\u002e\u002e" },
+                        { "ShortcutsCreated", "\u003e\u003e\u003e\u0020\u5feb\u6377\u65b9\u5f0f\u5df2\u521b\u5efa\u3002" }
+                    }
+                },
+                {
+                    "hi", new Dictionary<string, string>
+                    {
+                        { "Header", "\u0915\u094d\u0930\u093e\u092b\u094d\u091f\u092e\u0947\u091f\u0020\u0938\u0947\u091f\u0905\u092a" },
+                        { "SelectFolder", "\u0907\u0902\u0938\u094d\u091f\u0949\u0932\u0020\u092c\u0947\u0938\u0020\u092b\u094b\u0932\u094d\u0921\u0930\u003a" },
+                        { "Browse", "\u092c\u094d\u0930\u093e\u0909\u091c\u093c\u0020\u0915\u0930\u0947\u0902\u002e\u002e\u002e" },
+                        { "Install", "\u0907\u0902\u0938\u094d\u091f\u0949\u0932\u0020\u0915\u0930\u0947\u0902" },
+                        { "LogHeader", "\u003e\u003e\u003e\u0020\u0932\u0949\u0917\u0020\u0906\u0909\u091f\u092a\u0941\u091f" },
+                        { "Downloading", "\u003e\u003e\u003e\u0020\u0921\u093e\u0909\u0928\u0932\u094b\u0921\u0020\u0939\u094b\u0020\u0930\u0939\u093e\u0020\u0939\u0948\u002e\u002e\u002e" },
+                        { "Extracting", "\u003e\u003e\u003e\u0020\u0928\u093f\u0915\u093e\u0932\u0020\u0930\u0939\u093e\u0020\u0939\u0948\u002e\u002e\u002e" },
+                        { "Completed", "\u0907\u0902\u0938\u094d\u091f\u0949\u0932\u0947\u0936\u0928\u0020\u092a\u0942\u0930\u093e\u0020\u0939\u094b\u0020\u0917\u092f\u093e\u0964" },
+                        { "CreatingShortcuts", "\u003e\u003e\u003e\u0020\u0936\u0949\u0930\u094d\u091f\u0915\u091f\u0020\u092c\u0928\u093e\u090f\u0020\u091c\u093e\u0020\u0930\u0939\u0947\u0020\u0939\u0948\u0902\u002e\u002e\u002e" },
+                        { "ShortcutsCreated", "\u003e\u003e\u003e\u0020\u0936\u0949\u0930\u094d\u091f\u0915\u091f\u0020\u092c\u0928\u0020\u0917\u090f\u0020\u0939\u0948\u0902\u0964" }
+                    }
+                }
+            };
+
+        public static string Get(string lang, string key)
+        {
+            if (string.IsNullOrEmpty(lang)) lang = "en";
+            Dictionary<string, string> dict = _texts["en"];
+            _texts.TryGetValue(lang, out dict);
+            string text = key;
+            dict.TryGetValue(key, out text);
+            return text;
         }
     }
 
@@ -216,7 +376,7 @@ namespace CraftMateSetup
         {
             _lang = lang;
 
-            Text = "CraftMate Setup";
+            Text = UITexts.Get(_lang, "Header");
             Size = new Size(600, 550);
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Color.FromArgb(245, 245, 245);
@@ -237,7 +397,7 @@ namespace CraftMateSetup
 
             // タイトル（エメラルドグリーン）
             _lblTitle = new Label();
-            _lblTitle.Text = "CraftMate Setup";
+            _lblTitle.Text = UITexts.Get(_lang, "Header");
             _lblTitle.Font = new Font("Segoe UI", 18, FontStyle.Bold);
             _lblTitle.ForeColor = Color.FromArgb(16, 185, 129); // 緑
             _lblTitle.Location = new Point(100, 30);
@@ -253,7 +413,7 @@ namespace CraftMateSetup
 
             // インストール先
             _lblPath = new Label();
-            _lblPath.Text = _lang == "ja" ? "インストール先の親フォルダー:" : "Install Base Folder:";
+            _lblPath.Text = UITexts.Get(_lang, "SelectFolder");
             _lblPath.Location = new Point(20, 90);
             _lblPath.AutoSize = true;
 
@@ -266,7 +426,7 @@ namespace CraftMateSetup
                 "CraftMate");
 
             _btnBrowse = new Button();
-            _btnBrowse.Text = _lang == "ja" ? "参照..." : "Browse...";
+            _btnBrowse.Text = UITexts.Get(_lang, "Browse");
             _btnBrowse.Location = new Point(480, 113);
             _btnBrowse.Width = 80;
             _btnBrowse.Click += delegate {
@@ -292,7 +452,7 @@ namespace CraftMateSetup
 
             // インストールボタン（緑）
             _btnInstall = new Button();
-            _btnInstall.Text = _lang == "ja" ? "インストール" : "Install";
+            _btnInstall.Text = UITexts.Get(_lang, "Install");
             _btnInstall.Location = new Point(400, 210);
             _btnInstall.Width = 160;
             _btnInstall.Height = 35;
@@ -325,7 +485,7 @@ namespace CraftMateSetup
             _txtLog.ReadOnly = true;
             _txtLog.BackColor = Color.White;
             _txtLog.ForeColor = Color.DimGray;
-            _txtLog.Text = ">>> Log output" + Environment.NewLine;
+            _txtLog.Text = UITexts.Get(_lang, "LogHeader") + Environment.NewLine;
 
             Controls.Add(_lblTitle);
             Controls.Add(_lblUpdate);
@@ -396,7 +556,7 @@ namespace CraftMateSetup
                 Directory.CreateDirectory(target);
                 string tempZip = Path.GetTempFileName();
 
-                Invoke(new Action(delegate { _txtLog.AppendText(">>> Downloading...\r\n"); }));
+                Invoke(new Action(delegate { _txtLog.AppendText(UITexts.Get(_lang, "Downloading") + "\r\n"); }));
 
                 HttpWebRequest req = (HttpWebRequest)WebRequest.Create(DownloadUrl);
                 req.UserAgent = "CraftMateSetup";
@@ -409,7 +569,7 @@ namespace CraftMateSetup
                     while ((len = s.Read(buf, 0, buf.Length)) > 0) fs.Write(buf, 0, len);
                 }
 
-                Invoke(new Action(delegate { _txtLog.AppendText(">>> Extracting...\r\n"); }));
+                Invoke(new Action(delegate { _txtLog.AppendText(UITexts.Get(_lang, "Extracting") + "\r\n"); }));
 
                 using (ZipArchive archive = ZipFile.OpenRead(tempZip))
                 {
@@ -446,9 +606,14 @@ namespace CraftMateSetup
                     string startMenuFolder = Path.Combine(programsDirectory, "CraftMate");
                     Directory.CreateDirectory(startMenuFolder);
                     string executable = Path.Combine(target, "CraftMate.exe");
+
+                    Invoke(new Action(delegate { _txtLog.AppendText(UITexts.Get(_lang, "CreatingShortcuts") + "\r\n"); }));
+
                     CreateShortcut(Path.Combine(desktopDirectory, "CraftMate.lnk"), executable, target);
                     CreateShortcut(Path.Combine(startMenuFolder, "CraftMate.lnk"), executable, target);
                     CreateShortcut(Path.Combine(startMenuFolder, "CraftMate Updater.lnk"), updaterExecutable, target);
+
+                    Invoke(new Action(delegate { _txtLog.AppendText(UITexts.Get(_lang, "ShortcutsCreated") + "\r\n"); }));
                 }
                 catch (Exception shortcutError)
                 {
@@ -508,7 +673,7 @@ namespace CraftMateSetup
                 Invoke(new Action(delegate {
                     _lblStatus.Text = _lang == "ja" ? "インストール完了" : "Installation Complete";
                     _progressBar.Value = 100;
-                    _txtLog.AppendText(">>> Done.\r\n");
+                    _txtLog.AppendText(">>> " + UITexts.Get(_lang, "Completed") + "\r\n");
 
                     if (_chkLaunch.Checked)
                     {
@@ -523,7 +688,7 @@ namespace CraftMateSetup
                     else
                     {
                         MessageBox.Show(
-                            _lang == "ja" ? "CraftMateのインストールが完了しました。" : "CraftMate installation is complete.",
+                            UITexts.Get(_lang, "Completed"),
                             "CraftMate",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Information);
