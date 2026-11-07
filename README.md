@@ -157,3 +157,5 @@ npm start
   - A. `.env` の `GEMINI_API_KEY` または `OPENAI_API_KEY` に正しいキーが入力されているか確認してください。
 - **Q. タスクが途中で止まってしまった**
   - A. チャットまたはWeb画面から「`ストップ`」と送るか、WebUIの「タスク中断」ボタンを押せばリセットされます。
+
+配布サイト：https://kurageno8156-lgtm.github.io/craftmate-payload/public/distribution.html
