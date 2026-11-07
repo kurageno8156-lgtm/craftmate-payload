@@ -15,102 +15,102 @@
 </head>
 <body>
   <div class="app-container">
-    <!-- ãããã¼ -->
+    <!-- ヘッダー -->
     <header class="header">
       <div class="logo">
-        <span class="mc-icon">âï¸</span>
+        <span class="mc-icon">⛏️</span>
         <h1>Minecraft AI Agent <span class="badge">Autonomous</span></h1>
       </div>
       <div class="header-actions">
-        <a class="distribution-link" href="/distribution.html">CraftMate éå¸EEã¼ã¸ âE/a>
+        <a class="distribution-link" href="/distribution.html">CraftMate 配布ページ ↗</a>
         <div class="header-status">
           <div class="status-indicator" id="connection-status">
             <span class="dot offline"></span>
             <span class="text" data-i18n="connecting">Connecting...</span>
           </div>
-          <div class="llm-badge" id="llm-info">ð§  AI Brain: Loading...</div>
+          <div class="llm-badge" id="llm-info">🧠 AI Brain: Loading...</div>
         </div>
-        <button id="btn-settings" class="btn-settings" type="button" aria-haspopup="dialog" data-i18n="settingsButton">âï¸ESettings</button>
+        <button id="btn-settings" class="btn-settings" type="button" aria-haspopup="dialog" data-i18n="settingsButton">⚙️ Settings</button>
       </div>
     </header>
 
-    <!-- ã¡ã¤ã³ã³ã³ãE³ãE-->
+    <!-- メインコンテンツ -->
     <main class="dashboard-grid">
-      <!-- å·¦ã«ã©ã : ã¹ãEEã¿ã¹ & ã¤ã³ãã³ããª -->
+      <!-- 左カラム: ステータス & インベントリ -->
       <section class="panel status-panel">
-        <h2 data-i18n="botStatus">ð Bot Status</h2>
+        <h2 data-i18n="botStatus">📊 Bot Status</h2>
         
         <div class="stats-cards">
           <!-- HP & Food -->
           <div class="stat-card">
-            <div class="stat-label">â¤EE<span data-i18n="health">Health</span> (<span id="hp-val">20</span>/20)</div>
+            <div class="stat-label">❤️ <span data-i18n="health">Health</span> (<span id="hp-val">20</span>/20)</div>
             <div class="progress-bar hp"><div class="progress-fill" id="hp-bar" style="width: 100%;"></div></div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">ð <span data-i18n="food">Food</span> (<span id="food-val">20</span>/20)</div>
+            <div class="stat-label">🍗 <span data-i18n="food">Food</span> (<span id="food-val">20</span>/20)</div>
             <div class="progress-bar food"><div class="progress-fill" id="food-bar" style="width: 100%;"></div></div>
           </div>
         </div>
 
         <div class="info-list">
           <div class="info-item">
-            <span class="info-key" data-i18n="coordinates">ð Coordinates</span>
+            <span class="info-key" data-i18n="coordinates">📍 Coordinates</span>
             <span class="info-value" id="pos-val">X: 0, Y: 0, Z: 0</span>
           </div>
           <div class="info-item">
-            <span class="info-key" data-i18n="dimension">ð Dimension</span>
+            <span class="info-key" data-i18n="dimension">🌍 Dimension</span>
             <span class="info-value" id="dimension-val">overworld</span>
           </div>
           <div class="info-item">
-            <span class="info-key" data-i18n="biome">ð² Biome</span>
+            <span class="info-key" data-i18n="biome">🌲 Biome</span>
             <span class="info-value" id="biome-val">unknown</span>
           </div>
           <div class="info-item">
-            <span class="info-key" data-i18n="time">âEETime</span>
-            <span class="info-value" id="time-val">æ¼é</span>
+            <span class="info-key" data-i18n="time">☀️ Time</span>
+            <span class="info-value" id="time-val">昼間</span>
           </div>
           <div class="info-item">
-            <span class="info-key" data-i18n="heldItem">ð¡EEHeld Item</span>
-            <span class="info-value" id="held-val">ç´ æ</span>
+            <span class="info-key" data-i18n="heldItem">🗡️ Held Item</span>
+            <span class="info-value" id="held-val">素手</span>
           </div>
         </div>
 
-        <!-- è£E -->
-        <h3 data-i18n="equipment">ð¡EEEquipment</h3>
+        <!-- 装備 -->
+        <h3 data-i18n="equipment">🛡️ Equipment</h3>
         <div class="armor-grid">
-          <div class="armor-slot" id="armor-helmet">ðªE<span>-</span></div>
-          <div class="armor-slot" id="armor-chest">ð¦º <span>-</span></div>
-          <div class="armor-slot" id="armor-legs">ð <span>-</span></div>
-          <div class="armor-slot" id="armor-boots">ð¢ <span>-</span></div>
+          <div class="armor-slot" id="armor-helmet">🪖 <span>-</span></div>
+          <div class="armor-slot" id="armor-chest">🦺 <span>-</span></div>
+          <div class="armor-slot" id="armor-legs">👖 <span>-</span></div>
+          <div class="armor-slot" id="armor-boots">👢 <span>-</span></div>
         </div>
 
-        <!-- ã¤ã³ãã³ããª -->
-        <h3>ð <span data-i18n="inventory">Inventory</span> (<span id="inv-count">0</span> <span data-i18n="items">items</span>)</h3>
+        <!-- インベントリ -->
+        <h3>🎒 <span data-i18n="inventory">Inventory</span> (<span id="inv-count">0</span> <span data-i18n="items">items</span>)</h3>
         <div class="inventory-grid" id="inventory-container">
           <div class="empty-hint" data-i18n="emptyInventory">Inventory is empty</div>
         </div>
         <button class="inventory-view-all" id="btn-show-all-inventory" type="button" data-i18n="showAllItems" hidden>Show all ({count})</button>
 
-        <!-- å¨å²ã®Mobã»ãã¬ã¤ã¤ã¼ -->
-        <h3 data-i18n="nearbyEntities">ð Nearby Entities</h3>
+        <!-- 周囲のMob・プレイヤー -->
+        <h3 data-i18n="nearbyEntities">👀 Nearby Entities</h3>
         <div class="entities-list" id="entities-container">
           <div class="empty-hint" data-i18n="noEntities">No nearby entities</div>
         </div>
       </section>
 
-      <!-- å³ã«ã©ã : AIæèE­ã° & æE¤ºã³ã³ã½ã¼ã« -->
+      <!-- 右カラム: AI思考ログ & 指示コンソール -->
       <section class="panel action-panel">
-        <!-- ç¾å¨ã®ã¿ã¹ã¯è¡¨ç¤º -->
+        <!-- 現在のタスク表示 -->
         <div class="current-task-box" id="task-box">
           <div class="task-header">
-            <span class="task-title" data-i18n="currentGoal">ð¯ Current Goal</span>
+            <span class="task-title" data-i18n="currentGoal">🎯 Current Goal</span>
             <button id="btn-cancel" class="btn-cancel" style="display: none;" data-i18n="stopTask">Stop task</button>
           </div>
           <div class="task-content" id="current-task-text" data-i18n="waitingForTask">Waiting for instructions</div>
         </div>
 
-        <!-- AIæèEEè¡åã­ã° (ReAct Timeline) -->
-        <h2 data-i18n="aiLogTitle">ð§  AI Activity Log (Thoughts & Actions)</h2>
+        <!-- AI思考・行動ログ (ReAct Timeline) -->
+        <h2 data-i18n="aiLogTitle">🧠 AI Activity Log (Thoughts & Actions)</h2>
         <div class="logs-container" id="logs-container">
           <div class="log-entry system">
             <span class="log-time">System</span>
@@ -118,19 +118,19 @@
           </div>
         </div>
 
-        <!-- æE¤ºéä¿¡ãã©ã¼ã  -->
+        <!-- 指示送信フォーム -->
         <div class="command-input-container">
           <div class="quick-commands">
-            <button class="quick-btn" data-cmd="ç§ã«ã¤ãE¦ãã¦" data-cmd-ja="ç§ã«ã¤ãE¦ãã¦" data-cmd-en="Follow me">ð¶ <span data-i18n="quickFollow">Follow me</span></button>
-            <button class="quick-btn" data-cmd="æ¨ãEã¤åE£ã¦éEã¦" data-cmd-ja="æ¨ãEã¤åE£ã¦éEã¦" data-cmd-en="Chop and collect 3 logs">ð² <span data-i18n="quickChop">Collect 3 logs</span></button>
-            <button class="quick-btn" data-cmd="æ¨ã®ãE«ãã·ãEåä½ã£ã¦" data-cmd-ja="æ¨ã®ãE«ãã·ãEåä½ã£ã¦" data-cmd-en="Craft a wooden pickaxe">âï¸E<span data-i18n="quickPickaxe">Craft a wooden pickaxe</span></button>
-            <button class="quick-btn" data-cmd="å¨å²ã®ã¢ã³ã¹ã¿ã¼ããèº«ãå®ã£ã¦" data-cmd-ja="å¨å²ã®ã¢ã³ã¹ã¿ã¼ããèº«ãå®ã£ã¦" data-cmd-en="Defend yourself from nearby monsters">âï¸E<span data-i18n="quickDefend">Defend against monsters</span></button>
-            <button class="quick-btn" data-cmd="ææã¡ã®æ¨æãç§ã«æ¸¡ãã¦" data-cmd-ja="ææã¡ã®æ¨æãç§ã«æ¸¡ãã¦" data-cmd-en="Give me the wood you are carrying">ð <span data-i18n="quickGive">Give me your wood</span></button>
-            <button class="quick-btn" data-cmd="ã¹ãããE data-cmd-ja="ã¹ãããE data-cmd-en="Stop">ð <span data-i18n="quickStop">Stop</span></button>
+            <button class="quick-btn" data-cmd="私についてきて" data-cmd-ja="私についてきて" data-cmd-en="Follow me">🚶 <span data-i18n="quickFollow">Follow me</span></button>
+            <button class="quick-btn" data-cmd="木を3つ切って集めて" data-cmd-ja="木を3つ切って集めて" data-cmd-en="Chop and collect 3 logs">🌲 <span data-i18n="quickChop">Collect 3 logs</span></button>
+            <button class="quick-btn" data-cmd="木のツルハシを1個作って" data-cmd-ja="木のツルハシを1個作って" data-cmd-en="Craft a wooden pickaxe">⛏️ <span data-i18n="quickPickaxe">Craft a wooden pickaxe</span></button>
+            <button class="quick-btn" data-cmd="周囲のモンスターから身を守って" data-cmd-ja="周囲のモンスターから身を守って" data-cmd-en="Defend yourself from nearby monsters">⚔️ <span data-i18n="quickDefend">Defend against monsters</span></button>
+            <button class="quick-btn" data-cmd="手持ちの木材を私に渡して" data-cmd-ja="手持ちの木材を私に渡して" data-cmd-en="Give me the wood you are carrying">🎁 <span data-i18n="quickGive">Give me your wood</span></button>
+            <button class="quick-btn" data-cmd="ストップ" data-cmd-ja="ストップ" data-cmd-en="Stop">🛑 <span data-i18n="quickStop">Stop</span></button>
           </div>
           <form id="command-form" class="command-form">
             <input type="text" id="command-input" data-i18n-placeholder="commandPlaceholder" placeholder="Enter an instruction..." autocomplete="off" required>
-            <button type="submit" id="btn-submit" class="btn-send" data-i18n="sendInstruction">Send instruction ð</button>
+            <button type="submit" id="btn-submit" class="btn-send" data-i18n="sendInstruction">Send instruction 🚀</button>
           </form>
         </div>
       </section>
@@ -143,16 +143,16 @@
       <div class="settings-heading">
         <div>
           <p class="eyebrow" data-i18n="controlPanel">CRAFTMATE CONTROL</p>
-          <h2 id="settings-title" data-i18n="settingsTitle">âï¸ESettings</h2>
+          <h2 id="settings-title" data-i18n="settingsTitle">⚙️ Settings</h2>
         </div>
-        <button id="btn-close-settings" class="icon-button" type="button" aria-label="Close settings" data-i18n-aria="closeSettings">Ã</button>
+        <button id="btn-close-settings" class="icon-button" type="button" aria-label="Close settings" data-i18n-aria="closeSettings">×</button>
       </div>
       <form id="settings-form">
         <div class="settings-fields">
-          <label class="settings-field"><span data-i18n="languageLabel">Language / è¨èª</span><select id="setting-language" name="language" aria-label="Language / è¨èªE><option value="ja">æ¥æ¬èªE(ja)</option><option value="en">English (en)</option></select></label>
+          <label class="settings-field"><span data-i18n="languageLabel">Language / 言語</span><select id="setting-language" name="language" aria-label="Language / 言語"><option value="ja">日本語 (ja)</option><option value="en">English (en)</option></select></label>
           <label class="settings-field"><span data-i18n="mcPortLabel">Minecraft LAN port</span><input id="setting-mc-port" name="mcPort" type="number" min="1" max="65535" value="25565" required><small data-i18n="mcPortHelp">Default: 25565</small></label>
-          <label class="settings-field"><span data-i18n="mcVersionLabel">Minecraft version</span><select id="setting-mc-version" name="mcVersion"><option value="26.1.2">26.1.2</option><option value="26.1.1">26.1.1</option><option value="26.1">26.1</option><option value="1.21.11">1.21.11</option><option value="1.21.10">1.21.10</option><option value="1.21.9">1.21.9</option><option value="1.21.8">1.21.8</option><option value="1.21.7">1.21.7</option><option value="1.21.6">1.21.6</option><option value="1.21.5">1.21.5</option><option value="1.21.4">1.21.4</option><option value="1.21.3">1.21.3</option><option value="1.21.2">1.21.2</option><option value="1.21.1">1.21.1</option><option value="1.21">1.21</option><option value="1.20.6">1.20.6</option><option value="1.20.5">1.20.5</option><option value="1.20.4">1.20.4</option><option value="1.20.3">1.20.3</option><option value="1.20.2">1.20.2</option><option value="1.20.1">1.20.1</option><option value="1.20">1.20</option><option value="1.19.4">1.19.4</option><option value="1.19.3">1.19.3</option><option value="1.19.2">1.19.2</option><option value="1.19.1">1.19.1</option><option value="1.19">1.19</option><option value="1.18.2">1.18.2</option><option value="1.18.1">1.18.1</option><option value="1.18">1.18</option><option value="1.17.1">1.17.1</option><option value="1.17">1.17</option><option value="1.16.5">1.16.5</option><option value="1.16.4">1.16.4</option><option value="1.16.3">1.16.3</option><option value="1.16.2">1.16.2</option><option value="1.16.1">1.16.1</option><option value="1.16">1.16</option><option value="1.15.2">1.15.2</option><option value="1.15.1">1.15.1</option><option value="1.15">1.15</option><option value="1.14.4">1.14.4</option><option value="1.14.3">1.14.3</option><option value="1.14.2">1.14.2</option><option value="1.14.1">1.14.1</option><option value="1.14">1.14</option><option value="1.13.2">1.13.2</option><option value="1.13.1">1.13.1</option><option value="1.13">1.13</option><option value="1.12.2">1.12.2</option><option value="1.12.1">1.12.1</option><option value="1.12">1.12</option><option value="1.11.2">1.11.2</option><option value="1.11.1">1.11.1</option><option value="1.11">1.11</option><option value="1.10.2">1.10.2</option><option value="1.10.1">1.10.1</option><option value="1.10">1.10</option><option value="1.9.4">1.9.4</option><option value="1.9.3">1.9.3</option><option value="1.9.2">1.9.2</option><option value="1.9.1">1.9.1</option><option value="1.9">1.9</option><option value="1.8.9">1.8.9</option><option value="1.8.8">1.8.8</option><option value="1.8.7">1.8.7</option><option value="1.8.6">1.8.6</option><option value="1.8.5">1.8.5</option><option value="1.8.4">1.8.4</option><option value="1.8.3">1.8.3</option><option value="1.8.2">1.8.2</option><option value="1.8.1">1.8.1</option><option value="1.8">1.8</option></select><small data-i18n="mcVersionHelp">Choose a supported version.</small>
-          <label class="settings-field"><span data-i18n="botNameLabel">Bot name</span><input id="setting-username" name="username" type="text" maxlength="16" value="AIMAN" required><small data-i18n="botNameHelp">1âE6 letters, numbers, or underscores</small></label>
+          <label class="settings-field"><span data-i18n="mcVersionLabel">Minecraft version</span><select id="setting-mc-version" name="mcVersion"><option value="auto" data-i18n="autoDetect">Auto-detect (auto)</option><option value="26.3">26.3</option><option value="26.2">26.2</option><option value="26.1.2">26.1.2</option><option value="26.1.1">26.1.1</option><option value="26.1">26.1</option><option value="1.21.11">1.21.11</option><option value="1.21.10">1.21.10</option><option value="1.21.9">1.21.9</option><option value="1.21.8">1.21.8</option><option value="1.21.7">1.21.7</option><option value="1.21.6">1.21.6</option><option value="1.21.5">1.21.5</option><option value="1.21.4">1.21.4</option><option value="1.21.3">1.21.3</option><option value="1.21.2">1.21.2</option><option value="1.21.1">1.21.1</option><option value="1.21">1.21</option><option value="1.20.6">1.20.6</option><option value="1.20.5">1.20.5</option><option value="1.20.4">1.20.4</option><option value="1.20.3">1.20.3</option><option value="1.20.2">1.20.2</option><option value="1.20.1">1.20.1</option><option value="1.20">1.20</option><option value="1.19.4">1.19.4</option><option value="1.19.3">1.19.3</option><option value="1.19.2">1.19.2</option><option value="1.19.1">1.19.1</option><option value="1.19">1.19</option><option value="1.18.2">1.18.2</option><option value="1.18.1">1.18.1</option><option value="1.18">1.18</option><option value="1.17.1">1.17.1</option><option value="1.17">1.17</option><option value="1.16.5">1.16.5</option><option value="1.16.4">1.16.4</option><option value="1.16.3">1.16.3</option><option value="1.16.2">1.16.2</option><option value="1.16.1">1.16.1</option><option value="1.16">1.16</option><option value="1.15.2">1.15.2</option><option value="1.15.1">1.15.1</option><option value="1.15">1.15</option><option value="1.14.4">1.14.4</option><option value="1.14.3">1.14.3</option><option value="1.14.2">1.14.2</option><option value="1.14.1">1.14.1</option><option value="1.14">1.14</option><option value="1.13.2">1.13.2</option><option value="1.13.1">1.13.1</option><option value="1.13">1.13</option><option value="1.12.2">1.12.2</option><option value="1.12.1">1.12.1</option><option value="1.12">1.12</option><option value="1.11.2">1.11.2</option><option value="1.11.1">1.11.1</option><option value="1.11">1.11</option><option value="1.10.2">1.10.2</option><option value="1.10.1">1.10.1</option><option value="1.10">1.10</option><option value="1.9.4">1.9.4</option><option value="1.9.3">1.9.3</option><option value="1.9.2">1.9.2</option><option value="1.9.1">1.9.1</option><option value="1.9">1.9</option><option value="1.8.9">1.8.9</option><option value="1.8.8">1.8.8</option><option value="1.8.7">1.8.7</option><option value="1.8.6">1.8.6</option><option value="1.8.5">1.8.5</option><option value="1.8.4">1.8.4</option><option value="1.8.3">1.8.3</option><option value="1.8.2">1.8.2</option><option value="1.8.1">1.8.1</option><option value="1.8">1.8</option><option value="custom" data-i18n="otherVersion">Other (manual input)</option></select><input id="setting-mc-version-custom" name="mcVersionCustom" type="text" placeholder="Enter version" data-i18n-placeholder="mcVersionCustomPlaceholder" autocomplete="off" hidden><small data-i18n="mcVersionHelp">Choose a supported version or enter a custom version.</small></label>
+          <label class="settings-field"><span data-i18n="botNameLabel">Bot name</span><input id="setting-username" name="username" type="text" maxlength="16" value="AIMAN" required><small data-i18n="botNameHelp">1–16 letters, numbers, or underscores</small></label>
           <label class="settings-field"><span data-i18n="webPortLabel">Web server port</span><input id="setting-web-port" name="webPort" type="number" min="1" max="65535" value="3000" required><small data-i18n="webPortHelp">Default: 3000</small></label>
           <label class="settings-field"><span data-i18n="providerLabel">AI provider</span><select id="setting-provider" name="provider"><option value="gemini">Google Gemini</option><option value="groq">Groq</option><option value="ollama">Ollama (local)</option><option value="openai">OpenAI</option></select></label>
           <label class="settings-field"><span data-i18n="modelLabel">Model</span><select id="setting-model" name="model" required></select><small data-i18n="modelHelp">Choose the model used by the selected provider.</small></label>
@@ -167,16 +167,16 @@
         <input id="settings-backup-file" type="file" accept=".json,application/json" hidden>
       </div>
       <div class="settings-divider"></div>
-      <div class="connection-heading"><h3 data-i18n="connections">Connections</h3><span id="health-checked" data-i18n="checking">Checkingâ¦</span></div>
+      <div class="connection-heading"><h3 data-i18n="connections">Connections</h3><span id="health-checked" data-i18n="checking">Checking…</span></div>
       <div class="connection-cards">
         <div class="connection-card"><span class="connection-dot offline" id="minecraft-health-dot"></span><span data-i18n="minecraft">Minecraft</span><strong id="minecraft-health-label" data-i18n="checking">Checking</strong></div>
         <div class="connection-card"><span class="connection-dot offline" id="ai-health-dot"></span><span data-i18n="aiProvider">AI provider</span><strong id="ai-health-label" data-i18n="checking">Checking</strong></div>
       </div>
       <div class="settings-tools">
-        <button id="btn-reconnect" class="btn-secondary" type="button" data-i18n="reconnect">â» Reconnect Minecraft</button>
-        <button id="btn-ai-restart" class="btn-secondary" type="button" data-i18n="restartAI">â³ Restart AI client</button>
-        <button id="btn-check-updates" class="btn-secondary" type="button" data-i18n="checkUpdates">â» Check for updates</button>
-        <button id="btn-download-logs" class="btn-secondary" type="button" data-i18n="downloadLogs">âEDownload logs</button>
+        <button id="btn-reconnect" class="btn-secondary" type="button" data-i18n="reconnect">↻ Reconnect Minecraft</button>
+        <button id="btn-ai-restart" class="btn-secondary" type="button" data-i18n="restartAI">⟳ Restart AI client</button>
+        <button id="btn-check-updates" class="btn-secondary" type="button" data-i18n="checkUpdates">↻ Check for updates</button>
+        <button id="btn-download-logs" class="btn-secondary" type="button" data-i18n="downloadLogs">↓ Download logs</button>
       </div>
     </section>
   </div>
