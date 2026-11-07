@@ -131,7 +131,14 @@ if ([string]::IsNullOrWhiteSpace($defaultBranch)) {
 }
 
 $branch = Get-CommandOutput -Command 'git' -Arguments @('branch', '--show-current') -FailureMessage 'Could not determine the current Git branch.'
-if ([string]::IsNullOrWhiteSpace($branch) -or $branch -ne $defaultBranch) {
+$isDetached = Get-CommandOutput -Command 'git' -Arguments @('symbolic-ref', '--short', 'HEAD') -FailureMessage 'Could not determine HEAD reference'
+if ([string]::IsNullOrWhiteSpace($branch)) {
+    # If in detached HEAD state, check if current commit matches main
+    $mainCommit = Get-CommandOutput -Command 'git' -Arguments @('rev-parse', 'main') -FailureMessage 'Could not get main commit'
+    if ([string]::IsNullOrWhiteSpace($mainCommit) -or $mainCommit -ne $branch) {
+        throw "Switch to the repository default branch ($defaultBranch) before creating a release."
+    }
+} elseif ($branch -ne $defaultBranch) {
     throw "Switch to the repository default branch ($defaultBranch) before creating a release."
 }
 
