@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { MinecraftBot } from '../bot/mcBot.js';
 import { AutonomousAgent } from '../ai/agent.js';
+import { captureScreenRegion } from '../bot/vision.js';
 import { AgentStepLog, ChatMessage } from '../types.js';
 import * as fs from 'fs';
 import { randomBytes, timingSafeEqual } from 'crypto';
@@ -34,6 +35,7 @@ export class WebServer {
   private envPath: string;
   private isScreenSharing: boolean = false;
   private screenShareInterval: NodeJS.Timeout | null = null;
+  private updateToken: Buffer = Buffer.alloc(32);
 
 
   constructor(
@@ -569,7 +571,7 @@ export class WebServer {
           this.isScreenSharing = true;
           this.screenShareInterval = setInterval(async () => {
             if (!this.isScreenSharing) return;
-            const img = await captureScreenRegion();
+            const img = await captureScreenRegion(0, 0, 1920, 1080);
             socket.emit('bot-screen', img);
           }, 16);
         }
