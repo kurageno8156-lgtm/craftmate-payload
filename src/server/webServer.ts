@@ -48,7 +48,12 @@ export class WebServer {
     this.agent = agent;
     this.port = port;
     this.envPath = envPath;
-    this.updateToken = this.loadUpdateToken();
+    try {
+      this.updateToken = this.loadUpdateToken();
+    } catch (error) {
+      console.error('[Web] Failed to load update token:', error);
+      this.updateToken = Buffer.alloc(32);
+    }
 
     this.app = express();
     this.server = http.createServer(this.app);
