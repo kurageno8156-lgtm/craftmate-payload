@@ -245,35 +245,48 @@ export class LLMClient {
 
     const LIGHTWEIGHT_MODEL = 'gemini-3.1-flash-lite';
 
+    const GEMINI_TIMEOUT_MS = 45000;
+    const GEMINI_TIMEOUT_RETRIES = 2; // 初回 + 2回リトライ（2s, 4s バックオフ）
+
     const generate = async (modelName: string): Promise<{ data: any; elapsedMs: number }> => {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent`;
       const started = Date.now();
-      let res: Response;
-      try {
-        res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey,
-          },
-          body: requestBody,
-          signal: AbortSignal.timeout(15000),
-        });
-      } catch (err: any) {
-        const isTimeout = err?.name === 'TimeoutError' || err?.name === 'AbortError' ||
-          /timed?\s*out|timeout|aborted/i.test(String(err?.message || ''));
-        if (isTimeout) {
-          throw new Error('AIの応答がタイムアウトしました。もう一度お試しください。');
+      let lastTimeoutError: any = null;
+      for (let attempt = 0; attempt <= GEMINI_TIMEOUT_RETRIES; attempt++) {
+        if (attempt > 0) {
+          const backoffMs = attempt === 1 ? 2000 : 4000;
+          console.warn(`[LLM] Gemini ${modelName} timed out. Retry ${attempt}/${GEMINI_TIMEOUT_RETRIES} in ${backoffMs}ms...`);
+          await sleep(backoffMs);
         }
-        throw err;
+        let res: Response;
+        try {
+          res = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': apiKey,
+            },
+            body: requestBody,
+            signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+          });
+        } catch (err: any) {
+          const isTimeout = err?.name === 'TimeoutError' || err?.name === 'AbortError' ||
+            /timed?\s*out|timeout|aborted/i.test(String(err?.message || ''));
+          if (isTimeout) {
+            lastTimeoutError = err;
+            continue; // タイムアウトのみリトライ
+          }
+          throw err; // タイムアウト以外は即座にエラー
+        }
+        const elapsedMs = Date.now() - started;
+        const text = await res.text();
+        if (!res.ok) {
+          throw new Error(`Gemini API error ${res.status}: ${text.slice(0, 300)}`);
+        }
+        console.log(`[LLM] Gemini ${modelName} responded in ${elapsedMs}ms`);
+        return { data: JSON.parse(text), elapsedMs };
       }
-      const elapsedMs = Date.now() - started;
-      const text = await res.text();
-      if (!res.ok) {
-        throw new Error(`Gemini API error ${res.status}: ${text.slice(0, 300)}`);
-      }
-      console.log(`[LLM] Gemini ${modelName} responded in ${elapsedMs}ms`);
-      return { data: JSON.parse(text), elapsedMs };
+      throw new Error('AIの応答がタイムアウトしました。もう一度お試しください。');
     };
 
     let lastError: any = null;
