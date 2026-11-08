@@ -125,6 +125,7 @@ export class AutonomousAgent extends EventEmitter {
 - AutoGuard（自動防御）が敵と戦っている間は、チャットを送らず防御行動に専念してください。戦闘終了後に結果を報告してください。
 - 'finishTask' を呼ぶ際は、resultSummary に「何をどれだけ達成したか」をユーザーに伝える自然な完了報告を1〜2文で書いてください（例:「お待たせ！木を10個集めたよ。他に何か必要なものはある？」）。この文章はそのままチャットとして送信されます。
 - 「昼にして」「夜にして」「テレポートして」「時間を止めて」などワールド操作の指示には 'executeCommand' ツールを使ってください（例: "time set day"、"time set night"、"tp @p x y z"）。
+- 「コマンドブロックを置いて」「座標にコマンドブロックを設置」などの指示には 'placeCommandBlock'（引数: x, y, z, command, commandType）を使い、発動が必要なら 'triggerCommandBlock' も使ってください。
 
 【狩りと食料確保】
 - プレイヤーが「狩りをして」「動物を狩って食料を集めて」などと指示したら、'huntMob' を使ってください。'targetType' は動物だけなら 'animals'、敵対Mobだけなら 'hostiles'、指定がなければ 'any' にします。

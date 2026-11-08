@@ -1,6 +1,8 @@
 import { ToolDefinition, ToolCallResult } from '../types.js';
 import { MinecraftBot } from '../bot/mcBot.js';
 
+const DANGEROUS_COMMANDS = new Set(['kill', 'ban', 'ban-ip', 'banlist', 'op', 'deop', 'kick', 'stop', 'whitelist', 'pardon', 'setblock', 'fill', 'clone', 'function', 'give', 'clear']);
+
 export const BOT_TOOLS: ToolDefinition[] = [
   {
     name: 'chat',
@@ -92,6 +94,34 @@ export const BOT_TOOLS: ToolDefinition[] = [
         },
       },
       required: ['itemName'],
+    },
+  },
+  {
+    name: 'placeCommandBlock',
+    description: '指定座標にコマンドブロックを設置し、コマンドと種類を設定する（クリエイティブ必須）',
+    parameters: {
+      type: 'object',
+      properties: {
+        x: { type: 'number', description: '設置するX座標' },
+        y: { type: 'number', description: '設置するY座標' },
+        z: { type: 'number', description: '設置するZ座標' },
+        command: { type: 'string', description: '実行するMinecraftコマンド（例: time set day）' },
+        commandType: { type: 'string', enum: ['impulse', 'chain', 'repeat'], description: 'コマンドブロックの種類（省略時はimpulse）' },
+      },
+      required: ['x', 'y', 'z', 'command'],
+    },
+  },
+  {
+    name: 'triggerCommandBlock',
+    description: '設置済みのコマンドブロックにレッドストーンパルスを送り発動させる',
+    parameters: {
+      type: 'object',
+      properties: {
+        x: { type: 'number', description: 'コマンドブロックのX座標' },
+        y: { type: 'number', description: 'コマンドブロックのY座標' },
+        z: { type: 'number', description: 'コマンドブロックのZ座標' },
+      },
+      required: ['x', 'y', 'z'],
     },
   },
   {
@@ -294,11 +324,46 @@ export async function executeBotTool(
         }
         const normalized = command.startsWith('/') ? command.slice(1) : command;
         const head = normalized.split(/\s+/)[0].toLowerCase();
-        const DANGEROUS_COMMANDS = new Set(['kill', 'ban', 'ban-ip', 'banlist', 'op', 'deop', 'kick', 'stop', 'whitelist', 'pardon', 'setblock', 'fill', 'clone', 'function', 'give', 'clear']);
         if (DANGEROUS_COMMANDS.has(head) && cfg.botAllowDangerousCommands === false) {
           return { success: false, message: `管理者設定で危険なコマンド (/ ${head}) が禁止されています。` };
         }
         return await skills.executeCommand(command);
+      }
+      case 'placeCommandBlock': {
+        const cfg = botWrapper.config as any;
+        if (cfg.botAllowCommands === false) {
+          return { success: false, message: '管理者設定でコマンド実行が無効になっています。' };
+        }
+        const x = Number(args.x);
+        const y = Number(args.y);
+        const z = Number(args.z);
+        if (![x, y, z].every(Number.isFinite)) {
+          return { success: false, message: '座標が不正です。x/y/zは数値で指定してください。' };
+        }
+        const command = typeof args.command === 'string' ? args.command.trim() : '';
+        if (!command) {
+          return { success: false, message: 'コマンドが指定されていません。' };
+        }
+        const normalized = command.startsWith('/') ? command.slice(1) : command;
+        const head = normalized.split(/\s+/)[0].toLowerCase();
+        if (DANGEROUS_COMMANDS.has(head) && cfg.botAllowDangerousCommands === false) {
+          return { success: false, message: `管理者設定で危険なコマンド (/ ${head}) を含むコマンドブロックが禁止されています。` };
+        }
+        const commandType = args.commandType === 'chain' || args.commandType === 'repeat' ? args.commandType : 'impulse';
+        return await skills.placeCommandBlock(x, y, z, command, commandType);
+      }
+      case 'triggerCommandBlock': {
+        const cfg = botWrapper.config as any;
+        if (cfg.botAllowCommands === false) {
+          return { success: false, message: '管理者設定でコマンド実行が無効になっています。' };
+        }
+        const x = Number(args.x);
+        const y = Number(args.y);
+        const z = Number(args.z);
+        if (![x, y, z].every(Number.isFinite)) {
+          return { success: false, message: '座標が不正です。x/y/zは数値で指定してください。' };
+        }
+        return await skills.triggerCommandBlock(x, y, z);
       }
       case 'stopActions':
         return await skills.stopActions();

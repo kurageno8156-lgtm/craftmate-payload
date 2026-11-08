@@ -191,6 +191,108 @@ export class SkillManager {
   }
 
   /**
+   * 指定座標にコマンドブロックを設置し、コマンドと種類を設定する。
+   * bot.setCommandBlock はクリエイティブモードが必要。
+   * commandType: 'impulse'(REDSTONE=2) / 'chain'(SEQUENCE=0) / 'repeat'(AUTO=1)
+   */
+  public async placeCommandBlock(
+    x: number, y: number, z: number,
+    command: string,
+    commandType: 'impulse' | 'chain' | 'repeat' = 'impulse'
+  ): Promise<ToolCallResult> {
+    const pos = new Vec3(Math.floor(x), Math.floor(y), Math.floor(z));
+    const existing = this.bot.blockAt(pos);
+    const isCmdBlock = !!existing && existing.name.includes('command_block');
+    if (existing && !isCmdBlock && existing.name !== 'air' && existing.name !== 'cave_air' && existing.name !== 'void_air') {
+      return { success: false, message: `座標 (${x},${y},${z}) には既にブロック(${existing.name})があります。` };
+    }
+
+    const MODE_MAP: Record<string, number> = { chain: 0, repeat: 1, impulse: 2 };
+    const mode = MODE_MAP[commandType] ?? 2;
+    const cmd = (command || '').replace(/[\r\n]/g, ' ').trim().slice(0, 32500);
+    if (!cmd) return { success: false, message: 'コマンドが空です。' };
+
+    if (this.bot.player.gamemode !== 1) {
+      return { success: false, message: 'コマンドブロックの設定にはクリエイティブモードが必要です。' };
+    }
+
+    try {
+      if (!isCmdBlock) {
+        let slot = this.bot.inventory.items().findIndex(i => i.name === 'command_block');
+        if (slot < 0) {
+          await this.bot.creative.setInventorySlot(36, { name: 'command_block', count: 1 } as any);
+          slot = this.bot.inventory.items().findIndex(i => i.name === 'command_block');
+        }
+        if (slot < 0) return { success: false, message: 'コマンドブロックのアイテムが見つかりません。' };
+        await this.bot.equip(this.bot.inventory.items()[slot], 'hand');
+
+        const candidates: Array<{ ref: any; face: Vec3 }> = [
+          { ref: this.bot.blockAt(pos.offset(0, -1, 0)), face: new Vec3(0, 1, 0) },
+          { ref: this.bot.blockAt(pos.offset(1, 0, 0)), face: new Vec3(-1, 0, 0) },
+          { ref: this.bot.blockAt(pos.offset(-1, 0, 0)), face: new Vec3(1, 0, 0) },
+          { ref: this.bot.blockAt(pos.offset(0, 0, 1)), face: new Vec3(0, 0, -1) },
+          { ref: this.bot.blockAt(pos.offset(0, 0, -1)), face: new Vec3(0, 0, 1) },
+          { ref: this.bot.blockAt(pos.offset(0, 1, 0)), face: new Vec3(0, -1, 0) },
+        ];
+        let placed = false;
+        for (const c of candidates) {
+          if (!c.ref || c.ref.name === 'air') continue;
+          try {
+            await this.bot.placeBlock(c.ref, c.face);
+            placed = true;
+            break;
+          } catch { /* 次の候補へ */ }
+        }
+        if (!placed) return { success: false, message: 'コマンドブロックを設置できませんでした（設置場所がありません）。' };
+        await new Promise(r => setTimeout(r, 400));
+      }
+
+      const placedBlock = this.bot.blockAt(pos);
+      if (!placedBlock || !placedBlock.name.includes('command_block')) {
+        return { success: false, message: 'コマンドブロックの設置を確認できませんでした。' };
+      }
+
+      await (this.bot as any).setCommandBlock(pos, cmd, {
+        mode,
+        trackOutput: false,
+        conditional: false,
+        alwaysActive: false,
+      });
+
+      const typeLabel = commandType === 'chain' ? 'チェーン' : commandType === 'repeat' ? 'リピート' : 'インパルス';
+      return { success: true, message: `コマンドブロック(${typeLabel})を (${x},${y},${z}) に設置し、コマンドを設定しました: ${cmd}` };
+    } catch (err: any) {
+      return { success: false, message: `コマンドブロック設置エラー: ${err.message}` };
+    }
+  }
+
+  /**
+   * コマンドブロックにレッドストーンパルスを送って発動させる（ベストエフォート）。
+   */
+  public async triggerCommandBlock(x: number, y: number, z: number): Promise<ToolCallResult> {
+    const pos = new Vec3(Math.floor(x), Math.floor(y), Math.floor(z));
+    const block = this.bot.blockAt(pos);
+    if (!block || !block.name.includes('command_block')) {
+      return { success: false, message: `座標 (${x},${y},${z}) にコマンドブロックがありません。` };
+    }
+    try {
+      const torchItem = this.bot.inventory.items().find(i => i.name === 'redstone_torch');
+      if (!torchItem) {
+        return { success: false, message: '発動用のレッドストーントーチがインベントリにありません。' };
+      }
+      await this.bot.equip(torchItem, 'hand');
+      const side = this.bot.blockAt(pos.offset(1, 0, 0));
+      if (side && side.name !== 'air') {
+        await this.bot.placeBlock(side, new Vec3(1, 0, 0));
+        return { success: true, message: 'コマンドブロックにレッドストーンパルスを送りました。' };
+      }
+      return { success: false, message: 'コマンドブロックの隣に設置可能なブロックがありません。' };
+    } catch (err: any) {
+      return { success: false, message: `コマンドブロック発動エラー: ${err.message}` };
+    }
+  }
+
+  /**
    * 移動や追従の停止
    */
   public async stopActions(): Promise<ToolCallResult> {
