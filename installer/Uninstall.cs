@@ -159,6 +159,8 @@ namespace CraftMateUninstall
                 List<string> files = new List<string>();
                 if (Directory.Exists(_installLocation)) CollectFiles(_installLocation, files);
 
+                BackupUserData(_installLocation);
+
                 int total = files.Count + (Directory.Exists(_installLocation) ? 1 : 0);
                 SetProgressRange(Math.Max(1, total));
                 int completed = 0;
@@ -231,7 +233,7 @@ namespace CraftMateUninstall
 
         private void StopApplicationProcesses()
         {
-            string[] processNames = new string[] { "CraftMate", "node", "CraftMate_Setup" };
+            string[] processNames = new string[] { "CraftMate", "CraftMate_ScreenViewer", "node", "CraftMate_Setup" };
             foreach (string processName in processNames)
             {
                 Process[] processes;
@@ -319,14 +321,35 @@ namespace CraftMateUninstall
                     FileAttributes attributes = File.GetAttributes(entry);
                     if ((attributes & FileAttributes.Directory) != 0)
                     {
+                        // シンボリックリンク/ジャンクションは辿らず、再帰削除時にリンク自体だけを消す
                         if ((attributes & FileAttributes.ReparsePoint) == 0) pending.Push(entry);
-                        else files.Add(entry);
                     }
                     else
                     {
                         files.Add(entry);
                     }
                 }
+            }
+        }
+
+        private void BackupUserData(string installLocation)
+        {
+            try
+            {
+                string envPath = Path.Combine(installLocation, ".env");
+                if (!File.Exists(envPath)) return;
+
+                string backupRoot = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "CraftMate", "uninstall-backup");
+                Directory.CreateDirectory(backupRoot);
+                string backupPath = Path.Combine(backupRoot, ".env");
+                File.Copy(envPath, backupPath, true);
+                AppendLog("ユーザーデータをバックアップしました: " + backupPath);
+            }
+            catch (Exception ex)
+            {
+                AppendLog("バックアップに失敗しました: " + ex.Message);
             }
         }
 
@@ -377,6 +400,8 @@ namespace CraftMateUninstall
             DeleteShortcut(Path.Combine(desktop, "CraftMate.lnk"));
             DeleteShortcut(Path.Combine(programs, "CraftMate.lnk"));
             DeleteShortcut(Path.Combine(startMenuFolder, "CraftMate.lnk"));
+            DeleteShortcut(Path.Combine(startMenuFolder, "CraftMate Updater.lnk"));
+            DeleteShortcut(Path.Combine(startMenuFolder, "CraftMate 画面共有ビューア.lnk"));
             if (Directory.Exists(startMenuFolder) && Directory.GetFileSystemEntries(startMenuFolder).Length == 0)
             {
                 Directory.Delete(startMenuFolder, false);

@@ -77,6 +77,29 @@ function extractRetryDelaySeconds(errorMsg: string): number {
   return 10; // デフォルト10秒
 }
 
+/**
+ * 429 / レート制限系エラーの判定
+ */
+function isRateLimitError(err: any): boolean {
+  const status = err?.status ?? err?.statusCode ?? err?.error?.status;
+  if (status === 429) return true;
+  const msg = String(err?.message || err || '').toLowerCase();
+  return (
+    msg.includes('429') ||
+    msg.includes('rate limit') ||
+    msg.includes('rate_limit') ||
+    msg.includes('too many requests') ||
+    msg.includes('quota') ||
+    msg.includes('resource_exhausted')
+  );
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const RATE_LIMIT_MESSAGE = 'AIの利用制限に達しました。本日の利用上限に達した可能性があります。しばらく待ってから再試行するか、設定で別のAIプロバイダーに切り替えてください。';
+
 export class LLMClient {
   private config: BotConfig;
   private geminiAi: GoogleGenerativeAI | null = null;
@@ -122,15 +145,45 @@ export class LLMClient {
    */
   public async decideNextAction(
     systemPrompt: string,
-    history: Array<{ role: 'user' | 'model' | 'assistant'; content: string }>
+    history: Array<{ role: 'user' | 'model' | 'assistant'; content: string }>,
+    excludeProviders: string[] = []
   ): Promise<LLMResponse> {
     await this.enforceRateLimit();
 
-    if (this.config.llmProvider === 'gemini') {
-      return this.callGemini(systemPrompt, history);
-    } else {
-      return this.callOpenAI(systemPrompt, history);
+    try {
+      if (this.config.llmProvider === 'gemini') {
+        return await this.callGemini(systemPrompt, history);
+      }
+      return await this.callOpenAI(systemPrompt, history);
+    } catch (err: any) {
+      if (isRateLimitError(err)) {
+        const fallback = this.getFallbackProvider(excludeProviders);
+        if (fallback) {
+          console.warn(`[LLM] Provider "${this.config.llmProvider}" is rate limited. Falling back to "${fallback}"...`);
+          const fallbackClient = new LLMClient({ ...this.config, llmProvider: fallback });
+          return fallbackClient.decideNextAction(systemPrompt, history, [...excludeProviders, this.config.llmProvider]);
+        }
+        console.warn(`[LLM] ${RATE_LIMIT_MESSAGE}`);
+        throw new Error(RATE_LIMIT_MESSAGE);
+      }
+      throw err;
     }
+  }
+
+  /**
+   * レート制限時に切り替え可能な別プロバイダーを返す（APIキーが設定済みのもの優先）
+   */
+  private getFallbackProvider(excludeProviders: string[] = []): BotConfig['llmProvider'] | null {
+    const excluded = new Set([...excludeProviders, this.config.llmProvider]);
+    const candidates: Array<[BotConfig['llmProvider'], boolean]> = [
+      ['gemini', !!this.config.geminiApiKey],
+      ['openai', !!this.config.openaiApiKey],
+      ['groq', !!this.config.groqApiKey],
+    ];
+    for (const [name, configured] of candidates) {
+      if (!excluded.has(name) && configured) return name;
+    }
+    return null;
   }
 
   /**
@@ -356,12 +409,30 @@ export class LLMClient {
         ? this.config.groqModel
         : this.config.openaiModel;
 
-    const completion = await this.openAiClient.chat.completions.create({
-      model: modelName,
-      messages,
-      tools,
-      tool_choice: 'auto',
-    });
+    // 429(レート制限)の場合は指数バックオフでリトライ（初回 + 最大3回）
+    const maxRetries = 3;
+    let completion: OpenAI.ChatCompletion | null = null;
+    let lastError: any = null;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        completion = await this.openAiClient.chat.completions.create({
+          model: modelName,
+          messages,
+          tools,
+          tool_choice: 'auto',
+        });
+        break;
+      } catch (err: any) {
+        lastError = err;
+        if (!isRateLimitError(err) || attempt === maxRetries) break;
+        const backoffMs = Math.min(8000, 1000 * Math.pow(2, attempt)) + Math.floor(Math.random() * 250);
+        console.warn(`[LLM] Rate limited by ${this.config.llmProvider} (attempt ${attempt + 1}/${maxRetries + 1}). Retrying in ${backoffMs}ms...`);
+        await sleep(backoffMs);
+      }
+    }
+    if (!completion) {
+      throw lastError || new Error('AI request failed.');
+    }
 
     const choice = completion.choices[0];
     const message = choice.message;

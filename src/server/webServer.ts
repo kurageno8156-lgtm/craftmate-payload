@@ -176,18 +176,29 @@ export class WebServer {
 
     this.app.post('/api/launch-screen-viewer', (req, res) => {
       if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'The screen viewer can be launched only from the authenticated local dashboard.' });
-      const viewerPath = path.join(this.installationPath(), 'CraftMate_ScreenViewer.exe');
-      if (!fs.existsSync(viewerPath)) return res.status(404).json({ error: 'CraftMate_ScreenViewer.exe was not found. Reinstall CraftMate to add the screen viewer.' });
+
+      const candidates = [
+        path.join(this.installationPath(), 'CraftMate_ScreenViewer.exe'),
+        path.join(process.env.LOCALAPPDATA || '', 'Programs', 'CraftMate', 'CraftMate_ScreenViewer.exe'),
+      ].filter(Boolean);
+      const viewerPath = candidates.find(candidate => fs.existsSync(candidate));
+      if (!viewerPath) {
+        return res.status(404).json({
+          error: 'CraftMate_ScreenViewer.exe was not found. Reinstall or update CraftMate to add the screen viewer.',
+          searched: candidates,
+        });
+      }
       try {
-        const child = spawn(viewerPath, [], {
-          cwd: this.installationPath(), detached: true, stdio: 'ignore', windowsHide: false,
+        const child = spawn(viewerPath, ['--port', String(this.port)], {
+          cwd: path.dirname(viewerPath), detached: true, stdio: 'ignore', windowsHide: false,
         });
         child.once('error', error => console.error('[ScreenViewer] Could not start the screen viewer:', error));
         child.unref();
-        res.status(202).json({ success: true });
+        console.log('[ScreenViewer] Launched:', viewerPath);
+        res.status(202).json({ success: true, path: viewerPath });
       } catch (error) {
         console.error('[ScreenViewer] Could not start the screen viewer:', error);
-        res.status(500).json({ error: 'Could not start CraftMate_ScreenViewer.exe.' });
+        res.status(500).json({ error: `Could not start CraftMate_ScreenViewer.exe: ${(error as Error).message}` });
       }
     });
 

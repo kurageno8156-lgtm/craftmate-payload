@@ -68,7 +68,20 @@ if (screenShareToggle) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: '{}',
-      }).catch(error => console.warn('Could not launch the screen viewer:', error));
+      }).then(async response => {
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          console.warn('Could not launch the screen viewer:', data.error || response.status);
+          if (typeof showSettingsMessage === 'function') {
+            showSettingsMessage(data.error || 'Could not launch the screen viewer.', 'error');
+          }
+        }
+      }).catch(error => {
+        console.warn('Could not launch the screen viewer:', error);
+        if (typeof showSettingsMessage === 'function') {
+          showSettingsMessage(String(error && error.message ? error.message : error), 'error');
+        }
+      });
     } else {
       socket.emit('stop-screen-share');
       if (botScreenModal) botScreenModal.hidden = true;
