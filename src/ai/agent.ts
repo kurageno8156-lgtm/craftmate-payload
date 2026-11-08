@@ -28,55 +28,36 @@ export class AutonomousAgent extends EventEmitter {
    * 指示の受付と自律実行ループの開始
    */
   public async handleInstruction(instruction: string, requester: string = 'Player'): Promise<void> {
-    const runNext = async () => {
-      if (this.isProcessing) {
-        console.log(`[Agent] Interrupting previous task for new instruction: "${instruction}"`);
-        await this.cancelTask();
+    // 既に処理中の場合は、強制的に現在のタスクをキャンセルする
+    if (this.isProcessing) {
+      console.log(`[Agent] Interrupting previous task for new instruction: "${instruction}"`);
+      await this.cancelTask();
+      // キャンセル処理が完全に終わるのを少し待つ
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+
+    this.isProcessing = true;
+    this.currentTask = instruction;
+    const abortCtrl = new AbortController();
+    this.abortController = abortCtrl;
+
+    this.emit('taskStarted', { task: instruction, requester });
+    console.log(`[Agent] New Goal from ${requester}: "${instruction}"`);
+
+    // キューを使わずに即時実行
+    try {
+      this.currentExecutionPromise = this.runReActLoop(instruction, requester, abortCtrl.signal);
+      await this.currentExecutionPromise;
+    } catch (err) {
+      console.error('[Agent] Task failed:', err);
+    } finally {
+      if (this.abortController === abortCtrl) {
+        this.isProcessing = false;
+        this.currentTask = null;
+        this.currentExecutionPromise = null;
+        this.emit('taskFinished', { task: instruction });
       }
-
-      this.isProcessing = true;
-      this.currentTask = instruction;
-      const abortCtrl = new AbortController();
-      this.abortController = abortCtrl;
-
-      this.emit('taskStarted', { task: instruction, requester });
-      console.log(`\n========================================`);
-      console.log(`[Agent] New Goal from ${requester}: "${instruction}"`);
-      console.log(`========================================\n`);
-
-      const executionPromise = (async () => {
-        try {
-          await this.runReActLoop(instruction, requester, abortCtrl.signal);
-        } catch (err: any) {
-          if (abortCtrl.signal.aborted) {
-            console.log(`[Agent] Task "${instruction}" was interrupted.`);
-            return;
-          }
-          console.error('[Agent] Task failed with error:', err.message);
-          const failLog: AgentStepLog = {
-            timestamp: new Date().toLocaleTimeString(),
-            stepNumber: 0,
-            observation: `エラーが発生しました: ${err.message}`,
-            status: 'failure',
-          };
-          this.emit('stepLog', failLog);
-          await this.botWrapper.skills.chat(`申し訳ありません、タスク中にエラーが発生しました: ${err.message}`);
-        } finally {
-          if (this.abortController === abortCtrl) {
-            this.isProcessing = false;
-            this.currentTask = null;
-            this.currentExecutionPromise = null;
-            this.emit('taskFinished', { task: instruction });
-          }
-        }
-      })();
-
-      this.currentExecutionPromise = executionPromise;
-      await executionPromise;
-    };
-
-    this.instructionQueue = this.instructionQueue.then(runNext, runNext);
-    await this.instructionQueue;
+    }
   }
 
   private async runReActLoop(goal: string, requester: string, signal: AbortSignal): Promise<void> {
