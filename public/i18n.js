@@ -47,6 +47,32 @@
       logStep: 'ステップ {step} [{status}]', logAction: '⚡ アクション: {action}({params})', logObservation: '📋 観察: {text}', stopInMinecraft: '停止', emptyTask: '待機中（指示を待っています）', activeTask: '実行中:「{task}」', taskFrom: '[{requester}から]:「{task}」', newTask: 'タスクを開始します:「{task}」（依頼者: {requester}）',
       statusIdle: '待機中', statusThinking: '思考中', statusActing: '行動中', statusSuccess: '成功', statusError: 'エラー', statusCompleted: '完了', statusCancelled: 'キャンセル', statusSystem: 'システム', statusUnknown: '不明',
       overworld: 'オーバーワールド', nether: 'ネザー', theEnd: 'ジ・エンド', daytime: '昼間', nighttime: '夜間', bareHands: '素手',
+      ko: { 
+        pageTitle: '마인크래프트 AI 에이전트 대시보드', 
+        settingsButton: '설정', 
+        botStatus: '봇 상태' 
+      },
+      es: { 
+        pageTitle: 'Panel de Control del Agente AI de Minecraft', 
+        settingsButton: 'Configuración', 
+        botStatus: 'Estado del Bot' 
+      },
+      id: { 
+        pageTitle: 'Dasbor Agen AI Minecraft', 
+        settingsButton: 'Pengaturan', 
+        botStatus: 'Status Bot' 
+      },
+      zh: { 
+        pageTitle: '我的世界 AI 智能体仪表板', 
+        settingsButton: '设置', 
+        botStatus: '机器人状态' 
+      },
+      hi: { 
+        pageTitle: 'Minecraft AI एजेंट डैशबोर्ड', 
+        settingsButton: 'सेटिंग्स', 
+        botStatus: 'बॉट स्थिति' 
+      },
+
     },
   };
 

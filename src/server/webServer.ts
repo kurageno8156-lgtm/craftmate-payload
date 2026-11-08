@@ -32,7 +32,9 @@ export class WebServer {
   private port: number;
   private statusTimer: NodeJS.Timeout | null = null;
   private envPath: string;
-  private updateToken: Buffer;
+  private isScreenSharing: boolean = false;
+  private screenShareInterval: NodeJS.Timeout | null = null;
+
 
   constructor(
     botWrapper: MinecraftBot,
@@ -334,6 +336,22 @@ export class WebServer {
       if (selectedMinecraftVersion.toLowerCase() !== 'auto' && !/^[A-Za-z0-9][A-Za-z0-9.-]{0,63}$/.test(selectedMinecraftVersion)) {
         return res.status(400).json({ error: 'Enter auto or a valid Minecraft version such as 1.21.1.' });
       }
+      if (selectedMinecraftVersion !== 'auto') {
+        const versionParts = selectedMinecraftVersion.split('.').map(part => {
+          const n = Number(part);
+          if (!Number.isInteger(n) || String(n) !== part.trim()) return NaN;
+          return n;
+        });
+        if (versionParts.some(n => Number.isNaN(n))) {
+          return res.status(400).json({ error: 'Enter auto or a valid Minecraft version such as 1.21.1.' });
+        }
+        const major = versionParts[0];
+        const minor = versionParts[1] || 0;
+        const patch = versionParts[2] || 0;
+        if (major > 26 || (major === 26 && minor > 1) || (major === 26 && minor === 1 && patch > 0)) {
+          return res.status(400).json({ error: 'Minecraft version must be 26.1 or lower.' });
+        }
+      }
       if (!Number.isInteger(parsedWebPort) || parsedWebPort < 1 || parsedWebPort > 65535) {
         return res.status(400).json({ error: 'Web port must be between 1 and 65535.' });
       }
@@ -546,6 +564,25 @@ export class WebServer {
       });
 
       socket.on('cancelTask', async () => {
+      socket.on('start-screen-share', () => {
+        if (!this.isScreenSharing) {
+          this.isScreenSharing = true;
+          this.screenShareInterval = setInterval(async () => {
+            if (!this.isScreenSharing) return;
+            const img = await captureScreenRegion();
+            socket.emit('bot-screen', img);
+          }, 16);
+        }
+      });
+
+      socket.on('stop-screen-share', () => {
+        this.isScreenSharing = false;
+        if (this.screenShareInterval) {
+          clearInterval(this.screenShareInterval);
+          this.screenShareInterval = null;
+        }
+      });
+
         await this.agent.cancelTask();
       });
     });

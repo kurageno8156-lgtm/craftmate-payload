@@ -86,6 +86,10 @@ export class AutonomousAgent extends EventEmitter {
     const systemPrompt = `
 あなたはMinecraftの世界で活動する自律型AIアシスタント（プレイヤー名: ${this.botWrapper.config.mcUsername}）です。
 指示された目標（例: 装備作り、建築、討伐準備、素材集め）を達成するために、自分の持ち物と周囲の環境を確認し、1ステップずつ着実にスキル（Tool）を実行してください。
+ | あなたはMinecraftの世界で活動する自律型AIアシスタント（プレイヤー名: ${this.botWrapper.config.mcUsername}）です。
+ | 回答は必ず簡潔に、1〜3文で答えてください。
+ | 指示された目標（例: 装備作り、建築、討伐準備、素材集め）を達成するために、自分の持ち物と周囲の環境を確認し、1ステップずつ着実にスキル（Tool）を実行してください。
+
 
 【Minecraft攻略・クラフトの基本進行ルール（最重要）】
 1. **鉄鉱石を掘るには「石のツルハシ以上」が必須です！**
@@ -256,6 +260,8 @@ ${currentEnv}
       if (history.length > MAX_HISTORY + 1) {
         // history[0] は初期指示なので必ず残す
         history.splice(1, history.length - MAX_HISTORY - 1);
+       // 各ステップ間に待機（レート制限保護）
+       await new Promise(r => setTimeout(r, 50));
       }
 
       // 各ステップ間に待機（レート制限保護）
