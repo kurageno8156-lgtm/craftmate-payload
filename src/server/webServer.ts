@@ -1,4 +1,3 @@
-import { captureScreenRegion, resizeBase64Image } from '../bot/vision.js';
 import express from 'express';
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
@@ -34,7 +33,6 @@ export class WebServer {
   private port: number;
   private statusTimer: NodeJS.Timeout | null = null;
   private envPath: string;
-  private isScreenSharing: boolean = false;
 
   constructor(
     botWrapper: MinecraftBot,
@@ -564,17 +562,7 @@ export class WebServer {
       });
 
       socket.on('cancelTask', async () => {
-      socket.on('start-screen-share', async () => {
-        if (!this.isScreenSharing) {
-          this.isScreenSharing = true;
-          await this.startScreenShare(socket);
-        }
-      });
-
-      socket.on('stop-screen-share', () => {
-        this.isScreenSharing = false;
-        this.stopScreenShare(socket);
-      });
+        // Screen sharing temporarily disabled for debugging
         await this.agent.cancelTask();
       });
     });
@@ -620,20 +608,5 @@ export class WebServer {
   public stop(): void {
     if (this.statusTimer) clearInterval(this.statusTimer);
     this.io.close();
-  }
-  private async startScreenShare(socket: any) {
-    const interval = setInterval(async () => {
-      if (!this.isScreenSharing) { clearInterval(interval); return; }
-      try {
-        const raw = await captureScreenRegion(0, 0, 1920, 1080);
-        const resized = await resizeBase64Image(raw, 640, 360);
-        socket.emit('bot-screen', resized);
-      } catch (e) { /* ignore */ }
-    }, 200);
-    socket.on('stop-screen-share', () => { this.isScreenSharing = false; clearInterval(interval); });
-  }
-
-  private stopScreenShare(socket: any) {
-    this.isScreenSharing = false;
   }
 }
