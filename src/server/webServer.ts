@@ -192,7 +192,24 @@ export class WebServer {
         const child = spawn(viewerPath, ['--port', String(this.port)], {
           cwd: path.dirname(viewerPath), detached: true, stdio: 'ignore', windowsHide: false,
         });
-        child.once('error', error => console.error('[ScreenViewer] Could not start the screen viewer:', error));
+        child.once('error', error => {
+          console.error('[ScreenViewer] Could not start the screen viewer:', error);
+          // フォールバック: cmd.exe 経由で起動を試みる
+          try {
+            const fallback = spawn('cmd.exe', ['/d', '/s', '/c', `start "" "${viewerPath}" --port ${this.port}`], {
+              detached: true, stdio: 'ignore', windowsHide: false,
+            });
+            fallback.once('error', e => console.error('[ScreenViewer] Fallback launch also failed:', e));
+            fallback.unref();
+          } catch (fallbackError) {
+            console.error('[ScreenViewer] Fallback launch failed:', fallbackError);
+          }
+        });
+        child.once('exit', code => {
+          if (code !== 0 && code !== null) {
+            console.warn(`[ScreenViewer] Process exited unexpectedly with code ${code}.`);
+          }
+        });
         child.unref();
         console.log('[ScreenViewer] Launched:', viewerPath);
         res.status(202).json({ success: true, path: viewerPath });

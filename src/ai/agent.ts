@@ -74,7 +74,9 @@ export class AutonomousAgent extends EventEmitter {
       })();
 
       this.currentExecutionPromise = executionPromise;
-      await executionPromise;
+      // タスクの完了は待たずにキューを解放する。
+      // 待つと、長時間ツール実行中に届いた新しい指示が前タスク終了まで遅延してしまうため。
+      // 割り込みは runNext 先頭の cancelTask が担当する。
     };
 
     this.instructionQueue = this.instructionQueue.then(runNext, runNext);
@@ -122,6 +124,7 @@ export class AutonomousAgent extends EventEmitter {
 - ツールを呼び出す際は、thought には内部の思考過程ではなく「これから何をするか」をユーザーに伝える自然な一言を1〜2文で書いてください（例:「了解！木を10個集めてくるね。ちょっと待ってて！」）。この一言はそのままチャットとして送信されるので、ユーザーに向けた話し言葉で書いてください。
 - AutoGuard（自動防御）が敵と戦っている間は、チャットを送らず防御行動に専念してください。戦闘終了後に結果を報告してください。
 - 'finishTask' を呼ぶ際は、resultSummary に「何をどれだけ達成したか」をユーザーに伝える自然な完了報告を1〜2文で書いてください（例:「お待たせ！木を10個集めたよ。他に何か必要なものはある？」）。この文章はそのままチャットとして送信されます。
+- 「昼にして」「夜にして」「テレポートして」「時間を止めて」などワールド操作の指示には 'executeCommand' ツールを使ってください（例: "time set day"、"time set night"、"tp @p x y z"）。
 
 【狩りと食料確保】
 - プレイヤーが「狩りをして」「動物を狩って食料を集めて」などと指示したら、'huntMob' を使ってください。'targetType' は動物だけなら 'animals'、敵対Mobだけなら 'hostiles'、指定がなければ 'any' にします。
@@ -304,23 +307,24 @@ export class AutonomousAgent extends EventEmitter {
         }
       }
 
-      // 2. ボットによるアクション実行（長時間ツールは発言送信と並行してバックグラウンドで開始）
-      const execPromise = executeBotTool(this.botWrapper, toolName, toolArgs);
-      execPromise.catch(() => { /* await側でハンドリングする */ });
-
-      // 実行前の自然な一言：タスク最初の実動作ツールに対し、LLMのthoughtをユーザーへの発言として送信
-      if (chatCount === 0 && !guardActive() && toolName !== 'chat' && llmRes.thought) {
-        const remark = llmRes.thought.replace(/\s+/g, ' ').trim().slice(0, 200);
-        if (remark) {
-          const remarkResult = await this.botWrapper.skills.chat(remark);
-          if (remarkResult.success) {
-            chatCount++;
-            stepLog.observation = `開始の発言: ${remark}`;
-            this.emit('stepLog', stepLog);
-            console.log(`[Agent Remark]: ${remark}`);
-          }
+      // 実行前の宣言（必須）：タスク最初の実動作ツールに対し、LLMのthoughtを優先して開始の一言をチャット送信。
+      // thoughtが空の場合でもユーザーに必ず状況を伝えるフォールバック発言を送る。
+      if (chatCount === 0 && !guardActive() && toolName !== 'chat') {
+        const shortGoal = goal.length > 30 ? goal.slice(0, 30) + '…' : goal;
+        const remark = (llmRes.thought || '').replace(/\s+/g, ' ').trim().slice(0, 200)
+          || `了解！これから「${shortGoal}」に取りかかるね。少し待ってて！`;
+        const remarkResult = await this.botWrapper.skills.chat(remark);
+        if (remarkResult.success) {
+          chatCount++;
+          stepLog.observation = `開始の発言: ${remark}`;
+          this.emit('stepLog', stepLog);
+          console.log(`[Agent Remark]: ${remark}`);
         }
       }
+
+      // 2. ボットによるアクション実行（宣言の後にバックグラウンドで開始）
+      const execPromise = executeBotTool(this.botWrapper, toolName, toolArgs);
+      execPromise.catch(() => { /* await側でハンドリングする */ });
 
       const execResult = await execPromise;
       console.log(`[Agent Observation]: ${execResult.success ? '成功' : '失敗'} - ${execResult.message}`);

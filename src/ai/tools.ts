@@ -182,6 +182,20 @@ export const BOT_TOOLS: ToolDefinition[] = [
     },
   },
   {
+    name: 'executeCommand',
+    description: 'Minecraftのスラッシュコマンドを実行します（例: /time set day、/tp、/give）。「昼にして」「テレポートして」などの指示に使います。',
+    parameters: {
+      type: 'object',
+      properties: {
+        command: {
+          type: 'string',
+          description: '実行するMinecraftコマンド。先頭の / は省略可（例: "time set day" または "/time set day"）',
+        },
+      },
+      required: ['command'],
+    },
+  },
+  {
     name: 'stopActions',
     description: '現在進行中のすべての移動、追従、採掘、攻撃などのアクションを停止します。',
     parameters: {
@@ -269,6 +283,13 @@ export async function executeBotTool(
         return await skills.dropItem(args.itemName, toCount(args.count));
       case 'equipItem':
         return await skills.equipItem(args.itemName, args.destination || 'hand');
+      case 'executeCommand': {
+        const command = typeof args.command === 'string' ? args.command.trim() : '';
+        if (!command) {
+          return { success: false, message: 'コマンドが指定されていません。' };
+        }
+        return await skills.executeCommand(command);
+      }
       case 'stopActions':
         return await skills.stopActions();
       case 'finishTask':

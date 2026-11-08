@@ -14,7 +14,9 @@ interface WindowRect {
 // Minecraftウィンドウの矩形をキャッシュ（画面共有中に毎フレームPowerShellを起動しないよう2秒間隔で再取得）
 let cachedWindowRect: WindowRect | null = null;
 let windowRectCacheTime = 0;
+let lastFallbackLogTime = 0;
 const WINDOW_RECT_CACHE_MS = 2000;
+const FALLBACK_LOG_INTERVAL_MS = 30000;
 
 const WINDOW_RECT_SCRIPT = [
   "$code = @'",
@@ -25,6 +27,7 @@ const WINDOW_RECT_SCRIPT = [
   "  public delegate bool EnumProc(IntPtr h, IntPtr l);",
   "  [DllImport(\"user32.dll\")] public static extern bool EnumWindows(EnumProc cb, IntPtr l);",
   "  [DllImport(\"user32.dll\")] public static extern int GetWindowText(IntPtr h, StringBuilder s, int n);",
+  "  [DllImport(\"user32.dll\")] public static extern int GetClassName(IntPtr h, StringBuilder s, int n);",
   "  [DllImport(\"user32.dll\")] public static extern bool IsWindowVisible(IntPtr h);",
   "  [DllImport(\"user32.dll\")] public static extern bool IsIconic(IntPtr h);",
   "  [DllImport(\"user32.dll\")] public static extern bool GetWindowRect(IntPtr h, out RECT r);",
@@ -39,6 +42,11 @@ const WINDOW_RECT_SCRIPT = [
   "  $sb = New-Object System.Text.StringBuilder 256",
   "  [void][WinEnum]::GetWindowText($h, $sb, 256)",
   "  $title = $sb.ToString()",
+  "  $cn = New-Object System.Text.StringBuilder 256",
+  "  [void][WinEnum]::GetClassName($h, $cn, 256)",
+  "  $className = $cn.ToString()",
+  "  # Minecraft Java版のウィンドウクラス名は GLFW30。タイトル変更・別名でも確実に検出できる",
+  "  if ($className -eq 'GLFW30') { $script:target = $h; return $false }",
   "  if ($title -match 'Minecraft' -and $title -notmatch 'Launcher|ScreenViewer|CraftMate|画面共有') { $script:target = $h; return $false }",
   "  return $true",
   "}",
@@ -102,6 +110,11 @@ export async function captureScreenRegion(x: number, y: number, width: number, h
     let top = y;
     let w = width;
     let h = height;
+
+    if (!windowRect && Date.now() - lastFallbackLogTime > FALLBACK_LOG_INTERVAL_MS) {
+      lastFallbackLogTime = Date.now();
+      console.warn('[Vision] Minecraft window not found. Falling back to full-screen capture.');
+    }
 
     if (windowRect) {
       // スクリーンショット（プライマリモニタ原点(0,0)想定）とウィンドウ矩形の交差領域を計算

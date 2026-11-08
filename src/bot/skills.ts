@@ -170,6 +170,27 @@ export class SkillManager {
   }
 
   /**
+   * Minecraftスラッシュコマンドの実行
+   */
+  public async executeCommand(command: string): Promise<ToolCallResult> {
+    try {
+      // 改行を除去し、先頭に / がなければ付与
+      const sanitized = command.replace(/[\r\n]+/g, ' ').trim();
+      if (!sanitized) {
+        return { success: false, message: 'コマンドが空です。' };
+      }
+      const finalCommand = sanitized.startsWith('/') ? sanitized : `/${sanitized}`;
+      if (finalCommand.length > 256) {
+        return { success: false, message: 'コマンドが長すぎます。' };
+      }
+      this.bot.chat(finalCommand);
+      return { success: true, message: `コマンドを実行しました: ${finalCommand}` };
+    } catch (err: any) {
+      return { success: false, message: `コマンド実行エラー: ${err.message}` };
+    }
+  }
+
+  /**
    * 移動や追従の停止
    */
   public async stopActions(): Promise<ToolCallResult> {
