@@ -37,6 +37,24 @@ export class SkillManager {
   private isFollowing: boolean = false;
   private followTarget: string | null = null;
   private followInterval: NodeJS.Timeout | null = null;
+  private commandBlockHistory: Array<{ timestamp: string; x: number; y: number; z: number; command: string; success: boolean; output: string; }> = [];
+
+  private recordCommandBlock(x: number, y: number, z: number, command: string, success: boolean, output: string) {
+    this.commandBlockHistory.push({
+      timestamp: new Date().toISOString(),
+      x, y, z,
+      command: command || '',
+      success,
+      output: output || '',
+    });
+    if (this.commandBlockHistory.length > 10) {
+      this.commandBlockHistory = this.commandBlockHistory.slice(-10);
+    }
+  }
+
+  public getCommandBlockHistory(limit = 10): typeof this.commandBlockHistory {
+    return this.commandBlockHistory.slice(-Math.max(1, Math.min(limit, 10)));
+  }
 
   constructor(bot: Bot) {
     this.bot = bot;
@@ -203,17 +221,21 @@ export class SkillManager {
     const pos = new Vec3(Math.floor(x), Math.floor(y), Math.floor(z));
     const existing = this.bot.blockAt(pos);
     const isCmdBlock = !!existing && existing.name.includes('command_block');
+    const failPlace = (message: string): ToolCallResult => {
+      this.recordCommandBlock(x, y, z, command, false, message);
+      return { success: false, message };
+    };
     if (existing && !isCmdBlock && existing.name !== 'air' && existing.name !== 'cave_air' && existing.name !== 'void_air') {
-      return { success: false, message: `座標 (${x},${y},${z}) には既にブロック(${existing.name})があります。` };
+      return failPlace(`座標 (${x},${y},${z}) には既にブロック(${existing.name})があります。`);
     }
 
     const MODE_MAP: Record<string, number> = { chain: 0, repeat: 1, impulse: 2 };
     const mode = MODE_MAP[commandType] ?? 2;
     const cmd = (command || '').replace(/[\r\n]/g, ' ').trim().slice(0, 32500);
-    if (!cmd) return { success: false, message: 'コマンドが空です。' };
+    if (!cmd) return failPlace('コマンドが空です。');
 
     if (this.bot.player.gamemode !== 1) {
-      return { success: false, message: 'コマンドブロックの設定にはクリエイティブモードが必要です。' };
+      return failPlace('コマンドブロックの設定にはクリエイティブモードが必要です。');
     }
 
     try {
@@ -223,7 +245,7 @@ export class SkillManager {
           await this.bot.creative.setInventorySlot(36, { name: 'command_block', count: 1 } as any);
           slot = this.bot.inventory.items().findIndex(i => i.name === 'command_block');
         }
-        if (slot < 0) return { success: false, message: 'コマンドブロックのアイテムが見つかりません。' };
+        if (slot < 0) return failPlace('コマンドブロックのアイテムが見つかりません。');
         await this.bot.equip(this.bot.inventory.items()[slot], 'hand');
 
         const candidates: Array<{ ref: any; face: Vec3 }> = [
@@ -243,13 +265,13 @@ export class SkillManager {
             break;
           } catch { /* 次の候補へ */ }
         }
-        if (!placed) return { success: false, message: 'コマンドブロックを設置できませんでした（設置場所がありません）。' };
+        if (!placed) return failPlace('コマンドブロックを設置できませんでした（設置場所がありません）。');
         await new Promise(r => setTimeout(r, 400));
       }
 
       const placedBlock = this.bot.blockAt(pos);
       if (!placedBlock || !placedBlock.name.includes('command_block')) {
-        return { success: false, message: 'コマンドブロックの設置を確認できませんでした。' };
+        return failPlace('コマンドブロックの設置を確認できませんでした。');
       }
 
       await (this.bot as any).setCommandBlock(pos, cmd, {
@@ -260,9 +282,11 @@ export class SkillManager {
       });
 
       const typeLabel = commandType === 'chain' ? 'チェーン' : commandType === 'repeat' ? 'リピート' : 'インパルス';
-      return { success: true, message: `コマンドブロック(${typeLabel})を (${x},${y},${z}) に設置し、コマンドを設定しました: ${cmd}` };
+      const okMessage = `コマンドブロック(${typeLabel})を (${x},${y},${z}) に設置し、コマンドを設定しました: ${cmd}`;
+      this.recordCommandBlock(x, y, z, cmd, true, okMessage);
+      return { success: true, message: okMessage };
     } catch (err: any) {
-      return { success: false, message: `コマンドブロック設置エラー: ${err.message}` };
+      return failPlace(`コマンドブロック設置エラー: ${err.message}`);
     }
   }
 
@@ -272,23 +296,29 @@ export class SkillManager {
   public async triggerCommandBlock(x: number, y: number, z: number): Promise<ToolCallResult> {
     const pos = new Vec3(Math.floor(x), Math.floor(y), Math.floor(z));
     const block = this.bot.blockAt(pos);
+    const failTrigger = (message: string): ToolCallResult => {
+      this.recordCommandBlock(x, y, z, block && block.name.includes('command_block') ? '(trigger)' : '', false, message);
+      return { success: false, message };
+    };
     if (!block || !block.name.includes('command_block')) {
-      return { success: false, message: `座標 (${x},${y},${z}) にコマンドブロックがありません。` };
+      return failTrigger(`座標 (${x},${y},${z}) にコマンドブロックがありません。`);
     }
     try {
       const torchItem = this.bot.inventory.items().find(i => i.name === 'redstone_torch');
       if (!torchItem) {
-        return { success: false, message: '発動用のレッドストーントーチがインベントリにありません。' };
+        return failTrigger('発動用のレッドストーントーチがインベントリにありません。');
       }
       await this.bot.equip(torchItem, 'hand');
       const side = this.bot.blockAt(pos.offset(1, 0, 0));
       if (side && side.name !== 'air') {
         await this.bot.placeBlock(side, new Vec3(1, 0, 0));
-        return { success: true, message: 'コマンドブロックにレッドストーンパルスを送りました。' };
+        const okMessage = 'コマンドブロックにレッドストーンパルスを送りました。';
+        this.recordCommandBlock(x, y, z, '(trigger)', true, okMessage);
+        return { success: true, message: okMessage };
       }
-      return { success: false, message: 'コマンドブロックの隣に設置可能なブロックがありません。' };
+      return failTrigger('コマンドブロックの隣に設置可能なブロックがありません。');
     } catch (err: any) {
-      return { success: false, message: `コマンドブロック発動エラー: ${err.message}` };
+      return failTrigger(`コマンドブロック発動エラー: ${err.message}`);
     }
   }
 

@@ -112,6 +112,17 @@ export const BOT_TOOLS: ToolDefinition[] = [
     },
   },
   {
+    name: 'getCommandBlockHistory',
+    description: 'コマンドブロックの実行履歴（直近10件）を取得する。前回の実行結果・成否・時刻を確認したい時に使う',
+    parameters: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number', description: '取得件数（最大10、省略時10）' },
+      },
+      required: [],
+    },
+  },
+  {
     name: 'triggerCommandBlock',
     description: '設置済みのコマンドブロックにレッドストーンパルスを送り発動させる',
     parameters: {
@@ -351,6 +362,16 @@ export async function executeBotTool(
         }
         const commandType = args.commandType === 'chain' || args.commandType === 'repeat' ? args.commandType : 'impulse';
         return await skills.placeCommandBlock(x, y, z, command, commandType);
+      }
+      case 'getCommandBlockHistory': {
+        const limit = toCount(args.limit, 10);
+        const history = skills.getCommandBlockHistory(limit);
+        return {
+          success: true,
+          message: history.length > 0
+            ? `コマンドブロック履歴（最新${history.length}件）: ${JSON.stringify(history)}`
+            : 'コマンドブロックの実行履歴はまだありません。',
+        };
       }
       case 'triggerCommandBlock': {
         const cfg = botWrapper.config as any;
