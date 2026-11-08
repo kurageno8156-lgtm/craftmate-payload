@@ -1,42 +1,30 @@
-import { createCanvas } from 'canvas';
-import * as sharp from 'sharp';
+import screenshot from 'screenshot-desktop';
+import sharp from 'sharp';
 
-// Capture screen region - for Minecraft window or full screen
 export async function captureScreenRegion(x: number, y: number, width: number, height: number): Promise<string> {
   try {
-    // Use Minecraft bot's perception or screen capture
-    // This is a placeholder - actual implementation depends on the bot framework
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext('2d');
-    
-    // Fill with a pattern to indicate capture
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(0, 0, width, height);
-    
-    // Return as base64 for now
-    return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+    const imgBuffer = await screenshot({ format: 'png' });
+    const resized = await sharp(imgBuffer)
+      .extract({ left: x, top: y, width, height })
+      .jpeg({ quality: 70 })
+      .toBuffer();
+    return resized.toString('base64');
   } catch (err) {
-    console.error('Screen capture failed:', err);
-    return '';
+    console.error('[Vision] Screen capture failed:', err);
+    throw err;
   }
 }
 
-// Resize base64 image to target dimensions
 export async function resizeBase64Image(base64: string, maxWidth: number, maxHeight: number): Promise<string> {
   try {
-    const img = await sharp(Buffer.from(base64, 'base64'))
-      .resize({ width: maxWidth, height: maxHeight, fit: 'inside' })
-      .jpeg({ quality: 80 })
+    const buffer = Buffer.from(base64, 'base64');
+    const resized = await sharp(buffer)
+      .resize(maxWidth, maxHeight, { fit: 'inside' })
+      .jpeg({ quality: 70 })
       .toBuffer();
-    
-    return img.toString('base64');
+    return resized.toString('base64');
   } catch (err) {
-    console.error('Image resize failed:', err);
-    return base64;
+    console.error('[Vision] Image resize failed:', err);
+    throw err;
   }
-}
-
-// Convert canvas to base64 data URL
-export function canvasToBase64(canvas: any): string {
-  return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 }

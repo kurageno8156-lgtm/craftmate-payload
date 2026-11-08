@@ -1,3 +1,4 @@
+import { captureScreenRegion, resizeBase64Image } from '../bot/vision.js';
 import express from 'express';
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
@@ -24,6 +25,7 @@ type AIProvider = keyof typeof MODEL_ENV_KEYS;
 
 
 export class WebServer {
+  private updateToken: Buffer = Buffer.alloc(32);
   private app: express.Express;
   private server: http.Server;
   private io: SocketIOServer;
@@ -618,5 +620,20 @@ export class WebServer {
   public stop(): void {
     if (this.statusTimer) clearInterval(this.statusTimer);
     this.io.close();
+  }
+  private async startScreenShare(socket: any) {
+    const interval = setInterval(async () => {
+      if (!this.isScreenSharing) { clearInterval(interval); return; }
+      try {
+        const raw = await captureScreenRegion(0, 0, 1920, 1080);
+        const resized = await resizeBase64Image(raw, 640, 360);
+        socket.emit('bot-screen', resized);
+      } catch (e) { /* ignore */ }
+    }, 200);
+    socket.on('stop-screen-share', () => { this.isScreenSharing = false; clearInterval(interval); });
+  }
+
+  private stopScreenShare(socket: any) {
+    this.isScreenSharing = false;
   }
 }
