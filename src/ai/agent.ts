@@ -147,9 +147,24 @@ export class AutonomousAgent extends EventEmitter {
     const MAX_CHATS_PER_TASK = 2;
     let chatCount = 0;
     let blockedChatCount = 0;
+    let silentNudges = 0; // チャット上限後の無言継続カウント
     const guardActive = () => !!(this.botWrapper.guard && this.botWrapper.guard.isInCombat());
 
+    // 建築進捗をダッシュボードのログに表示（Minecraftチャットには送らない）
+    let progressStep = 0;
+    if (this.botWrapper.skills) {
+      this.botWrapper.skills.blueprintProgress = (message: string) => {
+        this.emit('stepLog', {
+          timestamp: new Date().toLocaleTimeString(),
+          stepNumber: progressStep,
+          observation: message,
+          status: 'acting',
+        } as AgentStepLog);
+      };
+    }
+
     for (let step = 1; step <= maxSteps; step++) {
+      progressStep = step;
       if (signal.aborted) {
         console.log('[Agent] Task was aborted.');
         break;
@@ -206,16 +221,24 @@ export class AutonomousAgent extends EventEmitter {
           continue;
         }
 
-        // チャット上限超過 → 強制終了（チャット連投の根本対策）
+        // チャット上限超過 → チャットは送らずツール実行のみ継続（連続3回応答なしなら終了）
         if (chatCount >= MAX_CHATS_PER_TASK) {
-          taskCompleted = true;
-          stepLog.status = 'finished';
-          stepLog.observation = `チャット送信上限に達したためタスクを終了しました: ${text}`;
+          silentNudges++;
+          stepLog.status = 'success';
+          stepLog.observation = `チャット送信上限のため発言をスキップしました（${silentNudges}/3）。ツール実行または finishTask で続行してください。`;
           this.emit('stepLog', stepLog);
-          console.log(`\n========================================`);
-          console.log(`[Agent Task Finished]: ${text}`);
-          console.log(`========================================\n`);
-          break;
+          history.push({ role: 'model', content: text });
+          history.push({ role: 'user', content: 'チャット送信上限に達したため発言できません。目標が未達成ならツールを実行し、達成済みなら \'finishTask\' を呼んでください。チャットツールは使わないでください。' });
+          if (history.length > 21) history.splice(1, history.length - 21);
+          await new Promise(r => setTimeout(r, 50));
+          if (silentNudges >= 3) {
+            taskCompleted = true;
+            console.log(`\n========================================`);
+            console.log('[Agent Task Finished]: チャット上限後に応答がなかったため終了しました。');
+            console.log(`========================================\n`);
+            break;
+          }
+          continue;
         }
 
         await this.botWrapper.skills.chat(text);
@@ -360,6 +383,7 @@ export class AutonomousAgent extends EventEmitter {
       } else {
         lastActionFailed = false;
         lastFailureMessage = '';
+        silentNudges = 0; // 実動作ツールが動いたら無言継続カウントをリセット
       }
 
       // 3. 環境フィードバックを履歴に追加

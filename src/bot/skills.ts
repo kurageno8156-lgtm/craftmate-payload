@@ -58,6 +58,7 @@ export class SkillManager {
 
   // ---- 建築設計図 ----
   public pendingBlueprint: any = null;
+  public blueprintProgress: ((message: string) => void) | null = null;
 
   /**
    * 設計図JSONをBot足元を原点として建築する（クリエイティブモード推奨）。
@@ -130,6 +131,7 @@ export class SkillManager {
         if (done) placed++; else failed++;
       } catch { failed++; }
       if (placed % 50 === 0 && placed > 0) {
+        try { this.blueprintProgress?.(`建築中... ${placed}/${entries.length} ブロック設置済み`); } catch { /* ignore */ }
         await new Promise(r => setTimeout(r, 100));
       }
     }
