@@ -276,8 +276,14 @@ export const BOT_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'buildBlueprint',
-    description: 'generateArchitecturalBlueprintで生成した設計図をBotの足元を原点として実際に建築する',
-    parameters: { type: 'object', properties: {}, required: [] },
+    description: 'generateArchitecturalBlueprintで生成した設計図をBotの足元を原点として手作業で建築する。引数なしで呼ぶと直前の設計図が自動で使われる',
+    parameters: {
+      type: 'object',
+      properties: {
+        blueprint: { type: 'object', description: '設計図JSON（省略時は直前に生成した設計図を使用）' },
+      },
+      required: [],
+    },
   },
   {
     name: 'getCommandBlockHistory',
@@ -589,16 +595,29 @@ export async function executeBotTool(
         if (cfg.botAllowCommands === false) {
           return { success: false, message: '管理者設定でコマンド実行が無効になっているため、コマンドブロック建築は使えません。buildBlueprint で手作業建築してください。' };
         }
-        const bp = args.blueprint || skills.pendingBlueprint;
-        if (!bp) return { success: false, message: '設計図がありません。先に generateArchitecturalBlueprint を実行してください。' };
+        // blueprint がJSON文字列で来た場合はパース、無ければ pendingBlueprint を使う
+        let bp = args.blueprint;
+        if (typeof bp === 'string') {
+          try { bp = JSON.parse(bp); } catch { bp = null; }
+        }
+        bp = bp || skills.pendingBlueprint;
+        if (!bp || !bp.structure) return { success: false, message: '設計図がありません。先に generateArchitecturalBlueprint を実行してください。' };
+        skills.pendingBlueprint = bp;
         const pos = botWrapper.bot?.entity?.position?.floored?.();
         const ox = Number.isFinite(Number(args.originX)) ? Number(args.originX) : (pos?.x ?? 0);
         const oy = Number.isFinite(Number(args.originY)) ? Number(args.originY) : (pos?.y ?? 0);
         const oz = Number.isFinite(Number(args.originZ)) ? Number(args.originZ) : (pos?.z ?? 0);
         return await skills.buildWithCommandBlocks(bp, ox, oy, oz);
       }
-      case 'buildBlueprint':
+      case 'buildBlueprint': {
+        // blueprint がJSON文字列/オブジェクトで来た場合はパースして pendingBlueprint に反映
+        let bp = args.blueprint;
+        if (typeof bp === 'string') {
+          try { bp = JSON.parse(bp); } catch { bp = null; }
+        }
+        if (bp && bp.structure) skills.pendingBlueprint = bp;
         return await skills.buildBlueprint();
+      }
       case 'getCommandBlockHistory': {
         const limit = toCount(args.limit, 10);
         const history = skills.getCommandBlockHistory(limit);
