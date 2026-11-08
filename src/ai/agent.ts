@@ -180,7 +180,7 @@ export class AutonomousAgent extends EventEmitter {
           content: `進捗の発言だけでは目標は完了していません。最新の所持品と環境を再確認し、目標達成に必要なツールアクションを実行してください。資材が不足していれば採掘・収集・クラフトを続けてください。`,
         });
         if (history.length > 21) history.splice(1, history.length - 21);
-        await new Promise(r => setTimeout(r, 1500));
+        await new Promise(r => setTimeout(r, 50));
         continue;
       }
 
@@ -200,7 +200,7 @@ export class AutonomousAgent extends EventEmitter {
           this.emit('stepLog', stepLog);
           history.push({ role: 'model', content: `Action: finishTask(${JSON.stringify(toolArgs)})` });
           history.push({ role: 'user', content: `目標は未達成です。${reason}。finishTask は受理されません。環境とインベントリを確認し、必要な素材の採掘・収集、クラフト、移動などのツールを実行してください。` });
-          await new Promise(r => setTimeout(r, 1500));
+          await new Promise(r => setTimeout(r, 50));
           continue;
         }
         const completedSummary = summary || '目標を完了しました。';
@@ -259,7 +259,7 @@ ${currentEnv}
       }
 
       // 各ステップ間に待機（レート制限保護）
-      await new Promise(r => setTimeout(r, 1500));
+      await new Promise(r => setTimeout(r, 50));
     }
 
     if (!taskCompleted && !signal.aborted) {
