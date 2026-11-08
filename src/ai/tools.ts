@@ -4,6 +4,59 @@ import type { LLMClient } from './llmClient.js';
 
 const DANGEROUS_COMMANDS = new Set(['kill', 'ban', 'ban-ip', 'banlist', 'op', 'deop', 'kick', 'stop', 'whitelist', 'pardon', 'setblock', 'fill', 'clone', 'function', 'give', 'clear']);
 
+/**
+ * 生成された設計図テキストからJSONを抽出・修復してパースする。
+ * - コードフェンス除去
+ * - 末尾カンマ削除
+ * - 波括弧・角括弧の不足を補完（文字列リテラル内は無視）
+ */
+function parseBlueprintJson(raw: string): any | null {
+  if (!raw) return null;
+  // コードフェンスを除去
+  let text = raw.replace(/```(?:json)?/gi, '');
+  // 最初の { から最後の } までを抽出（説明文混入対策）
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start === -1) return null;
+  let json = start >= 0 && end > start ? text.slice(start, end + 1) : text;
+
+  const tryParse = (s: string): any | null => {
+    try { return JSON.parse(s); } catch { return null; }
+  };
+
+  let parsed = tryParse(json);
+  if (parsed) return parsed;
+
+  // 末尾カンマを削除（文字列外のみ簡易対応: },] や },\n のパターン）
+  json = json.replace(/,(\s*[}\]])/g, '$1');
+  parsed = tryParse(json);
+  if (parsed) return parsed;
+
+  // 括弧のバランスを補完（文字列リテラル内の括弧はカウントしない）
+  let inString = false;
+  let escaped = false;
+  const stack: string[] = [];
+  for (const ch of json) {
+    if (escaped) { escaped = false; continue; }
+    if (ch === '\\' && inString) { escaped = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') stack.push('}');
+    else if (ch === '[') stack.push(']');
+    else if (ch === '}' || ch === ']') {
+      if (stack.length && stack[stack.length - 1] === ch) stack.pop();
+    }
+  }
+  if (!inString && stack.length > 0 && stack.length < 20) {
+    // 末尾のカンマを再度除去してから閉じ括弧を補完
+    let repaired = json.replace(/,(\s*)$/, '$1');
+    for (let i = stack.length - 1; i >= 0; i--) repaired += stack[i];
+    parsed = tryParse(repaired);
+    if (parsed) return parsed;
+  }
+  return null;
+}
+
 export const BOT_TOOLS: ToolDefinition[] = [
   {
     name: 'chat',
@@ -388,25 +441,36 @@ export async function executeBotTool(
         if (!description) return { success: false, message: '建物の説明を指定してください。' };
         const size = typeof args.size === 'string' ? args.size.trim() : '標準';
         const prompt =
-          `あなたはMinecraft建築のプロです。「${description}」（サイズ: ${size}）の詳細な設計図をJSONのみで出力してください。\n` +
+          `あなたはMinecraft建築のプロです。「${description}」（サイズ: ${size}）の詳細な設計図を作成してください。\n` +
+          `重要: 出力はJSONのみ。説明文・コメント・マークダウン・コードフェンスは一切含めないでください。\n` +
           `ブロックは必ずMinecraftの英語ID（例: stone_bricks, oak_planks, glass, oak_stairs, oak_door, torch, lantern, water, grass_block, oak_leaves）を使ってください。\n` +
-          `以下の形式で、合計400ブロック以内に収めてください:\n` +
+          `以下の形式で、合計200ブロック以内に必ず収めてください（超える場合は装飾を減らしてください）:\n` +
           `{"name":"名前","size":{"x":10,"y":6,"z":10},"structure":{"foundation":[{"x":0,"y":0,"z":0,"block":"stone_bricks"}],"walls":[],"roof":[],"windows":[],"doors":[],"decorations":[],"garden":[],"lighting":[]}}\n` +
-          `基礎・壁・屋根・窓・ドア・装飾・庭・照明を全て含め、プロ級の見栄えになるよう設計してください。説明文は不要、JSONのみ出力。`;
-        let raw = '';
-        try {
-          raw = await llmClient.chatOnce(prompt);
-        } catch (err: any) {
-          return { success: false, message: `設計図生成エラー: ${err.message}` };
+          `基礎・壁・屋根・窓・ドア・装飾・庭・照明を全て含め、プロ級の見栄えになるよう設計してください。`;
+        const MAX_ATTEMPTS = 3; // 初回 + 2回リトライ
+        let bp: any = null;
+        let lastRaw = '';
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+          let raw = '';
+          try {
+            raw = await llmClient.chatOnce(prompt, { maxTokens: 8192, timeoutMs: 45000 });
+          } catch (err: any) {
+            if (attempt === MAX_ATTEMPTS) {
+              return { success: false, message: '設計図の生成に失敗しました。もう一度お試しください。' };
+            }
+            continue;
+          }
+          lastRaw = raw;
+          bp = parseBlueprintJson(raw);
+          if (bp && bp.structure && typeof bp.structure === 'object') break;
+          bp = null;
+          if (attempt < MAX_ATTEMPTS) {
+            console.warn(`[Blueprint] JSON parse failed (attempt ${attempt}/${MAX_ATTEMPTS}), retrying...`);
+          }
         }
-        const jsonMatch = raw.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) return { success: false, message: '設計図のJSONを生成できませんでした。' };
-        let bp: any;
-        try { bp = JSON.parse(jsonMatch[0]); } catch {
-          return { success: false, message: '設計図JSONの解析に失敗しました。' };
-        }
-        if (!bp.structure || typeof bp.structure !== 'object') {
-          return { success: false, message: '設計図の構造が不正です。' };
+        if (!bp || !bp.structure || typeof bp.structure === 'object') {
+          console.warn(`[Blueprint] All attempts failed. Last output (first 300 chars): ${lastRaw.slice(0, 300)}`);
+          return { success: false, message: '設計図の生成に失敗しました。もう一度お試しください。' };
         }
         skills.pendingBlueprint = bp;
         const counts: Record<string, number> = {};

@@ -405,7 +405,9 @@ export class LLMClient {
   /**
    * ツール非実行の簡易テキスト応答（開始の一言などの生成用）。15秒タイムアウト。
    */
-  public async chatOnce(prompt: string): Promise<string> {
+  public async chatOnce(prompt: string, opts?: { maxTokens?: number; timeoutMs?: number }): Promise<string> {
+    const maxTokens = opts?.maxTokens ?? 512;
+    const timeoutMs = opts?.timeoutMs ?? 15000;
     if (this.config.llmProvider === 'gemini') {
       const apiKey = this.config.geminiApiKey;
       if (!apiKey) return '';
@@ -414,8 +416,11 @@ export class LLMClient {
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }),
-        signal: AbortSignal.timeout(15000),
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: maxTokens },
+        }),
+        signal: AbortSignal.timeout(timeoutMs),
       });
       if (!res.ok) return '';
       const data: any = await res.json();
@@ -446,7 +451,7 @@ export class LLMClient {
     const completion = await this.openAiClient.chat.completions.create({
       model: modelName,
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 80,
+      max_tokens: maxTokens,
     });
     return (completion.choices[0]?.message?.content || '').trim();
   }
