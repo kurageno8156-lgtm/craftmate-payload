@@ -261,6 +261,20 @@ export const BOT_TOOLS: ToolDefinition[] = [
     },
   },
   {
+    name: 'buildWithCommandBlock',
+    description: '設計図をコマンドブロックの /fill /setblock コマンドで一括建築する（クリエイティブ必須・高速）。buildBlueprint の前にまず試すこと',
+    parameters: {
+      type: 'object',
+      properties: {
+        blueprint: { type: 'object', description: 'generateArchitecturalBlueprint が生成した設計図JSON' },
+        originX: { type: 'number', description: '建築の開始X座標（省略時はBotの足元）' },
+        originY: { type: 'number', description: '建築の開始Y座標（省略時はBotの足元）' },
+        originZ: { type: 'number', description: '建築の開始Z座標（省略時はBotの足元）' },
+      },
+      required: [],
+    },
+  },
+  {
     name: 'buildBlueprint',
     description: 'generateArchitecturalBlueprintで生成した設計図をBotの足元を原点として実際に建築する',
     parameters: { type: 'object', properties: {}, required: [] },
@@ -569,6 +583,19 @@ export async function executeBotTool(
         for (const [k, v] of Object.entries(bp.structure)) counts[k] = Array.isArray(v) ? v.length : 0;
         const total = Object.values(counts).reduce((a, b) => a + b, 0);
         return { success: true, message: `設計図「${bp.name || description}」を生成しました（${total}ブロック: ${JSON.stringify(counts)}）。buildBlueprint で建築できます。` };
+      }
+      case 'buildWithCommandBlock': {
+        const cfg = botWrapper.config as any;
+        if (cfg.botAllowCommands === false) {
+          return { success: false, message: '管理者設定でコマンド実行が無効になっているため、コマンドブロック建築は使えません。buildBlueprint で手作業建築してください。' };
+        }
+        const bp = args.blueprint || skills.pendingBlueprint;
+        if (!bp) return { success: false, message: '設計図がありません。先に generateArchitecturalBlueprint を実行してください。' };
+        const pos = botWrapper.bot?.entity?.position?.floored?.();
+        const ox = Number.isFinite(Number(args.originX)) ? Number(args.originX) : (pos?.x ?? 0);
+        const oy = Number.isFinite(Number(args.originY)) ? Number(args.originY) : (pos?.y ?? 0);
+        const oz = Number.isFinite(Number(args.originZ)) ? Number(args.originZ) : (pos?.z ?? 0);
+        return await skills.buildWithCommandBlocks(bp, ox, oy, oz);
       }
       case 'buildBlueprint':
         return await skills.buildBlueprint();

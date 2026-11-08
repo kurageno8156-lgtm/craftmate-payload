@@ -85,21 +85,18 @@ export class SkillManager {
     if (entries.length > 1500) {
       return { success: false, message: `設計図のブロック数が多すぎます（${entries.length}個、上限1500）。もっとコンパクトな設計にしてください。` };
     }
-
+    const creative = this.bot.player.gamemode === 1;
+    if (!creative) {
+      return { success: false, message: '手作業での建築にはクリエイティブモードが必要です（アイテムが無いため設置できません）。コマンドブロック建築もクリエイティブモードが必要です。' };
+    }
     let placed = 0;
     let failed = 0;
-    const creative = this.bot.player.gamemode === 1;
     const itemCache = new Map<string, any>();
     for (const entry of entries) {
       try {
         const target = new Vec3(Math.floor(entry.x), Math.floor(entry.y), Math.floor(entry.z));
         const existing = this.bot.blockAt(target);
         if (existing && existing.name === entry.block) { placed++; continue; }
-        if (!creative) {
-          failed++;
-          if (failed <= 3) console.warn(`[Build] 非クリエイティブのため設置スキップ: ${entry.block}`);
-          continue;
-        }
         // アイテムをホットバーにセット
         let item = itemCache.get(entry.block);
         if (!item) {
@@ -119,6 +116,7 @@ export class SkillManager {
           { off: new Vec3(0, 1, 0), face: new Vec3(0, -1, 0) },
         ];
         let done = false;
+        let failReason = 'no solid neighbor';
         for (const d of dirs) {
           const ref = this.bot.blockAt(target.plus(d.off));
           if (!ref || ref.name === 'air' || ref.name === 'cave_air' || ref.name === 'void_air') continue;
@@ -126,9 +124,36 @@ export class SkillManager {
             await this.bot.placeBlock(ref, d.face);
             done = true;
             break;
-          } catch { /* 次の候補へ */ }
+          } catch (e: any) { failReason = e?.message || 'placeBlock failed'; }
         }
-        if (done) placed++; else failed++;
+        // 隣接ブロックが全くない場合: 足場（dirt）を下に仮設置してから再試行
+        if (!done) {
+          try {
+            const below = this.bot.blockAt(target.offset(0, -1, 0));
+            if (below && (below.name === 'air' || below.name === 'cave_air' || below.name === 'void_air')) {
+              await this.bot.creative.setInventorySlot(36, { name: 'dirt', count: 64 } as any);
+              const dirtItem = this.bot.inventory.items().find(i => i.name === 'dirt');
+              if (dirtItem) {
+                await this.bot.equip(dirtItem, 'hand');
+                const belowRef = this.bot.blockAt(target.offset(0, -2, 0));
+                if (belowRef && belowRef.name !== 'air') {
+                  await this.bot.placeBlock(belowRef, new Vec3(0, 1, 0));
+                  await new Promise(r => setTimeout(r, 150));
+                  const newBelow = this.bot.blockAt(target.offset(0, -1, 0));
+                  if (newBelow && newBelow.name !== 'air') {
+                    await this.bot.placeBlock(newBelow, new Vec3(0, 1, 0));
+                    done = true;
+                  }
+                }
+              }
+            }
+          } catch { /* 足場失敗は無視 */ }
+        }
+        if (done) placed++;
+        else {
+          failed++;
+          if (failed <= 10) console.warn(`[Build] Failed to place ${entry.block} at (${entry.x},${entry.y},${entry.z}): ${failReason}`);
+        }
       } catch { failed++; }
       if (placed % 50 === 0 && placed > 0) {
         try { this.blueprintProgress?.(`建築中... ${placed}/${entries.length} ブロック設置済み`); } catch { /* ignore */ }
@@ -373,6 +398,120 @@ export class SkillManager {
       return { success: true, message: okMessage };
     } catch (err: any) {
       return failPlace(`コマンドブロック設置エラー: ${err.message}`);
+    }
+  }
+
+  /**
+   * コマンドブロックで設計図を一括建築する（クリエイティブモード必須）。
+   * 同一ブロックの連続区間を /fill、単発を /setblock コマンドに変換し、
+   * 1つのコマンドブロックに順番に設定→レッドストーンパルスで発動させる。
+   */
+  public async buildWithCommandBlocks(
+    blueprint: any,
+    originX: number, originY: number, originZ: number
+  ): Promise<ToolCallResult> {
+    if (!blueprint || !blueprint.structure) {
+      return { success: false, message: '設計図がありません。' };
+    }
+    if (this.bot.player.gamemode !== 1) {
+      return { success: false, message: 'コマンドブロック建築にはクリエイティブモードが必要です。' };
+    }
+    const entries: Array<{ x: number; y: number; z: number; block: string }> = [];
+    for (const list of Object.values(blueprint.structure as Record<string, any[]>)) {
+      if (!Array.isArray(list)) continue;
+      for (const e of list) {
+        if (e && typeof e.block === 'string' && Number.isFinite(e.x) && Number.isFinite(e.y) && Number.isFinite(e.z)) {
+          entries.push({ x: Math.floor(originX) + e.x, y: Math.floor(originY) + e.y, z: Math.floor(originZ) + e.z, block: e.block });
+        }
+      }
+    }
+    if (entries.length === 0) return { success: false, message: '設計図にブロックがありません。' };
+
+    // 同一 (y,z,block) で x が連続する区間を /fill にまとめる
+    const sorted = [...entries].sort((a, b) => a.y - b.y || a.z - b.z || a.x - b.x || a.block.localeCompare(b.block));
+    const commands: string[] = [];
+    let i = 0;
+    while (i < sorted.length) {
+      const cur = sorted[i];
+      let j = i;
+      while (j + 1 < sorted.length) {
+        const n = sorted[j + 1];
+        if (n.y === cur.y && n.z === cur.z && n.x === sorted[j].x + 1 && n.block === cur.block) j++;
+        else break;
+      }
+      const runLen = j - i + 1;
+      if (runLen >= 3) {
+        commands.push(`fill ${cur.x} ${cur.y} ${cur.z} ${sorted[j].x} ${cur.y} ${cur.z} ${cur.block}`);
+      } else {
+        for (let k = i; k <= j; k++) {
+          commands.push(`setblock ${sorted[k].x} ${sorted[k].y} ${sorted[k].z} ${sorted[k].block}`);
+        }
+      }
+      i = j + 1;
+    }
+    if (commands.length > 150) {
+      return { success: false, message: `コマンド数が多すぎます（${commands.length}）。buildBlueprint での手作業建築を使ってください。` };
+    }
+
+    try {
+      // コマンドブロック設置場所: Botの足元の4ブロック先・足元Y（空気を確保）
+      const bp = this.bot.entity.position.floored();
+      const cbPos = new Vec3(bp.x + 3, bp.y, bp.z);
+      for (let dx = 3; dx <= 8; dx++) {
+        const p = new Vec3(bp.x + dx, bp.y, bp.z);
+        const b = this.bot.blockAt(p);
+        if (b && (b.name === 'air' || b.name === 'cave_air' || b.name === 'void_air')) {
+          const below = this.bot.blockAt(p.offset(0, -1, 0));
+          if (below && below.name !== 'air') { cbPos.x = p.x; cbPos.z = p.z; break; }
+        }
+      }
+      // コマンドブロックを設置
+      const existing = this.bot.blockAt(cbPos);
+      if (!existing || !existing.name.includes('command_block')) {
+        await this.placeCommandBlock(cbPos.x, cbPos.y, cbPos.z, 'time set day', 'impulse');
+      }
+      const cbBlock = this.bot.blockAt(cbPos);
+      if (!cbBlock || !cbBlock.name.includes('command_block')) {
+        return { success: false, message: 'コマンドブロックを設置できませんでした。' };
+      }
+
+      // レッドストーントーチを隣に置いてパルス発動（設置→掘削でON/OFF）
+      const torchItem = this.bot.inventory.items().find(it => it.name === 'redstone_torch')
+        || await this.bot.creative.setInventorySlot(36, { name: 'redstone_torch', count: 1 } as any).then(() =>
+             this.bot.inventory.items().find(it => it.name === 'redstone_torch'));
+      if (!torchItem) return { success: false, message: 'レッドストーントーチを用意できませんでした。' };
+      await this.bot.equip(torchItem, 'hand');
+      const torchRef = this.bot.blockAt(cbPos.offset(1, 0, 0));
+      const torchPos = cbPos.offset(1, 0, 0);
+
+      let executed = 0;
+      const total = commands.length;
+      for (const cmd of commands) {
+        await (this.bot as any).setCommandBlock(cbPos, cmd, { mode: 2, trackOutput: false });
+        // パルス: トーチ設置→少し待つ→掘削
+        try {
+          if (torchRef && torchRef.name !== 'air') {
+            await this.bot.placeBlock(torchRef, new Vec3(1, 0, 0));
+          } else {
+            const belowRef = this.bot.blockAt(cbPos.offset(0, -1, 0));
+            if (belowRef) await this.bot.placeBlock(belowRef, new Vec3(0, 1, 0));
+          }
+        } catch { /* トーチ設置失敗は無視して次へ */ }
+        await new Promise(r => setTimeout(r, 250));
+        try {
+          const tb = this.bot.blockAt(torchPos);
+          if (tb && tb.name.includes('redstone_torch')) await this.bot.dig(tb);
+        } catch { /* ignore */ }
+        await new Promise(r => setTimeout(r, 120));
+        executed++;
+        if (executed % 20 === 0) {
+          try { this.blueprintProgress?.(`コマンドブロック建築中... ${executed}/${total} コマンド実行済み`); } catch { /* ignore */ }
+        }
+      }
+      const name = blueprint.name || '設計図';
+      return { success: true, message: `${name} をコマンドブロックで一括建築しました（${total} コマンド実行、${entries.length} ブロック相当）。` };
+    } catch (err: any) {
+      return { success: false, message: `コマンドブロック建築エラー: ${err.message}` };
     }
   }
 
