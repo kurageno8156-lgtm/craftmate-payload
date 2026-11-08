@@ -405,7 +405,7 @@ export class LLMClient {
   /**
    * ツール非実行の簡易テキスト応答（開始の一言などの生成用）。15秒タイムアウト。
    */
-  public async chatOnce(prompt: string, opts?: { maxTokens?: number; timeoutMs?: number }): Promise<string> {
+  public async chatOnce(prompt: string, opts?: { maxTokens?: number; timeoutMs?: number; jsonMode?: boolean }): Promise<string> {
     const maxTokens = opts?.maxTokens ?? 512;
     const timeoutMs = opts?.timeoutMs ?? 15000;
     if (this.config.llmProvider === 'gemini') {
@@ -413,12 +413,14 @@ export class LLMClient {
       if (!apiKey) return '';
       const modelName = this.config.geminiModel || 'gemini-3.1-flash-lite';
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent`;
+      const generationConfig: any = { maxOutputTokens: maxTokens };
+      if (opts?.jsonMode) generationConfig.responseMimeType = 'application/json';
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: maxTokens },
+          generationConfig,
         }),
         signal: AbortSignal.timeout(timeoutMs),
       });

@@ -1,6 +1,7 @@
 import { ToolDefinition, ToolCallResult } from '../types.js';
 import { MinecraftBot } from '../bot/mcBot.js';
 import type { LLMClient } from './llmClient.js';
+import { jsonrepair } from 'jsonrepair';
 
 const DANGEROUS_COMMANDS = new Set(['kill', 'ban', 'ban-ip', 'banlist', 'op', 'deop', 'kick', 'stop', 'whitelist', 'pardon', 'setblock', 'fill', 'clone', 'function', 'give', 'clear']);
 
@@ -54,7 +55,89 @@ function parseBlueprintJson(raw: string): any | null {
     parsed = tryParse(repaired);
     if (parsed) return parsed;
   }
+
+  // 最終手段: jsonrepair ライブラリで修復を試みる
+  try {
+    const fixed = jsonrepair(json);
+    parsed = tryParse(fixed);
+    if (parsed) return parsed;
+  } catch { /* jsonrepair も失敗 */ }
   return null;
+}
+
+/**
+ * AIが設計図を生成できなかった場合のフォールバック設計図。
+ * 10x10x10 のシンプルな小屋（基礎・壁・窓・ドア・屋根・照明・庭）。
+ */
+function buildFallbackBlueprint(): any {
+  const foundation: any[] = [];
+  const walls: any[] = [];
+  const roof: any[] = [];
+  const windows: any[] = [];
+  const doors: any[] = [];
+  const lighting: any[] = [];
+  const garden: any[] = [];
+  const decorations: any[] = [];
+  // 10x10 の基礎（y=0）
+  for (let x = 0; x < 10; x++) {
+    for (let z = 0; z < 10; z++) {
+      foundation.push({ x, y: 0, z, block: 'stone_bricks' });
+    }
+  }
+  // 壁（高さ4、角はオークの丸太）
+  for (let y = 1; y <= 4; y++) {
+    for (let x = 0; x < 10; x++) {
+      for (let z = 0; z < 10; z++) {
+        const isEdge = x === 0 || x === 9 || z === 0 || z === 9;
+        if (!isEdge) continue;
+        const isCorner = (x === 0 || x === 9) && (z === 0 || z === 9);
+        const block = isCorner ? 'oak_log' : 'oak_planks';
+        walls.push({ x, y, z, block });
+      }
+    }
+  }
+  // 窓（y=2,3 の壁面中央）とドア（y=1,2 の南面中央）
+  for (const [x, z] of [[4, 0], [5, 0], [4, 9], [5, 9], [0, 4], [0, 5], [9, 4], [9, 5]] as Array<[number, number]>) {
+    windows.push({ x, y: 2, z, block: 'glass' });
+    windows.push({ x, y: 3, z, block: 'glass' });
+  }
+  doors.push({ x: 4, y: 1, z: 9, block: 'oak_door' });
+  doors.push({ x: 5, y: 1, z: 9, block: 'oak_door' });
+  doors.push({ x: 4, y: 2, z: 9, block: 'air' });
+  doors.push({ x: 5, y: 2, z: 9, block: 'air' });
+  // 屋根（y=5,6 の階段状ピラミッド風）
+  for (let ring = 0; ring < 5; ring++) {
+    const y = 5 + ring;
+    for (let x = ring; x < 10 - ring; x++) {
+      for (let z = ring; z < 10 - ring; z++) {
+        const isEdge = x === ring || x === 9 - ring || z === ring || z === 9 - ring;
+        if (!isEdge) continue;
+        roof.push({ x, y, z, block: 'oak_stairs' });
+      }
+    }
+  }
+  roof.push({ x: 4, y: 10, z: 4, block: 'oak_planks' });
+  roof.push({ x: 5, y: 10, z: 4, block: 'oak_planks' });
+  roof.push({ x: 4, y: 10, z: 5, block: 'oak_planks' });
+  roof.push({ x: 5, y: 10, z: 5, block: 'oak_planks' });
+  // 照明・装飾・庭
+  lighting.push({ x: 2, y: 4, z: 2, block: 'lantern' });
+  lighting.push({ x: 7, y: 4, z: 7, block: 'lantern' });
+  lighting.push({ x: 4, y: 4, z: 4, block: 'lantern' });
+  decorations.push({ x: 2, y: 1, z: 4, block: 'flower_pot' });
+  decorations.push({ x: 7, y: 1, z: 5, block: 'flower_pot' });
+  garden.push({ x: 12, y: 1, z: 5, block: 'grass_block' });
+  garden.push({ x: 12, y: 1, z: 6, block: 'grass_block' });
+  garden.push({ x: -2, y: 1, z: 5, block: 'grass_block' });
+  garden.push({ x: -2, y: 1, z: 6, block: 'grass_block' });
+  garden.push({ x: 5, y: 1, z: 12, block: 'oak_leaves' });
+  garden.push({ x: 6, y: 1, z: 12, block: 'oak_leaves' });
+  garden.push({ x: 5, y: 2, z: 12, block: 'oak_leaves' });
+  return {
+    name: 'シンプルハウス（フォールバック）',
+    size: { x: 10, y: 10, z: 10 },
+    structure: { foundation, walls, roof, windows, doors, decorations, garden, lighting },
+  };
 }
 
 export const BOT_TOOLS: ToolDefinition[] = [
@@ -450,27 +533,36 @@ export async function executeBotTool(
         const MAX_ATTEMPTS = 3; // 初回 + 2回リトライ
         let bp: any = null;
         let lastRaw = '';
+        let lastError = '';
         for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
           let raw = '';
           try {
-            raw = await llmClient.chatOnce(prompt, { maxTokens: 8192, timeoutMs: 45000 });
+            raw = await llmClient.chatOnce(prompt, { maxTokens: 8192, timeoutMs: 45000, jsonMode: true });
           } catch (err: any) {
-            if (attempt === MAX_ATTEMPTS) {
-              return { success: false, message: '設計図の生成に失敗しました。もう一度お試しください。' };
-            }
+            lastError = `API error: ${err?.message || err}`;
+            console.warn(`[Blueprint] attempt ${attempt}/${MAX_ATTEMPTS} API failed: ${lastError}`);
+            if (attempt === MAX_ATTEMPTS) break;
             continue;
           }
           lastRaw = raw;
           bp = parseBlueprintJson(raw);
           if (bp && bp.structure && typeof bp.structure === 'object') break;
-          bp = null;
-          if (attempt < MAX_ATTEMPTS) {
-            console.warn(`[Blueprint] JSON parse failed (attempt ${attempt}/${MAX_ATTEMPTS}), retrying...`);
+          try {
+            const m = (raw || '').match(/\{[\s\S]*\}/);
+            if (m) JSON.parse(m[0]);
+            lastError = 'JSON parsed but structure missing';
+          } catch (e: any) {
+            lastError = `JSON.parse error: ${e?.message || e}`;
           }
+          console.warn(`[Blueprint] attempt ${attempt}/${MAX_ATTEMPTS} parse failed: ${lastError}`);
+          bp = null;
         }
         if (!bp || !bp.structure || typeof bp.structure === 'object') {
-          console.warn(`[Blueprint] All attempts failed. Last output (first 300 chars): ${lastRaw.slice(0, 300)}`);
-          return { success: false, message: '設計図の生成に失敗しました。もう一度お試しください。' };
+          console.warn(`[Blueprint] All ${MAX_ATTEMPTS} attempts failed.`);
+          console.warn(`[Blueprint] Last raw output (first 500 chars): ${(lastRaw || '(empty)').slice(0, 500)}`);
+          console.warn(`[Blueprint] Last parse error: ${lastError || 'unknown'}`);
+          bp = buildFallbackBlueprint();
+          console.warn(`[Blueprint] Using fallback blueprint: ${bp.name}`);
         }
         skills.pendingBlueprint = bp;
         const counts: Record<string, number> = {};
