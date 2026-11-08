@@ -39,7 +39,7 @@ const WINDOW_RECT_SCRIPT = [
   "  $sb = New-Object System.Text.StringBuilder 256",
   "  [void][WinEnum]::GetWindowText($h, $sb, 256)",
   "  $title = $sb.ToString()",
-  "  if ($title -match 'Minecraft' -and $title -notmatch 'Launcher') { $script:target = $h; return $false }",
+  "  if ($title -match 'Minecraft' -and $title -notmatch 'Launcher|ScreenViewer|CraftMate|画面共有') { $script:target = $h; return $false }",
   "  return $true",
   "}",
   "[void][WinEnum]::EnumWindows($cb, [IntPtr]::Zero)",
