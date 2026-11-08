@@ -34,6 +34,7 @@ export class WebServer {
   private statusTimer: NodeJS.Timeout | null = null;
   private envPath: string;
   private isScreenSharing: boolean = false;
+  private screenShareSocket: any = null;
   private screenShareInterval: NodeJS.Timeout | null = null;
   private updateToken: Buffer = Buffer.alloc(32);
   private appVersion: string = '0.0.0';
@@ -170,6 +171,23 @@ export class WebServer {
       } catch (error) {
         console.error('[Updater] Could not start the desktop updater:', error);
         res.status(500).json({ error: 'Could not start CraftMate_Updater.exe.' });
+      }
+    });
+
+    this.app.post('/api/launch-screen-viewer', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'The screen viewer can be launched only from the authenticated local dashboard.' });
+      const viewerPath = path.join(this.installationPath(), 'CraftMate_ScreenViewer.exe');
+      if (!fs.existsSync(viewerPath)) return res.status(404).json({ error: 'CraftMate_ScreenViewer.exe was not found. Reinstall CraftMate to add the screen viewer.' });
+      try {
+        const child = spawn(viewerPath, [], {
+          cwd: this.installationPath(), detached: true, stdio: 'ignore', windowsHide: false,
+        });
+        child.once('error', error => console.error('[ScreenViewer] Could not start the screen viewer:', error));
+        child.unref();
+        res.status(202).json({ success: true });
+      } catch (error) {
+        console.error('[ScreenViewer] Could not start the screen viewer:', error);
+        res.status(500).json({ error: 'Could not start CraftMate_ScreenViewer.exe.' });
       }
     });
 
@@ -589,13 +607,14 @@ export class WebServer {
       socket.on('start-screen-share', () => {
         if (!this.isScreenSharing) {
           this.isScreenSharing = true;
+          this.screenShareSocket = socket;
           let capturing = false;
           this.screenShareInterval = setInterval(async () => {
             if (!this.isScreenSharing || capturing) return;
             capturing = true;
             try {
               const img = await captureScreenRegion(0, 0, 1920, 1080);
-              if (img) socket.emit('bot-screen', img);
+              if (img) this.io.emit('bot-screen', img);
             } catch (error) {
               console.error('[Web] Screen share capture failed:', error);
             } finally {
@@ -607,6 +626,7 @@ export class WebServer {
 
       socket.on('stop-screen-share', () => {
         this.isScreenSharing = false;
+        this.screenShareSocket = null;
         if (this.screenShareInterval) {
           clearInterval(this.screenShareInterval);
           this.screenShareInterval = null;
@@ -614,8 +634,9 @@ export class WebServer {
       });
 
       socket.on('disconnect', () => {
-        if (this.isScreenSharing) {
+        if (this.isScreenSharing && this.screenShareSocket === socket) {
           this.isScreenSharing = false;
+          this.screenShareSocket = null;
           if (this.screenShareInterval) {
             clearInterval(this.screenShareInterval);
             this.screenShareInterval = null;

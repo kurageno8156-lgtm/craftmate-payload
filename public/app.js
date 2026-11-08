@@ -64,7 +64,11 @@ if (screenShareToggle) {
   on(screenShareToggle, 'change', (e) => {
     if (e.target.checked) {
       socket.emit('start-screen-share');
-      if (botScreenModal) botScreenModal.hidden = false;
+      fetchWithLocalSettingsAuth('/api/launch-screen-viewer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      }).catch(error => console.warn('Could not launch the screen viewer:', error));
     } else {
       socket.emit('stop-screen-share');
       if (botScreenModal) botScreenModal.hidden = true;

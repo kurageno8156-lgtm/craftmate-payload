@@ -282,7 +282,7 @@ namespace CraftMateUpdater
 
                 StopInstalledNode(worker);
                 StopInstalledLauncher(worker);
-                string[] updateItems = new string[] { "dist", "public", "node_modules", "CraftMate.exe", "CraftMate_Updater.exe", "node.exe", ".env.example", "package.json", "package-lock.json", "README.md", "Uninstall.exe" };
+                string[] updateItems = new string[] { "dist", "public", "node_modules", "CraftMate.exe", "CraftMate_Updater.exe", "CraftMate_ScreenViewer.exe", "node.exe", ".env.example", "package.json", "package-lock.json", "README.md", "Uninstall.exe" };
                 int total = updateItems.Length;
                 for (int i = 0; i < updateItems.Length; i++)
                 {

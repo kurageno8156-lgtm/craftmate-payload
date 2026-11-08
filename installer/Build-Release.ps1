@@ -10,11 +10,12 @@ $payloadPath = Join-Path $OutputDirectory 'app_payload.zip'
 $setupPath = Join-Path $OutputDirectory 'CraftMate_Setup.exe'
 $uninstallPath = Join-Path $OutputDirectory 'Uninstall.exe'
 $updaterPath = Join-Path $OutputDirectory 'CraftMate_Updater.exe'
+$screenViewerPath = Join-Path $OutputDirectory 'CraftMate_ScreenViewer.exe'
 $iconPath = Join-Path $projectRoot 'public\app.ico'
 $manifestPath = Join-Path $PSScriptRoot 'app.manifest'
 $launcherSourcePath = Join-Path $projectRoot 'Launcher.cs'
 
-foreach ($required in @('node.exe', 'Launcher.cs', 'installer\Updater.cs', 'installer\app.manifest')) {
+foreach ($required in @('node.exe', 'Launcher.cs', 'installer\Updater.cs', 'installer\ScreenViewer.cs', 'installer\app.manifest')) {
   if (-not (Test-Path (Join-Path $projectRoot $required))) {
     throw "Required release file is missing: $required"
   }
@@ -34,6 +35,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Updater compilation failed.' }
 if (-not (Test-Path -LiteralPath $updaterPath -PathType Leaf)) { throw 'Updater compilation did not create CraftMate_Updater.exe.' }
 & $compiler /nologo /target:winexe "/out:$(Join-Path $projectRoot 'CraftMate.exe')" "/win32icon:$iconPath" /r:System.dll /r:System.Windows.Forms.dll $launcherSourcePath
 if ($LASTEXITCODE -ne 0) { throw 'Launcher compilation failed.' }
+& $compiler /nologo /target:winexe "/out:$screenViewerPath" "/win32icon:$iconPath" /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Web.Extensions.dll (Join-Path $PSScriptRoot 'ScreenViewer.cs')
+if ($LASTEXITCODE -ne 0) { throw 'ScreenViewer compilation failed.' }
+if (-not (Test-Path -LiteralPath $screenViewerPath -PathType Leaf)) { throw 'ScreenViewer compilation did not create CraftMate_ScreenViewer.exe.' }
 & $compiler /nologo /target:winexe "/out:$uninstallPath" "/win32icon:$iconPath" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll (Join-Path $PSScriptRoot 'Uninstall.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Uninstaller compilation failed.' }
 & $compiler /nologo /target:winexe "/out:$setupPath" "/win32icon:$iconPath" "/win32manifest:$manifestPath" "/resource:$iconPath,CraftMate.app.ico" "/resource:$uninstallPath,CraftMate.Uninstall.exe" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll (Join-Path $PSScriptRoot 'Setup.cs')
@@ -68,6 +72,7 @@ try {
     }
     & $addFile $uninstallPath 'Uninstall.exe'
     & $addFile $updaterPath 'CraftMate_Updater.exe'
+    & $addFile $screenViewerPath 'CraftMate_ScreenViewer.exe'
   } finally {
     $archive.Dispose()
   }

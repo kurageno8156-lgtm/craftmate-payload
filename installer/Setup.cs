@@ -368,9 +368,9 @@ namespace CraftMateSetup
         private ProgressBar _progressBar;
         private PictureBox _picAppIcon;
 
-        private const string CurrentVersion = "1.3.69";
+        private const string CurrentVersion = "1.3.70";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.69/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.70/app_payload.zip";
 
         public InstallerForm(string lang)
         {
@@ -612,6 +612,11 @@ namespace CraftMateSetup
                     CreateShortcut(Path.Combine(desktopDirectory, "CraftMate.lnk"), executable, target);
                     CreateShortcut(Path.Combine(startMenuFolder, "CraftMate.lnk"), executable, target);
                     CreateShortcut(Path.Combine(startMenuFolder, "CraftMate Updater.lnk"), updaterExecutable, target);
+                    string screenViewerExecutable = Path.Combine(target, "CraftMate_ScreenViewer.exe");
+                    if (File.Exists(screenViewerExecutable))
+                    {
+                        CreateShortcut(Path.Combine(startMenuFolder, "CraftMate 画面共有ビューア.lnk"), screenViewerExecutable, target);
+                    }
 
                     Invoke(new Action(delegate { _txtLog.AppendText(UITexts.Get(_lang, "ShortcutsCreated") + "\r\n"); }));
                 }
