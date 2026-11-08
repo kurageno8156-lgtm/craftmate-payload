@@ -47,37 +47,7 @@ const inventoryModalContainer = document.getElementById('inventory-modal-contain
 const showAllInventoryButton = document.getElementById('btn-show-all-inventory');
 const entitiesContainer = document.getElementById('entities-container');
 
-const screenShareToggle = document.getElementById('screen-share-toggle');
-const botScreenModal = document.getElementById('bot-screen-modal');
-const botScreenView = document.getElementById('bot-screen-view');
-const closeBotScreen = document.getElementById('close-bot-screen');
-
-const screenShareToggle = document.getElementById('screen-share-toggle');
-const botScreenModal = document.getElementById('bot-screen-modal');
-const botScreenView = document.getElementById('bot-screen-view');
-const closeBotScreen = document.getElementById('close-bot-screen');
-
 const taskText = document.getElementById('current-task-text');
-
-screenShareToggle.addEventListener('change', (e) => {
-  if (e.target.checked) {
-    socket.emit('start-screen-share');
-    botScreenModal.style.display = 'block';
-  } else {
-    socket.emit('stop-screen-share');
-    botScreenModal.style.display = 'none';
-  }
-});
-
-socket.on('bot-screen', (base64Image) => {
-  botScreenView.src = 'data:image/jpeg;base64,' + base64Image;
-});
-
-closeBotScreen.addEventListener('click', () => {
-  botScreenModal.style.display = 'none';
-  screenShareToggle.checked = false;
-  socket.emit('stop-screen-share');
-});
 const btnCancel = document.getElementById('btn-cancel');
 const logsContainer = document.getElementById('logs-container');
 const commandForm = document.getElementById('command-form');
@@ -753,30 +723,3 @@ document.getElementById('btn-download-logs').addEventListener('click', () => {
 
 refreshHealth();
 setInterval(refreshHealth, 10000);
-
-// --- クイックコマンドボタンのイベントリスナー（自動追加） ---
-(function initQuickCommands() {
-    const quickCommandButtons = document.querySelectorAll('.quick-btn');
-    if (quickCommandButtons.length === 0) {
-        console.warn('[QuickCommand] クイックコマンドボタンが見つかりません。');
-        return;
-    }
-    quickCommandButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            // data-cmd 属性（日本語）を優先して取得
-            const command = button.dataset.cmd || button.dataset.cmdJa || button.textContent.trim();
-            if (!command) return;
-            console.log('[QuickCommand] Sending:', command);
-            const input = document.getElementById('command-input');
-            const form = document.getElementById('command-form');
-            if (input && form) {
-                input.value = command;
-                form.dispatchEvent(new Event('submit', { cancelable: true }));
-            } else if (typeof socket !== 'undefined') {
-                socket.emit('sendInstruction', { instruction: command, sender: 'Dashboard' });
-            }
-        });
-    });
-    console.log('[QuickCommand] ' + quickCommandButtons.length + ' 個のクイックコマンドボタンを初期化しました。');
-    window.quickCommandButtonsInitialized = true;
-})();

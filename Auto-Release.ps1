@@ -11,13 +11,6 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path $PSScriptRoot).Path
 Set-Location $projectRoot
 
-try {
-    & git fetch --quiet --no-progress --tags origin
-}
-catch {
-    Write-Warning 'Could not fetch tags from origin; release notes may use local tags only.'
-}
-
 foreach ($tool in @('git', 'gh', 'npm')) {
     if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
         throw "Required command was not found: $tool"
@@ -131,14 +124,7 @@ if ([string]::IsNullOrWhiteSpace($defaultBranch)) {
 }
 
 $branch = Get-CommandOutput -Command 'git' -Arguments @('branch', '--show-current') -FailureMessage 'Could not determine the current Git branch.'
-$isDetached = Get-CommandOutput -Command 'git' -Arguments @('symbolic-ref', '--short', 'HEAD') -FailureMessage 'Could not determine HEAD reference'
-if ([string]::IsNullOrWhiteSpace($branch)) {
-    # If in detached HEAD state, check if current commit matches main
-    $mainCommit = Get-CommandOutput -Command 'git' -Arguments @('rev-parse', 'main') -FailureMessage 'Could not get main commit'
-    if ([string]::IsNullOrWhiteSpace($mainCommit) -or $mainCommit -ne $branch) {
-        throw "Switch to the repository default branch ($defaultBranch) before creating a release."
-    }
-} elseif ($branch -ne $defaultBranch) {
+if ([string]::IsNullOrWhiteSpace($branch) -or $branch -ne $defaultBranch) {
     throw "Switch to the repository default branch ($defaultBranch) before creating a release."
 }
 
