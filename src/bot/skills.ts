@@ -56,6 +56,90 @@ export class SkillManager {
     return this.commandBlockHistory.slice(-Math.max(1, Math.min(limit, 10)));
   }
 
+  // ---- 建築設計図 ----
+  public pendingBlueprint: any = null;
+
+  /**
+   * 設計図JSONをBot足元を原点として建築する（クリエイティブモード推奨）。
+   * structure 内の各セクション配列 {x,y,z,block} を順に設置する。
+   */
+  public async buildBlueprint(): Promise<ToolCallResult> {
+    const bp = this.pendingBlueprint;
+    if (!bp || !bp.structure) {
+      return { success: false, message: '設計図がありません。先に generateArchitecturalBlueprint を実行してください。' };
+    }
+    const base = this.bot.entity.position.floored();
+    const entries: Array<{ x: number; y: number; z: number; block: string; section: string }> = [];
+    for (const [section, list] of Object.entries(bp.structure as Record<string, any[]>)) {
+      if (!Array.isArray(list)) continue;
+      for (const e of list) {
+        if (e && typeof e.block === 'string' && Number.isFinite(e.x) && Number.isFinite(e.y) && Number.isFinite(e.z)) {
+          entries.push({ x: base.x + e.x, y: base.y + e.y, z: base.z + e.z, block: e.block, section });
+        }
+      }
+    }
+    if (entries.length === 0) {
+      return { success: false, message: '設計図に設置可能なブロックがありません。' };
+    }
+    if (entries.length > 1500) {
+      return { success: false, message: `設計図のブロック数が多すぎます（${entries.length}個、上限1500）。もっとコンパクトな設計にしてください。` };
+    }
+
+    let placed = 0;
+    let failed = 0;
+    const creative = this.bot.player.gamemode === 1;
+    const itemCache = new Map<string, any>();
+    for (const entry of entries) {
+      try {
+        const target = new Vec3(Math.floor(entry.x), Math.floor(entry.y), Math.floor(entry.z));
+        const existing = this.bot.blockAt(target);
+        if (existing && existing.name === entry.block) { placed++; continue; }
+        if (!creative) {
+          failed++;
+          if (failed <= 3) console.warn(`[Build] 非クリエイティブのため設置スキップ: ${entry.block}`);
+          continue;
+        }
+        // アイテムをホットバーにセット
+        let item = itemCache.get(entry.block);
+        if (!item) {
+          await this.bot.creative.setInventorySlot(36, { name: entry.block, count: 64 } as any);
+          item = this.bot.inventory.items().find(i => i.name === entry.block);
+          if (item) itemCache.set(entry.block, item);
+        }
+        if (!item) { failed++; continue; }
+        try { await this.bot.equip(item, 'hand'); } catch { /* 次へ */ }
+        // 隣接する固体ブロックを基準に設置
+        const dirs = [
+          { off: new Vec3(0, -1, 0), face: new Vec3(0, 1, 0) },
+          { off: new Vec3(1, 0, 0), face: new Vec3(-1, 0, 0) },
+          { off: new Vec3(-1, 0, 0), face: new Vec3(1, 0, 0) },
+          { off: new Vec3(0, 0, 1), face: new Vec3(0, 0, -1) },
+          { off: new Vec3(0, 0, -1), face: new Vec3(0, 0, 1) },
+          { off: new Vec3(0, 1, 0), face: new Vec3(0, -1, 0) },
+        ];
+        let done = false;
+        for (const d of dirs) {
+          const ref = this.bot.blockAt(target.plus(d.off));
+          if (!ref || ref.name === 'air' || ref.name === 'cave_air' || ref.name === 'void_air') continue;
+          try {
+            await this.bot.placeBlock(ref, d.face);
+            done = true;
+            break;
+          } catch { /* 次の候補へ */ }
+        }
+        if (done) placed++; else failed++;
+      } catch { failed++; }
+      if (placed % 50 === 0 && placed > 0) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+    }
+    const name = bp.name || '設計図';
+    return {
+      success: failed === 0 || placed > 0,
+      message: `${name} の建築が完了しました（設置 ${placed} 個 / 失敗 ${failed} 個 / 合計 ${entries.length} 個）。`,
+    };
+  }
+
   constructor(bot: Bot) {
     this.bot = bot;
     this.bot.once('spawn', () => {

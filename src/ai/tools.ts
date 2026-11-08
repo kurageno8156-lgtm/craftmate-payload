@@ -1,5 +1,6 @@
 import { ToolDefinition, ToolCallResult } from '../types.js';
 import { MinecraftBot } from '../bot/mcBot.js';
+import type { LLMClient } from './llmClient.js';
 
 const DANGEROUS_COMMANDS = new Set(['kill', 'ban', 'ban-ip', 'banlist', 'op', 'deop', 'kick', 'stop', 'whitelist', 'pardon', 'setblock', 'fill', 'clone', 'function', 'give', 'clear']);
 
@@ -110,6 +111,23 @@ export const BOT_TOOLS: ToolDefinition[] = [
       },
       required: ['x', 'y', 'z', 'command'],
     },
+  },
+  {
+    name: 'generateArchitecturalBlueprint',
+    description: '建物の詳細な設計図をAIが生成する。家具・庭・照明まで含むプロ級の設計図JSONを作成し、buildBlueprintで建築できる',
+    parameters: {
+      type: 'object',
+      properties: {
+        description: { type: 'string', description: '建物の説明（例: モダンな2階建ての家、庭付き、池付き）' },
+        size: { type: 'string', description: '建物のサイズ感（例: 小さめ/標準/大きめ、または具体的な寸法）' },
+      },
+      required: ['description'],
+    },
+  },
+  {
+    name: 'buildBlueprint',
+    description: 'generateArchitecturalBlueprintで生成した設計図をBotの足元を原点として実際に建築する',
+    parameters: { type: 'object', properties: {}, required: [] },
   },
   {
     name: 'getCommandBlockHistory',
@@ -275,7 +293,8 @@ function toCount(value: any, fallback: number = 1): number {
 export async function executeBotTool(
   botWrapper: MinecraftBot,
   toolName: string,
-  args: Record<string, any>
+  args: Record<string, any>,
+  llmClient?: LLMClient
 ): Promise<ToolCallResult> {
   const skills = botWrapper.skills;
   if (!skills) {
@@ -363,6 +382,40 @@ export async function executeBotTool(
         const commandType = args.commandType === 'chain' || args.commandType === 'repeat' ? args.commandType : 'impulse';
         return await skills.placeCommandBlock(x, y, z, command, commandType);
       }
+      case 'generateArchitecturalBlueprint': {
+        if (!llmClient) return { success: false, message: '設計図生成にはAI接続が必要です。' };
+        const description = typeof args.description === 'string' ? args.description.trim() : '';
+        if (!description) return { success: false, message: '建物の説明を指定してください。' };
+        const size = typeof args.size === 'string' ? args.size.trim() : '標準';
+        const prompt =
+          `あなたはMinecraft建築のプロです。「${description}」（サイズ: ${size}）の詳細な設計図をJSONのみで出力してください。\n` +
+          `ブロックは必ずMinecraftの英語ID（例: stone_bricks, oak_planks, glass, oak_stairs, oak_door, torch, lantern, water, grass_block, oak_leaves）を使ってください。\n` +
+          `以下の形式で、合計400ブロック以内に収めてください:\n` +
+          `{"name":"名前","size":{"x":10,"y":6,"z":10},"structure":{"foundation":[{"x":0,"y":0,"z":0,"block":"stone_bricks"}],"walls":[],"roof":[],"windows":[],"doors":[],"decorations":[],"garden":[],"lighting":[]}}\n` +
+          `基礎・壁・屋根・窓・ドア・装飾・庭・照明を全て含め、プロ級の見栄えになるよう設計してください。説明文は不要、JSONのみ出力。`;
+        let raw = '';
+        try {
+          raw = await llmClient.chatOnce(prompt);
+        } catch (err: any) {
+          return { success: false, message: `設計図生成エラー: ${err.message}` };
+        }
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) return { success: false, message: '設計図のJSONを生成できませんでした。' };
+        let bp: any;
+        try { bp = JSON.parse(jsonMatch[0]); } catch {
+          return { success: false, message: '設計図JSONの解析に失敗しました。' };
+        }
+        if (!bp.structure || typeof bp.structure !== 'object') {
+          return { success: false, message: '設計図の構造が不正です。' };
+        }
+        skills.pendingBlueprint = bp;
+        const counts: Record<string, number> = {};
+        for (const [k, v] of Object.entries(bp.structure)) counts[k] = Array.isArray(v) ? v.length : 0;
+        const total = Object.values(counts).reduce((a, b) => a + b, 0);
+        return { success: true, message: `設計図「${bp.name || description}」を生成しました（${total}ブロック: ${JSON.stringify(counts)}）。buildBlueprint で建築できます。` };
+      }
+      case 'buildBlueprint':
+        return await skills.buildBlueprint();
       case 'getCommandBlockHistory': {
         const limit = toCount(args.limit, 10);
         const history = skills.getCommandBlockHistory(limit);
