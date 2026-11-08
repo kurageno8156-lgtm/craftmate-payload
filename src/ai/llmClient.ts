@@ -306,6 +306,33 @@ export class LLMClient {
       textResponse: toolCall ? undefined : (thought.trim() || undefined),
     };
   }
+/** Google Gemini API にテキストと画像を送信 */
+  async generateTextWithImage(prompt: string, base64Image: string): Promise<string> {
+    if (!this.geminiAi) {
+      if (!this.config.geminiApiKey) {
+        throw new Error('GEMINI_API_KEY が設定されていません。.env ファイルを確認してください。');
+      }
+      this.geminiAi = new GoogleGenerativeAI(this.config.geminiApiKey);
+    }
+
+    const model = this.geminiAi.getGenerativeModel({
+      model: this.config.geminiModel || 'gemini-1.5-flash',
+    });
+
+    const imagePart = {
+      inlineData: {
+        data: base64Image,
+        mimeType: 'image/jpeg',
+      },
+    };
+
+    const response = await model.generateContent([
+      { text: prompt },
+      imagePart,
+    ]);
+
+    return response.response.text();
+  }
 
   /**
    * OpenAI / Ollama API 呼び出し
