@@ -31,6 +31,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, errorMsg: string): Prom
 
 export class SkillManager {
   private bot: Bot;
+  public guard: { isInCombat(): boolean } | null = null;
   private mcData: any;
   private mcDataVersion: string | null = null;
   private isFollowing: boolean = false;
@@ -70,6 +71,10 @@ export class SkillManager {
    * チャット発言
    */
   public async chat(message: string): Promise<ToolCallResult> {
+    // AutoGuardが敵と戦闘中はチャット送信を一時停止する
+    if (this.guard && this.guard.isInCombat()) {
+      return { success: false, message: 'AutoGuardが敵と戦闘中のため、チャットは送信されませんでした。' };
+    }
     try {
       this.bot.chat(message);
       return { success: true, message: `チャット発言: "${message}"` };

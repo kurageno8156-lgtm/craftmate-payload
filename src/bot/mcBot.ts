@@ -89,6 +89,7 @@ export class MinecraftBot extends EventEmitter {
     this.perception = new PerceptionManager(this.bot);
     this.skills = new SkillManager(this.bot);
     this.guard = new AutoGuard(this.bot);
+    this.skills.guard = this.guard;
   }
 
   private setupEvents(): void {

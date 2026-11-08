@@ -114,6 +114,11 @@ export class AutonomousAgent extends EventEmitter {
 5. **完了報告**:
    - 目標全体の達成を確認したら、'finishTask' ツールで結果を報告してください。最大100ステップに到達した場合のみ、未達成のまま強制停止します。
 
+【チャット・雑談のルール（最重要）】
+- 挨拶や雑談（「こんにちは」「あなたは誰」「英語で話して」など）や質問には、チャットで1回だけ返答し、直ちに 'finishTask' を呼んでタスクを終了してください。雑談や質問に作業ツール（採掘・クラフト等）は不要です。
+- 1つのタスクにつきチャット送信は最大1回までです。同じ内容・類似内容のチャットを連続で送ってはいけません。報告は1回にまとめてください。
+- AutoGuard（自動防御）が敵と戦っている間は、チャットを送らず防御行動に専念してください。戦闘終了後に結果を報告してください。
+
 【狩りと食料確保】
 - プレイヤーが「狩りをして」「動物を狩って食料を集めて」などと指示したら、'huntMob' を使ってください。'targetType' は動物だけなら 'animals'、敵対Mobだけなら 'hostiles'、指定がなければ 'any' にします。
 - 'huntMob' は近くの対象を探して討伐し、ドロップの回収まで行います。対象が見つからない、または倒せなかった場合は成功したと報告せず、周囲を移動して再探索してください。体力が少ない場合は安全を優先してください。
@@ -129,6 +134,10 @@ export class AutonomousAgent extends EventEmitter {
     let lastActionFailed = false;
     let lastFailureMessage = '';
     let taskCompleted = false;
+    const MAX_CHATS_PER_TASK = 1;
+    let chatCount = 0;
+    let blockedChatCount = 0;
+    const guardActive = () => !!(this.botWrapper.guard && this.botWrapper.guard.isInCombat());
 
     for (let step = 1; step <= maxSteps; step++) {
       if (signal.aborted) {
@@ -174,14 +183,39 @@ export class AutonomousAgent extends EventEmitter {
       if (!llmRes.toolCall) {
         const text = llmRes.textResponse || '了解しました。';
         console.log(`[Agent Chat]: ${text}`);
-        await this.botWrapper.skills.chat(text);
         stepLog.status = 'success';
-        stepLog.observation = `進捗発言: ${text}。目標の完了はまだ確認されていないため、実行可能な次のアクションを選びます。`;
+
+        // AutoGuard戦闘中はチャットを送らない
+        if (guardActive()) {
+          stepLog.observation = 'AutoGuardが敵と戦闘中のため、チャットは送信されませんでした。';
+          this.emit('stepLog', stepLog);
+          history.push({ role: 'model', content: text });
+          history.push({ role: 'user', content: '現在AutoGuardが敵と戦闘中です。チャットは送らず、戦闘終了を待ってから次のアクションを実行してください。' });
+          if (history.length > 21) history.splice(1, history.length - 21);
+          await new Promise(r => setTimeout(r, 50));
+          continue;
+        }
+
+        // チャット上限超過 → 強制終了（チャット連投の根本対策）
+        if (chatCount >= MAX_CHATS_PER_TASK) {
+          taskCompleted = true;
+          stepLog.status = 'finished';
+          stepLog.observation = `チャット送信上限に達したためタスクを終了しました: ${text}`;
+          this.emit('stepLog', stepLog);
+          console.log(`\n========================================`);
+          console.log(`[Agent Task Finished]: ${text}`);
+          console.log(`========================================\n`);
+          break;
+        }
+
+        await this.botWrapper.skills.chat(text);
+        chatCount++;
+        stepLog.observation = `発言: ${text}。チャットは送信済みです。追加のチャットは送らず、目標が達成済みなら 'finishTask'、未達成なら作業ツールを実行してください。`;
         this.emit('stepLog', stepLog);
         history.push({ role: 'model', content: text });
         history.push({
           role: 'user',
-          content: `進捗の発言だけでは目標は完了していません。最新の所持品と環境を再確認し、目標達成に必要なツールアクションを実行してください。資材が不足していれば採掘・収集・クラフトを続けてください。`,
+          content: `あなたは「${text}」と発言しました。チャットはこのタスクで既に1回送信済みのため、これ以上チャットを送らないでください。目標が達成済みなら 'finishTask' を呼んで終了し、未達成なら必要な作業ツールを実行してください。`,
         });
         if (history.length > 21) history.splice(1, history.length - 21);
         await new Promise(r => setTimeout(r, 50));
@@ -208,7 +242,11 @@ export class AutonomousAgent extends EventEmitter {
           continue;
         }
         const completedSummary = summary || '目標を完了しました。';
-        await this.botWrapper.skills.chat(`完了報告: ${completedSummary}`);
+        // チャット上限・戦闘中は完了報告のチャットを送らない
+        if (!guardActive() && chatCount < MAX_CHATS_PER_TASK) {
+          await this.botWrapper.skills.chat(`完了報告: ${completedSummary}`);
+          chatCount++;
+        }
         stepLog.status = 'finished';
         stepLog.observation = completedSummary;
         this.emit('stepLog', stepLog);
@@ -217,6 +255,36 @@ export class AutonomousAgent extends EventEmitter {
         console.log(`========================================\n`);
         taskCompleted = true;
         break;
+      }
+
+      // 'chat' ツールの連投・戦闘中送信をブロック
+      if (toolName === 'chat') {
+        if (guardActive()) {
+          stepLog.status = 'success';
+          stepLog.observation = 'AutoGuardが敵と戦闘中のため、チャットは送信されませんでした。防御行動を優先してください。';
+          this.emit('stepLog', stepLog);
+          history.push({ role: 'model', content: `Action: chat(${JSON.stringify(toolArgs)})` });
+          history.push({ role: 'user', content: '【アクション "chat" の実行結果】\nSKIPPED: AutoGuardが敵と戦闘中のためチャットは送信されませんでした。チャットは送らず、戦闘終了を待つか次の作業ツールを実行してください。' });
+          await new Promise(r => setTimeout(r, 50));
+          continue;
+        }
+        if (chatCount >= MAX_CHATS_PER_TASK) {
+          blockedChatCount++;
+          stepLog.status = 'failure';
+          stepLog.observation = 'チャット送信上限（1タスクにつき1回）に達したためブロックしました。';
+          this.emit('stepLog', stepLog);
+          history.push({ role: 'model', content: `Action: chat(${JSON.stringify(toolArgs)})` });
+          if (blockedChatCount >= 2) {
+            taskCompleted = true;
+            console.log(`\n========================================`);
+            console.log('[Agent Task Finished]: チャット連投のため強制終了しました。');
+            console.log(`========================================\n`);
+            break;
+          }
+          history.push({ role: 'user', content: 'チャットは既にこのタスクで送信済みで、これ以上送信できません。チャットを送らず、目標が達成済みなら \'finishTask\' を呼び、未達成なら作業ツールを実行してください。' });
+          await new Promise(r => setTimeout(r, 50));
+          continue;
+        }
       }
 
       // 2. ボットによるアクション実行
@@ -229,7 +297,10 @@ export class AutonomousAgent extends EventEmitter {
       if (!execResult.success) {
         lastActionFailed = true;
         lastFailureMessage = execResult.message;
-      } else if (toolName !== 'chat') {
+      } else if (toolName === 'chat') {
+        chatCount++;
+        blockedChatCount = 0;
+      } else {
         lastActionFailed = false;
         lastFailureMessage = '';
       }
