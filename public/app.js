@@ -582,11 +582,23 @@ on(settingsForm, 'submit', async event => {
   const saveButton = document.getElementById('btn-save-settings');
   saveButton.disabled = true;
   showSettingsMessage(translate('saving'));
+  const mcVersionValue = minecraftVersionSelect.value === 'custom'
+    ? minecraftVersionCustomInput.value.trim()
+    : minecraftVersionSelect.value;
+  if (mcVersionValue && mcVersionValue !== 'auto') {
+    const vparts = mcVersionValue.split('.').map(Number);
+    const versionTooNew = vparts.some(n => Number.isNaN(n)) ||
+      vparts[0] > 26 || (vparts[0] === 26 && (vparts[1] || 0) > 1) ||
+      (vparts[0] === 26 && vparts[1] === 1 && (vparts[2] || 0) > 0);
+    if (versionTooNew) {
+      showSettingsMessage(translate('mcVersionTooNew'), 'error');
+      saveButton.disabled = false;
+      return;
+    }
+  }
   const payload = {
     mcPort: Number(document.getElementById('setting-mc-port').value),
-    mcVersion: minecraftVersionSelect.value === 'custom'
-      ? minecraftVersionCustomInput.value.trim()
-      : minecraftVersionSelect.value,
+    mcVersion: mcVersionValue,
     username: document.getElementById('setting-username').value.trim(),
     webPort: Number(document.getElementById('setting-web-port').value),
     provider: providerSelect.value,

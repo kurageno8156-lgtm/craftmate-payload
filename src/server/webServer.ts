@@ -583,6 +583,9 @@ export class WebServer {
       });
 
       socket.on('cancelTask', async () => {
+        await this.agent.cancelTask();
+      });
+
       socket.on('start-screen-share', () => {
         if (!this.isScreenSharing) {
           this.isScreenSharing = true;
@@ -610,7 +613,14 @@ export class WebServer {
         }
       });
 
-        await this.agent.cancelTask();
+      socket.on('disconnect', () => {
+        if (this.isScreenSharing) {
+          this.isScreenSharing = false;
+          if (this.screenShareInterval) {
+            clearInterval(this.screenShareInterval);
+            this.screenShareInterval = null;
+          }
+        }
       });
     });
 

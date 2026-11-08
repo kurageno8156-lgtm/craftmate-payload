@@ -23,7 +23,7 @@
       logStep: 'Step {step} [{status}]', logAction: '⚡ Action: {action}({params})', logObservation: '📋 Observation: {text}', stopInMinecraft: 'stop', emptyTask: 'Waiting for instructions', activeTask: 'Running: "{task}"', taskFrom: '[{requester}]: "{task}"', newTask: 'Starting task: "{task}" (requested by {requester})',
       statusIdle: 'IDLE', statusThinking: 'THINKING', statusActing: 'ACTING', statusSuccess: 'SUCCESS', statusError: 'ERROR', statusCompleted: 'COMPLETED', statusCancelled: 'CANCELLED', statusSystem: 'SYSTEM', statusUnknown: 'UNKNOWN',
       overworld: 'Overworld', nether: 'Nether', theEnd: 'The End', daytime: 'Day', nighttime: 'Night', bareHands: 'Bare hands',
-      screenShareDesc: 'Share the bot view (for humans)', screenShareTitle: 'Screen share (for humans)', screenShareHelp: 'When on, the bot view is shown in the browser.', screenShareToggleLabel: 'Enable screen share', botScreenTitle: 'Bot view', closeBotScreen: 'Close bot view',
+      screenShareDesc: 'Share the bot view (for humans)', screenShareTitle: 'Screen share (for humans)', screenShareHelp: 'When on, the bot view is shown in the browser.', screenShareToggleLabel: 'Enable screen share', mcVersionTooNew: 'Minecraft version must be 26.1 or lower.', botScreenTitle: 'Bot view', closeBotScreen: 'Close bot view',
     },
     ja: {
       pageTitle: 'Minecraft AI Agent ダッシュボード', connecting: '接続中...', settingsButton: '⚙️ 設定',
@@ -48,7 +48,7 @@
       logStep: 'ステップ {step} [{status}]', logAction: '⚡ アクション: {action}({params})', logObservation: '📋 観察: {text}', stopInMinecraft: '停止', emptyTask: '待機中（指示を待っています）', activeTask: '実行中:「{task}」', taskFrom: '[{requester}から]:「{task}」', newTask: 'タスクを開始します:「{task}」（依頼者: {requester}）',
       statusIdle: '待機中', statusThinking: '思考中', statusActing: '行動中', statusSuccess: '成功', statusError: 'エラー', statusCompleted: '完了', statusCancelled: 'キャンセル', statusSystem: 'システム', statusUnknown: '不明',
       overworld: 'オーバーワールド', nether: 'ネザー', theEnd: 'ジ・エンド', daytime: '昼間', nighttime: '夜間', bareHands: '素手',
-      screenShareDesc: 'ボット視点の画面共有（人間用）', screenShareTitle: '画面共有（人間用）', screenShareHelp: 'オンにすると、ボットの視点がブラウザに表示されます。', screenShareToggleLabel: '画面共有を有効にする', botScreenTitle: 'ボット視点', closeBotScreen: 'ボット視点を閉じる',
+      screenShareDesc: 'ボット視点の画面共有（人間用）', screenShareTitle: '画面共有（人間用）', screenShareHelp: 'オンにすると、ボットの視点がブラウザに表示されます。', screenShareToggleLabel: '画面共有を有効にする', mcVersionTooNew: 'Minecraft バージョンは 26.1 以下にしてください。', botScreenTitle: 'ボット視点', closeBotScreen: 'ボット視点を閉じる',
     },
     ko: {
       pageTitle: '마인크래프트 AI 에이전트 대시보드', connecting: '연결 중...', settingsButton: '⚙️ 설정',
@@ -67,7 +67,7 @@
       logStep: '단계 {step} [{status}]', logAction: '⚡ 행동: {action}({params})', logObservation: '📋 관찰: {text}', stopInMinecraft: '중지', emptyTask: '대기 중', activeTask: '실행 중: "{task}"', taskFrom: '[{requester}]: "{task}"', newTask: '작업 시작: "{task}" (요청자: {requester})',
       statusIdle: '대기', statusThinking: '생각 중', statusActing: '행동 중', statusSuccess: '성공', statusError: '오류', statusCompleted: '완료', statusCancelled: '취소됨', statusSystem: '시스템', statusUnknown: '알 수 없음',
       overworld: '오버월드', nether: '네더', theEnd: '엔드', daytime: '낮', nighttime: '밤', bareHands: '맨손',
-      screenShareDesc: '봇 시점 화면 공유 (사람용)', screenShareTitle: '화면 공유 (사람용)', screenShareHelp: '켜면 봇의 화면이 브라우저에 표시됩니다.', screenShareToggleLabel: '화면 공유 활성화', botScreenTitle: '봇 시점', closeBotScreen: '봇 화면 닫기',
+      screenShareDesc: '봇 시점 화면 공유 (사람용)', screenShareTitle: '화면 공유 (사람용)', screenShareHelp: '켜면 봇의 화면이 브라우저에 표시됩니다.', screenShareToggleLabel: '화면 공유 활성화', mcVersionTooNew: 'Minecraft 버전은 26.1 이하여야 합니다.', botScreenTitle: '봇 시점', closeBotScreen: '봇 화면 닫기',
     },
     es: {
       pageTitle: 'Panel de Minecraft AI Agent', connecting: 'Conectando...', settingsButton: '⚙️ Ajustes',
@@ -86,7 +86,7 @@
       logStep: 'Paso {step} [{status}]', logAction: '⚡ Acción: {action}({params})', logObservation: '📋 Observación: {text}', stopInMinecraft: 'detener', emptyTask: 'Esperando instrucciones', activeTask: 'Ejecutando: "{task}"', taskFrom: '[{requester}]: "{task}"', newTask: 'Iniciando tarea: "{task}" (de {requester})',
       statusIdle: 'INACTIVO', statusThinking: 'PENSANDO', statusActing: 'ACTUANDO', statusSuccess: 'ÉXITO', statusError: 'ERROR', statusCompleted: 'COMPLETADO', statusCancelled: 'CANCELADO', statusSystem: 'SISTEMA', statusUnknown: 'DESCONOCIDO',
       overworld: 'Overworld', nether: 'Nether', theEnd: 'El End', daytime: 'Día', nighttime: 'Noche', bareHands: 'Manos vacías',
-      screenShareDesc: 'Compartir vista del bot (para humanos)', screenShareTitle: 'Compartir pantalla (para humanos)', screenShareHelp: 'Al activarlo, la vista del bot se muestra en el navegador.', screenShareToggleLabel: 'Activar compartir pantalla', botScreenTitle: 'Vista del bot', closeBotScreen: 'Cerrar vista del bot',
+      screenShareDesc: 'Compartir vista del bot (para humanos)', screenShareTitle: 'Compartir pantalla (para humanos)', screenShareHelp: 'Al activarlo, la vista del bot se muestra en el navegador.', screenShareToggleLabel: 'Activar compartir pantalla', mcVersionTooNew: 'La versión de Minecraft debe ser 26.1 o inferior.', botScreenTitle: 'Vista del bot', closeBotScreen: 'Cerrar vista del bot',
     },
     id: {
       pageTitle: 'Dasbor Agen AI Minecraft', connecting: 'Menghubungkan...', settingsButton: '⚙️ Pengaturan',
@@ -105,7 +105,7 @@
       logStep: 'Langkah {step} [{status}]', logAction: '⚡ Aksi: {action}({params})', logObservation: '📋 Observasi: {text}', stopInMinecraft: 'berhenti', emptyTask: 'Menunggu instruksi', activeTask: 'Berjalan: "{task}"', taskFrom: '[{requester}]: "{task}"', newTask: 'Memulai tugas: "{task}" (dari {requester})',
       statusIdle: 'IDLE', statusThinking: 'BERPIKIR', statusActing: 'BERTINDAK', statusSuccess: 'BERHASIL', statusError: 'ERROR', statusCompleted: 'SELESAI', statusCancelled: 'DIBATALKAN', statusSystem: 'SISTEM', statusUnknown: 'TIDAK DIKETAHUI',
       overworld: 'Overworld', nether: 'Nether', theEnd: 'The End', daytime: 'Siang', nighttime: 'Malam', bareHands: 'Tangan kosong',
-      screenShareDesc: 'Bagikan tampilan bot (untuk manusia)', screenShareTitle: 'Berbagi layar (untuk manusia)', screenShareHelp: 'Jika aktif, tampilan bot ditampilkan di browser.', screenShareToggleLabel: 'Aktifkan berbagi layar', botScreenTitle: 'Tampilan bot', closeBotScreen: 'Tutup tampilan bot',
+      screenShareDesc: 'Bagikan tampilan bot (untuk manusia)', screenShareTitle: 'Berbagi layar (untuk manusia)', screenShareHelp: 'Jika aktif, tampilan bot ditampilkan di browser.', screenShareToggleLabel: 'Aktifkan berbagi layar', mcVersionTooNew: 'Versi Minecraft harus 26.1 atau lebih rendah.', botScreenTitle: 'Tampilan bot', closeBotScreen: 'Tutup tampilan bot',
     },
     zh: {
       pageTitle: '我的世界 AI 智能体仪表板', connecting: '连接中...', settingsButton: '⚙️ 设置',
@@ -124,7 +124,7 @@
       logStep: '步骤 {step} [{status}]', logAction: '⚡ 动作: {action}({params})', logObservation: '📋 观察: {text}', stopInMinecraft: '停止', emptyTask: '等待指令', activeTask: '执行中: "{task}"', taskFrom: '[{requester}]: "{task}"', newTask: '开始任务: "{task}"（来自 {requester}）',
       statusIdle: '空闲', statusThinking: '思考中', statusActing: '行动中', statusSuccess: '成功', statusError: '错误', statusCompleted: '已完成', statusCancelled: '已取消', statusSystem: '系统', statusUnknown: '未知',
       overworld: '主世界', nether: '下界', theEnd: '末地', daytime: '白天', nighttime: '夜晚', bareHands: '空手',
-      screenShareDesc: '共享机器人视角（供人类观看）', screenShareTitle: '屏幕共享（人类用）', screenShareHelp: '开启后，机器人的视角将显示在浏览器中。', screenShareToggleLabel: '启用屏幕共享', botScreenTitle: '机器人视角', closeBotScreen: '关闭机器人画面',
+      screenShareDesc: '共享机器人视角（供人类观看）', screenShareTitle: '屏幕共享（人类用）', screenShareHelp: '开启后，机器人的视角将显示在浏览器中。', screenShareToggleLabel: '启用屏幕共享', mcVersionTooNew: 'Minecraft 版本必须为 26.1 或更低。', botScreenTitle: '机器人视角', closeBotScreen: '关闭机器人画面',
     },
     hi: {
       pageTitle: 'Minecraft AI एजेंट डैशबोर्ड', connecting: 'कनेक्ट हो रहा है...', settingsButton: '⚙️ सेटिंग्स',
@@ -143,7 +143,7 @@
       logStep: 'चरण {step} [{status}]', logAction: '⚡ क्रिया: {action}({params})', logObservation: '📋 अवलोकन: {text}', stopInMinecraft: 'रुको', emptyTask: 'निर्देश की प्रतीक्षा', activeTask: 'चल रहा है: "{task}"', taskFrom: '[{requester}]: "{task}"', newTask: 'कार्य शुरू: "{task}" ({requester} से)',
       statusIdle: 'निष्क्रिय', statusThinking: 'सोच रहा है', statusActing: 'कार्रवाई कर रहा है', statusSuccess: 'सफल', statusError: 'त्रुटि', statusCompleted: 'पूर्ण', statusCancelled: 'रद्द', statusSystem: 'सिस्टम', statusUnknown: 'अज्ञात',
       overworld: 'ओवरवर्ल्ड', nether: 'नेदर', theEnd: 'द एंड', daytime: 'दिन', nighttime: 'रात', bareHands: 'खाली हाथ',
-      screenShareDesc: 'बॉट का दृश्य साझा करें (मनुष्यों के लिए)', screenShareTitle: 'स्क्रीन शेयर (मनुष्यों के लिए)', screenShareHelp: 'चालू करने पर बॉट का दृश्य ब्राउज़र में दिखेगा।', screenShareToggleLabel: 'स्क्रीन शेयर सक्षम करें', botScreenTitle: 'बॉट दृश्य', closeBotScreen: 'बॉट दृश्य बंद करें',
+      screenShareDesc: 'बॉट का दृश्य साझा करें (मनुष्यों के लिए)', screenShareTitle: 'स्क्रीन शेयर (मनुष्यों के लिए)', screenShareHelp: 'चालू करने पर बॉट का दृश्य ब्राउज़र में दिखेगा।', screenShareToggleLabel: 'स्क्रीन शेयर सक्षम करें', mcVersionTooNew: 'Minecraft संस्करण 26.1 या उससे कम होना चाहिए।', botScreenTitle: 'बॉट दृश्य', closeBotScreen: 'बॉट दृश्य बंद करें',
     },
   };
 
