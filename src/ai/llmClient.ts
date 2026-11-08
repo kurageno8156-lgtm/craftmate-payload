@@ -243,8 +243,11 @@ export class LLMClient {
       contents,
     });
 
-    const generate = async (modelName: string): Promise<any> => {
+    const LIGHTWEIGHT_MODEL = 'gemini-3.1-flash-lite';
+
+    const generate = async (modelName: string): Promise<{ data: any; elapsedMs: number }> => {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent`;
+      const started = Date.now();
       const res = await fetch(url, {
         method: 'POST',
         headers: {
@@ -252,12 +255,15 @@ export class LLMClient {
           'x-goog-api-key': apiKey,
         },
         body: requestBody,
+        signal: AbortSignal.timeout(30000),
       });
+      const elapsedMs = Date.now() - started;
       const text = await res.text();
       if (!res.ok) {
         throw new Error(`Gemini API error ${res.status}: ${text.slice(0, 300)}`);
       }
-      return JSON.parse(text);
+      console.log(`[LLM] Gemini ${modelName} responded in ${elapsedMs}ms`);
+      return { data: JSON.parse(text), elapsedMs };
     };
 
     let lastError: any = null;
@@ -267,10 +273,16 @@ export class LLMClient {
     for (const modelName of candidateModels) {
       try {
         console.log(`[LLM] Requesting Gemini model: ${modelName}...`);
-        result = await generate(modelName);
+        const generated = await generate(modelName);
+        result = generated.data;
         if (modelName !== this.config.geminiModel) {
           console.log(`[LLM] Switched to working model: ${modelName}`);
           this.config.geminiModel = modelName;
+        }
+        // 応答が20秒を超えた場合は次回から軽量モデルを優先する
+        if (generated.elapsedMs > 20000 && modelName !== LIGHTWEIGHT_MODEL) {
+          console.warn(`[LLM] ${modelName} took ${generated.elapsedMs}ms. Switching default model to ${LIGHTWEIGHT_MODEL} for faster responses.`);
+          this.config.geminiModel = LIGHTWEIGHT_MODEL;
         }
         break; // 成功
       } catch (err: any) {
@@ -308,7 +320,8 @@ export class LLMClient {
 
       for (const modelName of candidateModels) {
         try {
-          result = await generate(modelName);
+          const generated = await generate(modelName);
+          result = generated.data;
           this.config.geminiModel = modelName;
           break;
         } catch {

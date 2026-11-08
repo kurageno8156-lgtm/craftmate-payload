@@ -4,6 +4,8 @@ import { executeBotTool } from './tools.js';
 import { AgentStepLog, ChatMessage } from '../types.js';
 import { EventEmitter } from 'events';
 
+const ACTION_GOAL_PATTERN = /採掘|掘|伐|切|作|クラフト|建|設置|置|取|集め|狩|殺|倒|行|探|拾|mine|craft|build|place|chop|dig|gather|hunt|kill|attack|fight|fetch|get|make|find|go to/i;
+
 export class AutonomousAgent extends EventEmitter {
   private botWrapper: MinecraftBot;
   private llmClient: LLMClient;
@@ -210,6 +212,19 @@ export class AutonomousAgent extends EventEmitter {
 
         await this.botWrapper.skills.chat(text);
         chatCount++;
+
+        // 雑談・質問（作業指示を含まない目標）には1回の返答で即終了し、余分なLLM呼び出しを省略する
+        if (!ACTION_GOAL_PATTERN.test(goal)) {
+          taskCompleted = true;
+          stepLog.status = 'finished';
+          stepLog.observation = `雑談・質問への返答を送信しました: ${text}`;
+          this.emit('stepLog', stepLog);
+          console.log(`\n========================================`);
+          console.log(`[Agent Task Finished]: ${text}`);
+          console.log(`========================================\n`);
+          break;
+        }
+
         stepLog.observation = `発言: ${text}。チャットは送信済みです。追加のチャットは送らず、目標が達成済みなら 'finishTask'、未達成なら作業ツールを実行してください。`;
         this.emit('stepLog', stepLog);
         history.push({ role: 'model', content: text });
