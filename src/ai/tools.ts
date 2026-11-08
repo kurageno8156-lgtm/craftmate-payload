@@ -205,6 +205,18 @@ export const BOT_TOOLS: ToolDefinition[] = [
   },
 ];
 
+// LLMが省略可能な数値引数を null で返すことがあるため、有限の数値のみを通す
+function toFiniteNumber(value: any): number | undefined {
+  if (value === null || value === undefined || value === '') return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function toCount(value: any, fallback: number = 1): number {
+  const n = toFiniteNumber(value);
+  return n !== undefined && n > 0 ? Math.floor(n) : fallback;
+}
+
 export async function executeBotTool(
   botWrapper: MinecraftBot,
   toolName: string,
@@ -221,24 +233,40 @@ export async function executeBotTool(
         return await skills.chat(args.message);
       case 'goToPlayer':
         return await skills.goToPlayer(args.playerName);
-      case 'goToCoordinates':
-        return await skills.goToCoordinates(args.x, args.y, args.z, args.range);
+      case 'goToCoordinates': {
+        const x = toFiniteNumber(args.x);
+        const y = toFiniteNumber(args.y);
+        const z = toFiniteNumber(args.z);
+        if (x === undefined || y === undefined || z === undefined) {
+          return { success: false, message: '座標(x, y, z)には有効な数値が必要です。整数の座標を指定してください。' };
+        }
+        return await skills.goToCoordinates(x, y, z, toFiniteNumber(args.range));
+      }
       case 'followPlayer':
         return await skills.followPlayer(args.playerName);
       case 'mineAndCollect':
-        return await skills.mineAndCollect(args.blockName, args.count || 1);
+        return await skills.mineAndCollect(args.blockName, toCount(args.count));
       case 'craftItem':
-        return await skills.craftItem(args.itemName, args.count || 1);
-      case 'placeBlock':
-        return await skills.placeBlock(args.blockName, args.x, args.y, args.z);
+        return await skills.craftItem(args.itemName, toCount(args.count));
+      case 'placeBlock': {
+        const px = toFiniteNumber(args.x);
+        const py = toFiniteNumber(args.y);
+        const pz = toFiniteNumber(args.z);
+        const hasCoords = px !== undefined && py !== undefined && pz !== undefined;
+        const hasPartialCoords = (px !== undefined || py !== undefined || pz !== undefined) && !hasCoords;
+        if (hasPartialCoords) {
+          return { success: false, message: '設置座標は x, y, z をすべて指定するか、すべて省略してください。' };
+        }
+        return await skills.placeBlock(args.blockName, hasCoords ? px : undefined, hasCoords ? py : undefined, hasCoords ? pz : undefined);
+      }
       case 'attackTarget':
         return await skills.attackTarget(args.targetName);
       case 'huntMob':
-        return await skills.huntMob(args.maxTargets || 3, args.targetType || 'any');
+        return await skills.huntMob(toCount(args.maxTargets, 3), args.targetType || 'any');
       case 'giveItemsToPlayer':
-        return await skills.giveItemsToPlayer(args.playerName, args.itemName, args.count || 1);
+        return await skills.giveItemsToPlayer(args.playerName, args.itemName, toCount(args.count));
       case 'dropItem':
-        return await skills.dropItem(args.itemName, args.count || 1);
+        return await skills.dropItem(args.itemName, toCount(args.count));
       case 'equipItem':
         return await skills.equipItem(args.itemName, args.destination || 'hand');
       case 'stopActions':

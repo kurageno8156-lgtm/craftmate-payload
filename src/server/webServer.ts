@@ -574,11 +574,19 @@ export class WebServer {
       socket.on('start-screen-share', () => {
         if (!this.isScreenSharing) {
           this.isScreenSharing = true;
+          let capturing = false;
           this.screenShareInterval = setInterval(async () => {
-            if (!this.isScreenSharing) return;
-            const img = await captureScreenRegion(0, 0, 1920, 1080);
-            socket.emit('bot-screen', img);
-          }, 16);
+            if (!this.isScreenSharing || capturing) return;
+            capturing = true;
+            try {
+              const img = await captureScreenRegion(0, 0, 1920, 1080);
+              if (img) socket.emit('bot-screen', img);
+            } catch (error) {
+              console.error('[Web] Screen share capture failed:', error);
+            } finally {
+              capturing = false;
+            }
+          }, 100);
         }
       });
 

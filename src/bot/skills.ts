@@ -496,7 +496,8 @@ export class SkillManager {
       await this.bot.equip(itemInInv, 'hand');
 
       let targetPos: Vec3;
-      if (x !== undefined && y !== undefined && z !== undefined) {
+      if (typeof x === 'number' && typeof y === 'number' && typeof z === 'number' &&
+          Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)) {
         targetPos = new Vec3(x, y, z);
       } else {
         // 目の前の地面 (足元の1つ前)
