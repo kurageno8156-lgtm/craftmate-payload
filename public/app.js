@@ -76,12 +76,17 @@ socket.on('bot-screen', (base64Image) => {
   if (botScreenView) botScreenView.src = 'data:image/jpeg;base64,' + base64Image;
 });
 
+function closeBotScreenModal() {
+  if (botScreenModal) botScreenModal.hidden = true;
+  if (screenShareToggle) screenShareToggle.checked = false;
+  socket.emit('stop-screen-share');
+}
+
 if (closeBotScreen) {
-  on(closeBotScreen, 'click', () => {
-    if (botScreenModal) botScreenModal.hidden = true;
-    if (screenShareToggle) screenShareToggle.checked = false;
-    socket.emit('stop-screen-share');
-  });
+  on(closeBotScreen, 'click', closeBotScreenModal);
+}
+if (botScreenModal) {
+  on(botScreenModal.querySelector('[data-close-bot-screen]'), 'click', closeBotScreenModal);
 }
 
 const taskText = document.getElementById('current-task-text');

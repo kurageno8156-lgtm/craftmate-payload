@@ -271,6 +271,7 @@ namespace CraftMateUpdater
                 DownloadPayload(worker, downloadUrl, archivePath);
                 Report(worker, 58, "ZIP 内のパスとバージョンを検証しています...");
                 ExtractSafely(archivePath, stageDirectory, worker);
+                try { File.Delete(archivePath); } catch { }
                 string stagedPackagePath = Path.Combine(stageDirectory, "package.json");
                 if (!File.Exists(stagedPackagePath)) throw new InvalidDataException("ZIP に package.json がありません。");
                 Dictionary<string, object> stagedPackage = DeserializeObject(File.ReadAllText(stagedPackagePath));
