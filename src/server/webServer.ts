@@ -36,6 +36,7 @@ export class WebServer {
   private isScreenSharing: boolean = false;
   private screenShareInterval: NodeJS.Timeout | null = null;
   private updateToken: Buffer = Buffer.alloc(32);
+  private appVersion: string = '0.0.0';
 
 
   constructor(
@@ -54,6 +55,10 @@ export class WebServer {
       console.error('[Web] Failed to load update token:', error);
       this.updateToken = Buffer.alloc(32);
     }
+    try {
+      const packageInfo = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf8'));
+      this.appVersion = String(packageInfo.version || '0.0.0');
+    } catch { }
 
     this.app = express();
     this.server = http.createServer(this.app);
@@ -78,7 +83,8 @@ export class WebServer {
     const publicPath = path.resolve(__dirname, '../../public');
     this.app.get('/', (_req, res) => {
       try {
-        const html = fs.readFileSync(path.join(publicPath, 'index.html'), 'utf8');
+        let html = fs.readFileSync(path.join(publicPath, 'index.html'), 'utf8');
+        html = html.replace(/(src|href)="(\/?)(app\.js|i18n\.js|style\.css|manifest\.json)(\?[^"]*)?"/g, `$1="$2$3?v=${this.appVersion}"`);
         res.setHeader('Cache-Control', 'no-store');
         res.type('html').send(html.replace('</head>', `<meta name="craftmate-update-token" content="${this.updateToken.toString('hex')}"></head>`));
       } catch {
