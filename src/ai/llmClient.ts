@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import OpenAI from 'openai';
 import { BotConfig } from '../config.js';
 import { BOT_TOOLS } from './tools.js';
@@ -102,7 +101,6 @@ const RATE_LIMIT_MESSAGE = 'AIの利用制限に達しました。本日の利�
 
 export class LLMClient {
   private config: BotConfig;
-  private geminiAi: GoogleGenerativeAI | null = null;
   private openAiClient: OpenAI | null = null;
   private lastRequestTime: number = 0;
   private minRequestIntervalMs: number = 2500; // 1分間に最大24回以下に制限（15 RPM無料制限を保護）
@@ -110,9 +108,7 @@ export class LLMClient {
   constructor(config: BotConfig) {
     this.config = config;
 
-    if (this.config.llmProvider === 'gemini' && this.config.geminiApiKey) {
-      this.geminiAi = new GoogleGenerativeAI(this.config.geminiApiKey);
-    } else if (this.config.llmProvider === 'openai' && this.config.openaiApiKey) {
+    if (this.config.llmProvider === 'openai' && this.config.openaiApiKey) {
       this.openAiClient = new OpenAI({ apiKey: this.config.openaiApiKey });
     } else if (this.config.llmProvider === 'groq' && this.config.groqApiKey) {
       this.openAiClient = new OpenAI({
@@ -193,11 +189,9 @@ export class LLMClient {
     systemPrompt: string,
     history: Array<{ role: 'user' | 'model' | 'assistant'; content: string }>
   ): Promise<LLMResponse> {
-    if (!this.geminiAi) {
-      if (!this.config.geminiApiKey) {
-        throw new Error('GEMINI_API_KEY が設定されていません。.env ファイルを確認してください。');
-      }
-      this.geminiAi = new GoogleGenerativeAI(this.config.geminiApiKey);
+    const apiKey = this.config.geminiApiKey;
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY が設定されていません。.env ファイルを確認してください。');
     }
 
     const functionDeclarations = BOT_TOOLS.map(tool => {
@@ -205,10 +199,10 @@ export class LLMClient {
       const required: string[] = tool.parameters.required || [];
 
       for (const [key, prop] of Object.entries(tool.parameters.properties)) {
-        let type = SchemaType.STRING;
-        if (prop.type === 'number') type = SchemaType.NUMBER;
-        if (prop.type === 'boolean') type = SchemaType.BOOLEAN;
-        if (prop.type === 'array') type = SchemaType.ARRAY;
+        let type = 'STRING';
+        if (prop.type === 'number') type = 'NUMBER';
+        if (prop.type === 'boolean') type = 'BOOLEAN';
+        if (prop.type === 'array') type = 'ARRAY';
 
         properties[key] = {
           type,
@@ -220,7 +214,7 @@ export class LLMClient {
         name: tool.name,
         description: tool.description,
         parameters: {
-          type: SchemaType.OBJECT,
+          type: 'OBJECT',
           properties,
           required,
         },
@@ -238,6 +232,34 @@ export class LLMClient {
       'gemini-3.5-flash',
     ].filter((v, i, a) => a.indexOf(v) === i);
 
+    const contents = history.map(h => ({
+      role: h.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: h.content }],
+    }));
+
+    const requestBody = JSON.stringify({
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      tools: [{ function_declarations: functionDeclarations }],
+      contents,
+    });
+
+    const generate = async (modelName: string): Promise<any> => {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: requestBody,
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        throw new Error(`Gemini API error ${res.status}: ${text.slice(0, 300)}`);
+      }
+      return JSON.parse(text);
+    };
+
     let lastError: any = null;
     let result: any = null;
 
@@ -245,18 +267,7 @@ export class LLMClient {
     for (const modelName of candidateModels) {
       try {
         console.log(`[LLM] Requesting Gemini model: ${modelName}...`);
-        const model = this.geminiAi.getGenerativeModel({
-          model: modelName,
-          systemInstruction: systemPrompt,
-          tools: [{ functionDeclarations: functionDeclarations as any }],
-        });
-
-        const contents = history.map(h => ({
-          role: h.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: h.content }],
-        }));
-
-        result = await model.generateContent({ contents });
+        result = await generate(modelName);
         if (modelName !== this.config.geminiModel) {
           console.log(`[LLM] Switched to working model: ${modelName}`);
           this.config.geminiModel = modelName;
@@ -293,20 +304,11 @@ export class LLMClient {
     if (!result && lastError) {
       const delaySec = extractRetryDelaySeconds(lastError.message || '');
       console.warn(`[LLM] ⏳ All candidate models hit rate limit. Waiting ${delaySec}s before fallback retry...`);
-      await new Promise(r => setTimeout(r, delaySec * 1000));
+      await sleep(delaySec * 1000);
 
       for (const modelName of candidateModels) {
         try {
-          const model = this.geminiAi.getGenerativeModel({
-            model: modelName,
-            systemInstruction: systemPrompt,
-            tools: [{ functionDeclarations: functionDeclarations as any }],
-          });
-          const contents = history.map(h => ({
-            role: h.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: h.content }],
-          }));
-          result = await model.generateContent({ contents });
+          result = await generate(modelName);
           this.config.geminiModel = modelName;
           break;
         } catch {
@@ -318,11 +320,15 @@ export class LLMClient {
     if (!result) {
       throw lastError || new Error('利用可能なGeminiモデルが見つかりませんでした。');
     }
-    const response = result.response;
+    const response = result;
     const candidates = response.candidates;
 
     if (!candidates || candidates.length === 0) {
-      return { textResponse: response.text() };
+      const fallbackText = (response.candidates?.[0]?.content?.parts || [])
+        .map((p: any) => p.text || '')
+        .join('')
+        .trim();
+      return { textResponse: fallbackText || undefined };
     }
 
     const firstCandidate = candidates[0];
