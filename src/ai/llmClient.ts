@@ -247,38 +247,33 @@ export class LLMClient {
 
     const generate = async (modelName: string): Promise<{ data: any; elapsedMs: number }> => {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent`;
-      let lastError: any = null;
-      // タイムアウト時は最大2回リトライ（60秒 × 最大3回試行）
-      for (let attempt = 0; attempt <= 2; attempt++) {
-        const started = Date.now();
-        try {
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': apiKey,
-            },
-            body: requestBody,
-            signal: AbortSignal.timeout(60000),
-          });
-          const elapsedMs = Date.now() - started;
-          const text = await res.text();
-          if (!res.ok) {
-            throw new Error(`Gemini API error ${res.status}: ${text.slice(0, 300)}`);
-          }
-          console.log(`[LLM] Gemini ${modelName} responded in ${elapsedMs}ms`);
-          return { data: JSON.parse(text), elapsedMs };
-        } catch (err: any) {
-          lastError = err;
-          const isTimeout = err?.name === 'TimeoutError' || err?.name === 'AbortError' ||
-            /timed?\s*out|timeout|aborted/i.test(String(err?.message || ''));
-          if (!isTimeout || attempt === 2) throw err;
-          const retryDelayMs = 1000 * (attempt + 1);
-          console.warn(`[LLM] Gemini ${modelName} timed out. Retrying in ${retryDelayMs}ms (attempt ${attempt + 1}/2)...`);
-          await sleep(retryDelayMs);
+      const started = Date.now();
+      let res: Response;
+      try {
+        res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey,
+          },
+          body: requestBody,
+          signal: AbortSignal.timeout(15000),
+        });
+      } catch (err: any) {
+        const isTimeout = err?.name === 'TimeoutError' || err?.name === 'AbortError' ||
+          /timed?\s*out|timeout|aborted/i.test(String(err?.message || ''));
+        if (isTimeout) {
+          throw new Error('AIの応答がタイムアウトしました。もう一度お試しください。');
         }
+        throw err;
       }
-      throw lastError || new Error('Gemini API request failed.');
+      const elapsedMs = Date.now() - started;
+      const text = await res.text();
+      if (!res.ok) {
+        throw new Error(`Gemini API error ${res.status}: ${text.slice(0, 300)}`);
+      }
+      console.log(`[LLM] Gemini ${modelName} responded in ${elapsedMs}ms`);
+      return { data: JSON.parse(text), elapsedMs };
     };
 
     let lastError: any = null;

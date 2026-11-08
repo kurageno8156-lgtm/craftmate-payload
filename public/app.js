@@ -477,7 +477,7 @@ if (languageSelect) {
   on(languageSelect, 'change', () => window.craftMateI18n.setLanguage(languageSelect.value));
 }
 const modelsByProvider = {
-  gemini: ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'],
+  gemini: ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.8-flash'],
   groq: ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'openai/gpt-oss-120b'],
   ollama: ['llama3.1', 'qwen3', 'deepseek-r1'],
   openai: ['gpt-4o', 'gpt-4o-mini'],

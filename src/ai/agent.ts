@@ -274,20 +274,6 @@ export class AutonomousAgent extends EventEmitter {
         break;
       }
 
-      // 実行前の自然な一言：タスク最初の実動作ツールに対し、LLMのthoughtをユーザーへの発言として送信
-      if (chatCount === 0 && !guardActive() && toolName !== 'chat' && llmRes.thought) {
-        const remark = llmRes.thought.replace(/\s+/g, ' ').trim().slice(0, 200);
-        if (remark) {
-          const remarkResult = await this.botWrapper.skills.chat(remark);
-          if (remarkResult.success) {
-            chatCount++;
-            stepLog.observation = `開始の発言: ${remark}`;
-            this.emit('stepLog', stepLog);
-            console.log(`[Agent Remark]: ${remark}`);
-          }
-        }
-      }
-
       // 'chat' ツールの連投・戦闘中送信をブロック
       if (toolName === 'chat') {
         if (guardActive()) {
@@ -318,8 +304,25 @@ export class AutonomousAgent extends EventEmitter {
         }
       }
 
-      // 2. ボットによるアクション実行
-      const execResult = await executeBotTool(this.botWrapper, toolName, toolArgs);
+      // 2. ボットによるアクション実行（長時間ツールは発言送信と並行してバックグラウンドで開始）
+      const execPromise = executeBotTool(this.botWrapper, toolName, toolArgs);
+      execPromise.catch(() => { /* await側でハンドリングする */ });
+
+      // 実行前の自然な一言：タスク最初の実動作ツールに対し、LLMのthoughtをユーザーへの発言として送信
+      if (chatCount === 0 && !guardActive() && toolName !== 'chat' && llmRes.thought) {
+        const remark = llmRes.thought.replace(/\s+/g, ' ').trim().slice(0, 200);
+        if (remark) {
+          const remarkResult = await this.botWrapper.skills.chat(remark);
+          if (remarkResult.success) {
+            chatCount++;
+            stepLog.observation = `開始の発言: ${remark}`;
+            this.emit('stepLog', stepLog);
+            console.log(`[Agent Remark]: ${remark}`);
+          }
+        }
+      }
+
+      const execResult = await execPromise;
       console.log(`[Agent Observation]: ${execResult.success ? '成功' : '失敗'} - ${execResult.message}`);
 
       stepLog.status = execResult.success ? 'success' : 'failure';
