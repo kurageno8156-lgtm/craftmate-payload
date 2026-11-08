@@ -305,6 +305,8 @@ namespace CraftMateUpdater
                     Report(worker, 65 + (int)(((i + 1) / (double)total) * 30), "インストール先を更新中... " + item);
                 }
 
+                CleanStaleFiles(worker);
+
                 Dictionary<string, object> verifiedPackage = DeserializeObject(File.ReadAllText(packagePath));
                 string verifiedVersion = Convert.ToString(verifiedPackage["version"]);
                 if (CompareVersions(verifiedVersion, latestVersion) != 0) throw new InvalidDataException("更新後のバージョン確認に失敗しました。");
@@ -321,6 +323,67 @@ namespace CraftMateUpdater
             {
                 try { Directory.Delete(workDirectory, true); } catch { }
             }
+        }
+
+        /// <summary>
+        /// アップデート後のクリーンアップ。
+        /// 旧バージョンの残存ファイル・一時ファイルを削除するが、
+        /// ユーザーデータ（.env、backup/、logs/ など）は保持する。
+        /// </summary>
+        private void CleanStaleFiles(BackgroundWorker worker)
+        {
+            // ホワイトリスト: 残してよいインストール先ルートの項目
+            HashSet<string> keep = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+                "dist", "public", "node_modules",
+                "CraftMate.exe", "CraftMate_Updater.exe", "CraftMate_ScreenViewer.exe",
+                "node.exe", ".env", ".env.example", "package.json", "package-lock.json",
+                "README.md", "Uninstall.exe", "app.ico", "backup", "logs", "log",
+                "screen-share", "screenshots"
+            };
+            string[] tempExtensions = new string[] { ".tmp", ".bak", ".old", ".log" };
+            string[] root = Directory.GetFiles(_installDirectory);
+            int removed = 0;
+            foreach (string file in root)
+            {
+                string name = Path.GetFileName(file);
+                bool isTemp = false;
+                foreach (string ext in tempExtensions)
+                    if (name.EndsWith(ext, StringComparison.OrdinalIgnoreCase)) { isTemp = true; break; }
+                // ルート直下の未知ファイルは旧バージョンの残存物として削除
+                // （app_payload.zip、*.log、*.tmp、一時ファイルなど）
+                if (!keep.Contains(name) || name.Equals("app_payload.zip", StringComparison.OrdinalIgnoreCase) || isTemp)
+                {
+                    try { File.Delete(file); removed++; } catch { }
+                }
+            }
+            // 空になった不要フォルダも削除（ユーザーデータ系は keep で保護済み）
+            foreach (string dir in Directory.GetDirectories(_installDirectory))
+            {
+                string name = Path.GetFileName(dir);
+                if (keep.Contains(name)) continue;
+                try
+                {
+                    if (Directory.GetFileSystemEntries(dir).Length == 0) { Directory.Delete(dir, false); removed++; }
+                }
+                catch { }
+            }
+            if (removed > 0) Report(worker, 97, "不要なファイルを " + removed + " 件削除しました。");
+
+            // %TEMP% 内の過去のアップデート作業フォルダを削除
+            try
+            {
+                string temp = Path.GetTempPath();
+                foreach (string dir in Directory.GetDirectories(temp, "CraftMateUpdate-*"))
+                {
+                    try { Directory.Delete(dir, true); } catch { }
+                }
+                foreach (string dir in Directory.GetDirectories(temp, "CraftMateUpdater-*"))
+                {
+                    // 実行中のワーカー自身は削除できないので失敗しても無視
+                    try { Directory.Delete(dir, true); } catch { }
+                }
+            }
+            catch { }
         }
 
         private bool ConfirmUpdate(string latestVersion, string installedVersion)
