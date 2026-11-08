@@ -32,7 +32,7 @@ export class WebServer {
   private port: number;
   private statusTimer: NodeJS.Timeout | null = null;
   private envPath: string;
-  private updateToken: Buffer;
+  private isScreenSharing: boolean = false;
 
   constructor(
     botWrapper: MinecraftBot,
@@ -562,6 +562,17 @@ export class WebServer {
       });
 
       socket.on('cancelTask', async () => {
+      socket.on('start-screen-share', async () => {
+        if (!this.isScreenSharing) {
+          this.isScreenSharing = true;
+          await this.startScreenShare(socket);
+        }
+      });
+
+      socket.on('stop-screen-share', () => {
+        this.isScreenSharing = false;
+        this.stopScreenShare(socket);
+      });
         await this.agent.cancelTask();
       });
     });
