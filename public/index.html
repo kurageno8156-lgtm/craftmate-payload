@@ -165,6 +165,14 @@
               <span data-i18n="screenShareToggleLabel">画面共有を有効にする</span>
             </label>
           </div>
+          <div class="settings-field settings-field-wide screen-share-field">
+            <span class="screen-share-title" data-i18n="adminTitle">管理者設定</span>
+            <small class="screen-share-desc" data-i18n="adminHelp">Botに許可する権限を管理します。変更は .env に保存されます。</small>
+            <label class="screen-share-toggle-row"><input id="admin-allow-commands" name="botAllowCommands" type="checkbox"><span data-i18n="adminAllowCommands">BotにMinecraftコマンド実行権限を付与</span></label>
+            <label class="screen-share-toggle-row"><input id="admin-allow-dangerous" name="botAllowDangerousCommands" type="checkbox"><span data-i18n="adminAllowDangerous">Botに危険なコマンド（/kill, /ban等）の実行を許可</span></label>
+            <label class="screen-share-toggle-row"><input id="admin-allow-fileops" name="botAllowFileOps" type="checkbox"><span data-i18n="adminAllowFileOps">Botにファイル操作権限を付与（将来の拡張用）</span></label>
+            <label class="screen-share-toggle-row"><input id="admin-allow-autoguard" name="botAllowAutoguard" type="checkbox"><span data-i18n="adminAllowAutoguard">Botに自動防御を許可</span></label>
+          </div>
         </div>
         <div id="settings-message" class="settings-message" role="status" aria-live="polite"></div>
         <div class="settings-footer"><span class="settings-note" data-i18n="settingsNote">Changes save to the local .env file.</span><button id="btn-save-settings" class="btn-primary" type="submit" data-i18n="saveSettings">Save settings</button></div>

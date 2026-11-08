@@ -563,6 +563,16 @@ async function loadSettings() {
     providerSelect.value = data.provider || 'gemini';
     populateModelOptions(providerSelect.value, data.model);
     apiKeyInput.value = '';
+    const adminMap = {
+      'admin-allow-commands': data.botAllowCommands,
+      'admin-allow-dangerous': data.botAllowDangerousCommands,
+      'admin-allow-fileops': data.botAllowFileOps,
+      'admin-allow-autoguard': data.botAllowAutoguard,
+    };
+    for (const [id, value] of Object.entries(adminMap)) {
+      const el = document.getElementById(id);
+      if (el) el.checked = value !== false;
+    }
     document.getElementById('api-key-help').textContent = data.apiKeyConfigured
       ? translate('keySaved')
       : translate('noKeySaved');
@@ -621,6 +631,10 @@ on(settingsForm, 'submit', async event => {
     provider: providerSelect.value,
     model: modelSelect.value,
     aiApiKey: apiKeyInput.value,
+    botAllowCommands: document.getElementById('admin-allow-commands')?.checked !== false,
+    botAllowDangerousCommands: document.getElementById('admin-allow-dangerous')?.checked !== false,
+    botAllowFileOps: document.getElementById('admin-allow-fileops')?.checked !== false,
+    botAllowAutoguard: document.getElementById('admin-allow-autoguard')?.checked !== false,
   };
   try {
     const response = await fetch('/api/settings', {

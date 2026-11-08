@@ -311,8 +311,17 @@ export class AutonomousAgent extends EventEmitter {
       // thoughtが空の場合でもユーザーに必ず状況を伝えるフォールバック発言を送る。
       if (chatCount === 0 && !guardActive() && toolName !== 'chat') {
         const shortGoal = goal.length > 30 ? goal.slice(0, 30) + '…' : goal;
-        const remark = (llmRes.thought || '').replace(/\s+/g, ' ').trim().slice(0, 200)
-          || `了解！これから「${shortGoal}」に取りかかるね。少し待ってて！`;
+        let remark = (llmRes.thought || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+        // thoughtが空の場合はAIに開始の一言を生成させる（定型文は最終手段）
+        if (!remark) {
+          try {
+            remark = (await this.llmClient.chatOnce(
+              `あなたはMinecraftのボットです。プレイヤーから「${shortGoal}」という指示を受け、これからツール「${toolName}」を実行します。` +
+              `プレイヤーに向けて、これから何をするかを伝える自然な一言を1〜2文だけ返してください（敬語は使わずフレンドリーに。説明や記号は不要）。`
+            )).replace(/\s+/g, ' ').trim().slice(0, 200);
+          } catch { remark = ''; }
+        }
+        remark = remark || `了解！これから「${shortGoal}」に取りかかるね。少し待ってて！`;
         const remarkResult = await this.botWrapper.skills.chat(remark);
         if (remarkResult.success) {
           chatCount++;

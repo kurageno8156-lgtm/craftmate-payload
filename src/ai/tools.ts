@@ -284,9 +284,19 @@ export async function executeBotTool(
       case 'equipItem':
         return await skills.equipItem(args.itemName, args.destination || 'hand');
       case 'executeCommand': {
+        const cfg = botWrapper.config as any;
+        if (cfg.botAllowCommands === false) {
+          return { success: false, message: '管理者設定でコマンド実行が無効になっています。' };
+        }
         const command = typeof args.command === 'string' ? args.command.trim() : '';
         if (!command) {
           return { success: false, message: 'コマンドが指定されていません。' };
+        }
+        const normalized = command.startsWith('/') ? command.slice(1) : command;
+        const head = normalized.split(/\s+/)[0].toLowerCase();
+        const DANGEROUS_COMMANDS = new Set(['kill', 'ban', 'ban-ip', 'banlist', 'op', 'deop', 'kick', 'stop', 'whitelist', 'pardon', 'setblock', 'fill', 'clone', 'function', 'give', 'clear']);
+        if (DANGEROUS_COMMANDS.has(head) && cfg.botAllowDangerousCommands === false) {
+          return { success: false, message: `管理者設定で危険なコマンド (/ ${head}) が禁止されています。` };
         }
         return await skills.executeCommand(command);
       }

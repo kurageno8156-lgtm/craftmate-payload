@@ -106,9 +106,13 @@ export class MinecraftBot extends EventEmitter {
       if (this.bot !== connectedBot) return;
       console.log('[Bot] Bot spawned in the world!');
 
-      // 自動防衛（自衛ガード）開始
-      this.guard.start();
-      console.log('[Bot] 🛡️ Auto-Defense Guard system activated (常時自衛ガード有効)');
+      // 自動防衛（自衛ガード）開始（管理者設定で無効化可能）
+      if (this.config.botAllowAutoguard !== false) {
+        this.guard.start();
+        console.log('[Bot] 🛡️ Auto-Defense Guard system activated (常時自衛ガード有効)');
+      } else {
+        console.log('[Bot] Auto-Defense Guard is disabled by admin settings.');
+      }
 
       // 空腹度15以下で安全なインベントリ食料を自動で食べる
       const eater = (this.bot as any).autoEat;

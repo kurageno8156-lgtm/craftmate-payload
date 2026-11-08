@@ -36,6 +36,7 @@ export class WebServer {
   private isScreenSharing: boolean = false;
   private screenShareSocket: any = null;
   private screenShareInterval: NodeJS.Timeout | null = null;
+  private lastScreenFrameAt: number | null = null;
   private updateToken: Buffer = Buffer.alloc(32);
   private appVersion: string = '0.0.0';
 
@@ -343,6 +344,10 @@ export class WebServer {
       config.webPort = webPort;
       config.autoEat = values.AUTO_EAT !== 'false';
       config.autoArmor = values.AUTO_ARMOR !== 'false';
+      config.botAllowCommands = values.BOT_ALLOW_COMMANDS !== 'false';
+      config.botAllowDangerousCommands = values.BOT_ALLOW_DANGEROUS_COMMANDS !== 'false';
+      config.botAllowFileOps = values.BOT_ALLOW_FILE_OPS !== 'false';
+      config.botAllowAutoguard = values.BOT_ALLOW_AUTOGUARD !== 'false';
       config.maxAgentSteps = 100;
       this.agent.restartAIClient();
       if (minecraftChanged) this.botWrapper.reconnect();
@@ -359,6 +364,8 @@ export class WebServer {
       res.json({
         connected: this.botWrapper.isConnected,
         status,
+        screenSharing: this.isScreenSharing,
+        lastScreenFrameAt: this.lastScreenFrameAt,
         config: {
           username: this.botWrapper.config.mcUsername,
           host: this.botWrapper.config.mcHost,
@@ -385,11 +392,16 @@ export class WebServer {
         provider: config.llmProvider,
         model: this.getModelName(),
         apiKeyConfigured: this.isProviderConfigured(),
+        botAllowCommands: config.botAllowCommands,
+        botAllowDangerousCommands: config.botAllowDangerousCommands,
+        botAllowFileOps: config.botAllowFileOps,
+        botAllowAutoguard: config.botAllowAutoguard,
       });
     });
 
     this.app.post('/api/settings', async (req, res) => {
-      const { mcPort, mcVersion, username, webPort, provider, model, aiApiKey } = req.body || {};
+      const { mcPort, mcVersion, username, webPort, provider, model, aiApiKey,
+        botAllowCommands, botAllowDangerousCommands, botAllowFileOps, botAllowAutoguard } = req.body || {};
       const parsedMcPort = Number(mcPort);
       const parsedWebPort = Number(webPort);
       const providers = Object.keys(MODEL_ENV_KEYS) as AIProvider[];
@@ -451,6 +463,18 @@ export class WebServer {
       const trimmedKey = typeof aiApiKey === 'string' ? aiApiKey.trim() : '';
       if (keyName && trimmedKey) updates[keyName] = trimmedKey;
 
+      const toBoolEnv = (value: unknown): string | null =>
+        typeof value === 'boolean' ? (value ? 'true' : 'false') : null;
+      const adminUpdates: Array<[string, string | null]> = [
+        ['BOT_ALLOW_COMMANDS', toBoolEnv(botAllowCommands)],
+        ['BOT_ALLOW_DANGEROUS_COMMANDS', toBoolEnv(botAllowDangerousCommands)],
+        ['BOT_ALLOW_FILE_OPS', toBoolEnv(botAllowFileOps)],
+        ['BOT_ALLOW_AUTOGUARD', toBoolEnv(botAllowAutoguard)],
+      ];
+      for (const [envKey, envValue] of adminUpdates) {
+        if (envValue !== null) updates[envKey] = envValue;
+      }
+
       try {
         await this.writeEnvUpdates(updates);
       } catch (error) {
@@ -467,6 +491,15 @@ export class WebServer {
       if (selectedProvider === 'groq') config.groqModel = selectedModel;
       if (selectedProvider === 'ollama') config.ollamaModel = selectedModel;
       if (selectedProvider === 'openai') config.openaiModel = selectedModel;
+      for (const [envKey, envValue] of adminUpdates) {
+        if (envValue !== null) {
+          const cfgKey = envKey === 'BOT_ALLOW_COMMANDS' ? 'botAllowCommands'
+            : envKey === 'BOT_ALLOW_DANGEROUS_COMMANDS' ? 'botAllowDangerousCommands'
+            : envKey === 'BOT_ALLOW_FILE_OPS' ? 'botAllowFileOps'
+            : 'botAllowAutoguard';
+          (config as any)[cfgKey] = envValue === 'true';
+        }
+      }
       if (keyName && trimmedKey) {
         if (selectedProvider === 'gemini') config.geminiApiKey = trimmedKey;
         if (selectedProvider === 'groq') config.groqApiKey = trimmedKey;
@@ -642,7 +675,10 @@ export class WebServer {
             capturing = true;
             try {
               const img = await captureScreenRegion(0, 0, 1920, 1080);
-              if (img) this.io.emit('bot-screen', img);
+              if (img) {
+                this.lastScreenFrameAt = Date.now();
+                this.io.emit('bot-screen', img);
+              }
             } catch (error) {
               console.error('[Web] Screen share capture failed:', error);
             } finally {
@@ -655,6 +691,7 @@ export class WebServer {
       socket.on('stop-screen-share', () => {
         this.isScreenSharing = false;
         this.screenShareSocket = null;
+        this.lastScreenFrameAt = null;
         if (this.screenShareInterval) {
           clearInterval(this.screenShareInterval);
           this.screenShareInterval = null;
@@ -665,6 +702,7 @@ export class WebServer {
         if (this.isScreenSharing && this.screenShareSocket === socket) {
           this.isScreenSharing = false;
           this.screenShareSocket = null;
+          this.lastScreenFrameAt = null;
           if (this.screenShareInterval) {
             clearInterval(this.screenShareInterval);
             this.screenShareInterval = null;

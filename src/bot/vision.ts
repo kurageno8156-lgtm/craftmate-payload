@@ -15,6 +15,7 @@ interface WindowRect {
 let cachedWindowRect: WindowRect | null = null;
 let windowRectCacheTime = 0;
 let lastFallbackLogTime = 0;
+let lastDetectLogTime = 0;
 const WINDOW_RECT_CACHE_MS = 2000;
 const FALLBACK_LOG_INTERVAL_MS = 30000;
 
@@ -88,6 +89,10 @@ function getMinecraftWindowRect(): Promise<WindowRect | null> {
           return resolve(null);
         }
         cachedWindowRect = { x, y, width, height };
+        if (Date.now() - lastDetectLogTime > 30000) {
+          lastDetectLogTime = Date.now();
+          console.log(`[Vision] Minecraft window detected: ${x},${y} ${width}x${height}`);
+        }
         resolve(cachedWindowRect);
       }
     );

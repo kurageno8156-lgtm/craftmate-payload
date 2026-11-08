@@ -31,6 +31,12 @@ export interface BotConfig {
   maxAgentSteps: number;
   autoEat: boolean;
   autoArmor: boolean;
+
+  // Admin permissions
+  botAllowCommands: boolean;
+  botAllowDangerousCommands: boolean;
+  botAllowFileOps: boolean;
+  botAllowAutoguard: boolean;
 }
 
 export const config: BotConfig = {
@@ -55,4 +61,8 @@ export const config: BotConfig = {
   maxAgentSteps: 100,
   autoEat: process.env.AUTO_EAT !== 'false',
   autoArmor: process.env.AUTO_ARMOR !== 'false',
+  botAllowCommands: process.env.BOT_ALLOW_COMMANDS !== 'false',
+  botAllowDangerousCommands: process.env.BOT_ALLOW_DANGEROUS_COMMANDS !== 'false',
+  botAllowFileOps: process.env.BOT_ALLOW_FILE_OPS !== 'false',
+  botAllowAutoguard: process.env.BOT_ALLOW_AUTOGUARD !== 'false',
 };

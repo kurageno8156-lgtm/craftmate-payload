@@ -390,6 +390,55 @@ export class LLMClient {
   }
 
   /**
+   * ツール非実行の簡易テキスト応答（開始の一言などの生成用）。15秒タイムアウト。
+   */
+  public async chatOnce(prompt: string): Promise<string> {
+    if (this.config.llmProvider === 'gemini') {
+      const apiKey = this.config.geminiApiKey;
+      if (!apiKey) return '';
+      const modelName = this.config.geminiModel || 'gemini-3.1-flash-lite';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!res.ok) return '';
+      const data: any = await res.json();
+      const parts = data?.candidates?.[0]?.content?.parts || [];
+      return parts.map((p: any) => p.text || '').join('').trim();
+    }
+
+    // OpenAI互換プロバイダ（groq/openai/ollama）
+    if (!this.openAiClient) {
+      this.openAiClient = new OpenAI({
+        apiKey: this.config.llmProvider === 'groq'
+          ? this.config.groqApiKey || ''
+          : this.config.llmProvider === 'ollama'
+            ? 'ollama'
+            : this.config.openaiApiKey || '',
+        baseURL: this.config.llmProvider === 'ollama'
+          ? this.config.ollamaBaseUrl
+          : this.config.llmProvider === 'groq'
+            ? 'https://api.groq.com/openai/v1'
+            : undefined,
+      });
+    }
+    const modelName = this.config.llmProvider === 'ollama'
+      ? this.config.ollamaModel
+      : this.config.llmProvider === 'groq'
+        ? this.config.groqModel
+        : this.config.openaiModel;
+    const completion = await this.openAiClient.chat.completions.create({
+      model: modelName,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 80,
+    });
+    return (completion.choices[0]?.message?.content || '').trim();
+  }
+
+  /**
    * OpenAI / Ollama API 呼び出し
    */
   private async callOpenAI(
