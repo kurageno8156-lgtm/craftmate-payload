@@ -121,7 +121,7 @@ export class AutonomousAgent extends EventEmitter {
 【チャット・雑談のルール（最重要）】
 - 挨拶や雑談（「こんにちは」「あなたは誰」「英語で話して」など）や質問には、チャットで1回だけ返答し、直ちに 'finishTask' を呼んでタスクを終了してください。雑談や質問に作業ツール（採掘・クラフト等）は不要です。
 - 1つのタスクにつきチャット送信は最大2回までです（開始時の一言と完了時の報告のみ）。同じ内容・類似内容のチャットを連続で送ったり、途中経過を何度も報告したりしてはいけません。
-- ツールを呼び出す際は、thought には内部の思考過程ではなく「これから何をするか」をユーザーに伝える自然な一言を1〜2文で書いてください（例:「了解！木を10個集めてくるね。ちょっと待ってて！」）。この一言はそのままチャットとして送信されるので、ユーザーに向けた話し言葉で書いてください。
+- ツールを呼び出す際は、thought には内部の思考過程ではなく「これから何をするか」をユーザーに伝える自然な一言を1〜2文で書いてください（例:「了解！木を10個集めてくるね。ちょっと待ってて！」）。この一言はそのままチャットとして送信されるので、ユーザーに向けた話し言葉で書いてください。thought に実行結果・完了報告・観察（「〜しました」「設置しました」など過去形の報告）は絶対に書かないでください。それらは内部ログ専用です。
 - AutoGuard（自動防御）が敵と戦っている間は、チャットを送らず防御行動に専念してください。戦闘終了後に結果を報告してください。
 - 'finishTask' を呼ぶ際は、resultSummary に「何をどれだけ達成したか」をユーザーに伝える自然な完了報告を1〜2文で書いてください（例:「お待たせ！木を10個集めたよ。他に何か必要なものはある？」）。この文章はそのままチャットとして送信されます。
 - 「昼にして」「夜にして」「テレポートして」「時間を止めて」などワールド操作の指示には 'executeCommand' ツールを使ってください（例: "time set day"、"time set night"、"tp @p x y z"）。
@@ -314,8 +314,14 @@ export class AutonomousAgent extends EventEmitter {
       // thoughtが空の場合でもユーザーに必ず状況を伝えるフォールバック発言を送る。
       if (chatCount === 0 && !guardActive() && toolName !== 'chat') {
         const shortGoal = goal.length > 30 ? goal.slice(0, 30) + '…' : goal;
+        // 観察・完了報告調の文章はチャットに送らない（内部ログ専用）
+        const OBSERVATION_PATTERN = /(ました|しました|です。|でした|SUCCESS|FAILED|設置し|完了しま|実行結果|観察|success|failed|installed|completed|placed)/i;
         let remark = (llmRes.thought || '').replace(/\s+/g, ' ').trim().slice(0, 200);
-        // thoughtが空の場合はAIに開始の一言を生成させる（定型文は最終手段）
+        if (remark && OBSERVATION_PATTERN.test(remark)) {
+          console.log(`[Agent Remark] thought looked like an observation, discarding: ${remark}`);
+          remark = '';
+        }
+        // remarkが空/観察調の場合はAIに開始の一言を生成させる（定型文は最終手段）
         if (!remark) {
           try {
             remark = (await this.llmClient.chatOnce(
@@ -323,6 +329,7 @@ export class AutonomousAgent extends EventEmitter {
               `プレイヤーに向けて、これから何をするかを伝える自然な一言を1〜2文だけ返してください（敬語は使わずフレンドリーに。説明や記号は不要）。`
             )).replace(/\s+/g, ' ').trim().slice(0, 200);
           } catch { remark = ''; }
+          if (remark && OBSERVATION_PATTERN.test(remark)) remark = '';
         }
         remark = remark || `了解！これから「${shortGoal}」に取りかかるね。少し待ってて！`;
         const remarkResult = await this.botWrapper.skills.chat(remark);
