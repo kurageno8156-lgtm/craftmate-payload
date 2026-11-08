@@ -1,42 +1,18 @@
-import { createCanvas } from 'canvas';
-import * as sharp from 'sharp';
+import screenshot from 'screenshot-desktop';
+import sharp from 'sharp';
 
-// Capture screen region - for Minecraft window or full screen
+// 画面の指定領域をキャプチャし、640x360にリサイズしてBase64形式で返す
 export async function captureScreenRegion(x: number, y: number, width: number, height: number): Promise<string> {
   try {
-    // Use Minecraft bot's perception or screen capture
-    // This is a placeholder - actual implementation depends on the bot framework
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext('2d');
-    
-    // Fill with a pattern to indicate capture
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(0, 0, width, height);
-    
-    // Return as base64 for now
-    return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
-  } catch (err) {
-    console.error('Screen capture failed:', err);
-    return '';
-  }
-}
-
-// Resize base64 image to target dimensions
-export async function resizeBase64Image(base64: string, maxWidth: number, maxHeight: number): Promise<string> {
-  try {
-    const img = await sharp(Buffer.from(base64, 'base64'))
-      .resize({ width: maxWidth, height: maxHeight, fit: 'inside' })
-      .jpeg({ quality: 80 })
+    const buffer = await screenshot({ format: 'jpeg' });
+    const resized = await sharp(buffer)
+      .extract({ left: x, top: y, width, height })
+      .resize(640, 360)
+      .jpeg({ quality: 50 })
       .toBuffer();
-    
-    return img.toString('base64');
+    return resized.toString('base64');
   } catch (err) {
-    console.error('Image resize failed:', err);
-    return base64;
+    console.error('[Vision] Screen capture failed:', err);
+    throw err;
   }
-}
-
-// Convert canvas to base64 data URL
-export function canvasToBase64(canvas: any): string {
-  return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 }

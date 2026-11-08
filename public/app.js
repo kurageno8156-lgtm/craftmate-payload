@@ -52,6 +52,31 @@ const botScreenModal = document.getElementById('bot-screen-modal');
 const botScreenView = document.getElementById('bot-screen-view');
 const closeBotScreen = document.getElementById('close-bot-screen');
 
+screenShareToggle.addEventListener('change', (e) => {
+  if (e.target.checked) {
+    socket.emit('start-screen-share');
+    botScreenModal.hidden = false;
+  } else {
+    socket.emit('stop-screen-share');
+    botScreenModal.hidden = true;
+  }
+});
+
+socket.on('bot-screen', (base64Image) => {
+  botScreenView.src = 'data:image/jpeg;base64,' + base64Image;
+});
+
+closeBotScreen.addEventListener('click', () => {
+  botScreenModal.hidden = true;
+  screenShareToggle.checked = false;
+  socket.emit('stop-screen-share');
+});
+
+const screenShareToggle = document.getElementById('screen-share-toggle');
+const botScreenModal = document.getElementById('bot-screen-modal');
+const botScreenView = document.getElementById('bot-screen-view');
+const closeBotScreen = document.getElementById('close-bot-screen');
+
 const screenShareToggle = document.getElementById('screen-share-toggle');
 const botScreenModal = document.getElementById('bot-screen-modal');
 const botScreenView = document.getElementById('bot-screen-view');
