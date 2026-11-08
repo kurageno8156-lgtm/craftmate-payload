@@ -118,8 +118,10 @@ export class AutonomousAgent extends EventEmitter {
 
 【チャット・雑談のルール（最重要）】
 - 挨拶や雑談（「こんにちは」「あなたは誰」「英語で話して」など）や質問には、チャットで1回だけ返答し、直ちに 'finishTask' を呼んでタスクを終了してください。雑談や質問に作業ツール（採掘・クラフト等）は不要です。
-- 1つのタスクにつきチャット送信は最大1回までです。同じ内容・類似内容のチャットを連続で送ってはいけません。報告は1回にまとめてください。
+- 1つのタスクにつきチャット送信は最大2回までです（開始時の一言と完了時の報告のみ）。同じ内容・類似内容のチャットを連続で送ったり、途中経過を何度も報告したりしてはいけません。
+- ツールを呼び出す際は、thought には内部の思考過程ではなく「これから何をするか」をユーザーに伝える自然な一言を1〜2文で書いてください（例:「了解！木を10個集めてくるね。ちょっと待ってて！」）。この一言はそのままチャットとして送信されるので、ユーザーに向けた話し言葉で書いてください。
 - AutoGuard（自動防御）が敵と戦っている間は、チャットを送らず防御行動に専念してください。戦闘終了後に結果を報告してください。
+- 'finishTask' を呼ぶ際は、resultSummary に「何をどれだけ達成したか」をユーザーに伝える自然な完了報告を1〜2文で書いてください（例:「お待たせ！木を10個集めたよ。他に何か必要なものはある？」）。この文章はそのままチャットとして送信されます。
 
 【狩りと食料確保】
 - プレイヤーが「狩りをして」「動物を狩って食料を集めて」などと指示したら、'huntMob' を使ってください。'targetType' は動物だけなら 'animals'、敵対Mobだけなら 'hostiles'、指定がなければ 'any' にします。
@@ -136,7 +138,7 @@ export class AutonomousAgent extends EventEmitter {
     let lastActionFailed = false;
     let lastFailureMessage = '';
     let taskCompleted = false;
-    const MAX_CHATS_PER_TASK = 1;
+    const MAX_CHATS_PER_TASK = 2;
     let chatCount = 0;
     let blockedChatCount = 0;
     const guardActive = () => !!(this.botWrapper.guard && this.botWrapper.guard.isInCombat());
@@ -225,12 +227,12 @@ export class AutonomousAgent extends EventEmitter {
           break;
         }
 
-        stepLog.observation = `発言: ${text}。チャットは送信済みです。追加のチャットは送らず、目標が達成済みなら 'finishTask'、未達成なら作業ツールを実行してください。`;
+        stepLog.observation = `発言: ${text}。チャットは送信済みです。追加のチャットは最小限にし、目標が達成済みなら 'finishTask'、未達成なら作業ツールを実行してください。`;
         this.emit('stepLog', stepLog);
         history.push({ role: 'model', content: text });
         history.push({
           role: 'user',
-          content: `あなたは「${text}」と発言しました。チャットはこのタスクで既に1回送信済みのため、これ以上チャットを送らないでください。目標が達成済みなら 'finishTask' を呼んで終了し、未達成なら必要な作業ツールを実行してください。`,
+          content: `あなたは「${text}」と発言しました。これ以上チャットは原則送らないでください。目標が達成済みなら 'finishTask' を呼んで終了し、未達成なら必要な作業ツールを実行してください。`,
         });
         if (history.length > 21) history.splice(1, history.length - 21);
         await new Promise(r => setTimeout(r, 50));
@@ -259,7 +261,7 @@ export class AutonomousAgent extends EventEmitter {
         const completedSummary = summary || '目標を完了しました。';
         // チャット上限・戦闘中は完了報告のチャットを送らない
         if (!guardActive() && chatCount < MAX_CHATS_PER_TASK) {
-          await this.botWrapper.skills.chat(`完了報告: ${completedSummary}`);
+          await this.botWrapper.skills.chat(completedSummary);
           chatCount++;
         }
         stepLog.status = 'finished';
@@ -270,6 +272,20 @@ export class AutonomousAgent extends EventEmitter {
         console.log(`========================================\n`);
         taskCompleted = true;
         break;
+      }
+
+      // 実行前の自然な一言：タスク最初の実動作ツールに対し、LLMのthoughtをユーザーへの発言として送信
+      if (chatCount === 0 && !guardActive() && toolName !== 'chat' && llmRes.thought) {
+        const remark = llmRes.thought.replace(/\s+/g, ' ').trim().slice(0, 200);
+        if (remark) {
+          const remarkResult = await this.botWrapper.skills.chat(remark);
+          if (remarkResult.success) {
+            chatCount++;
+            stepLog.observation = `開始の発言: ${remark}`;
+            this.emit('stepLog', stepLog);
+            console.log(`[Agent Remark]: ${remark}`);
+          }
+        }
       }
 
       // 'chat' ツールの連投・戦闘中送信をブロック
@@ -286,7 +302,7 @@ export class AutonomousAgent extends EventEmitter {
         if (chatCount >= MAX_CHATS_PER_TASK) {
           blockedChatCount++;
           stepLog.status = 'failure';
-          stepLog.observation = 'チャット送信上限（1タスクにつき1回）に達したためブロックしました。';
+          stepLog.observation = 'チャット送信上限（1タスクにつき最大2回）に達したためブロックしました。';
           this.emit('stepLog', stepLog);
           history.push({ role: 'model', content: `Action: chat(${JSON.stringify(toolArgs)})` });
           if (blockedChatCount >= 2) {
@@ -296,7 +312,7 @@ export class AutonomousAgent extends EventEmitter {
             console.log(`========================================\n`);
             break;
           }
-          history.push({ role: 'user', content: 'チャットは既にこのタスクで送信済みで、これ以上送信できません。チャットを送らず、目標が達成済みなら \'finishTask\' を呼び、未達成なら作業ツールを実行してください。' });
+          history.push({ role: 'user', content: 'チャットはこのタスクの送信上限に達しています。チャットを送らず、目標が達成済みなら \'finishTask\' を呼び、未達成なら作業ツールを実行してください。' });
           await new Promise(r => setTimeout(r, 50));
           continue;
         }
