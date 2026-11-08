@@ -1,6 +1,13 @@
 const socket = io();
 
-const translate = (key, values) => window.craftMateI18n.t(key, values);
+// 要素が存在しない場合でもスクリプト全体が落ちないようにするヘルパー
+function on(element, event, handler) {
+  if (element && typeof element.addEventListener === 'function') {
+    element.addEventListener(event, handler);
+  }
+}
+
+const translate = (key, values) => (window.craftMateI18n ? window.craftMateI18n.t(key, values) : key);
 let mcNameDb = { items: {}, entities: {}, biomes: {} };
 fetch('/minecraft-names.json')
   .then(res => res.json())
@@ -13,10 +20,11 @@ fetch('/minecraft-names.json')
   .catch(err => console.warn('Could not load minecraft-names.json:', err));
 let lastRenderedStatus = null;
 function updateLlmLabel(provider, model) {
-  llmInfo.textContent = translate('aiBrain', { provider: String(provider || '').toUpperCase(), model: model || '' });
+  if (llmInfo) llmInfo.textContent = translate('aiBrain', { provider: String(provider || '').toUpperCase(), model: model || '' });
 }
 
 document.addEventListener('craftmate-language-changed', () => {
+  if (!llmInfo) return;
   const match = llmInfo.textContent.match(/(?:AI Brain|AI 脳):\s*([^ (]+)\s*\((.*)\)$/);
   if (match) updateLlmLabel(match[1], match[2]);
   if (lastRenderedStatus) renderStatus(lastRenderedStatus);
@@ -52,25 +60,29 @@ const botScreenModal = document.getElementById('bot-screen-modal');
 const botScreenView = document.getElementById('bot-screen-view');
 const closeBotScreen = document.getElementById('close-bot-screen');
 
-screenShareToggle.addEventListener('change', (e) => {
-  if (e.target.checked) {
-    socket.emit('start-screen-share');
-    botScreenModal.hidden = false;
-  } else {
-    socket.emit('stop-screen-share');
-    botScreenModal.hidden = true;
-  }
-});
+if (screenShareToggle) {
+  on(screenShareToggle, 'change', (e) => {
+    if (e.target.checked) {
+      socket.emit('start-screen-share');
+      if (botScreenModal) botScreenModal.hidden = false;
+    } else {
+      socket.emit('stop-screen-share');
+      if (botScreenModal) botScreenModal.hidden = true;
+    }
+  });
+}
 
 socket.on('bot-screen', (base64Image) => {
-  botScreenView.src = 'data:image/jpeg;base64,' + base64Image;
+  if (botScreenView) botScreenView.src = 'data:image/jpeg;base64,' + base64Image;
 });
 
-closeBotScreen.addEventListener('click', () => {
-  botScreenModal.hidden = true;
-  screenShareToggle.checked = false;
-  socket.emit('stop-screen-share');
-});
+if (closeBotScreen) {
+  on(closeBotScreen, 'click', () => {
+    if (botScreenModal) botScreenModal.hidden = true;
+    if (screenShareToggle) screenShareToggle.checked = false;
+    socket.emit('stop-screen-share');
+  });
+}
 
 const taskText = document.getElementById('current-task-text');
 const btnCancel = document.getElementById('btn-cancel');
@@ -112,8 +124,8 @@ socket.on('disconnect', () => {
 });
 
 socket.on('taskStarted', (data) => {
-  taskText.textContent = translate('taskFrom', { requester: data.requester, task: data.task });
-  btnCancel.style.display = 'block';
+  if (taskText) taskText.textContent = translate('taskFrom', { requester: data.requester, task: data.task });
+  if (btnCancel) btnCancel.style.display = 'block';
   appendLog({
     status: 'acting',
     timestamp: new Date().toLocaleTimeString(),
@@ -122,8 +134,8 @@ socket.on('taskStarted', (data) => {
 });
 
 socket.on('taskFinished', (data) => {
-  taskText.textContent = translate('emptyTask');
-  btnCancel.style.display = 'none';
+  if (taskText) taskText.textContent = translate('emptyTask');
+  if (btnCancel) btnCancel.style.display = 'none';
 });
 
 socket.on('agentLog', (log) => {
@@ -140,8 +152,10 @@ socket.on('chatMessage', (chat) => {
 
 // UI更新関数
 function updateConnectionUI(connected) {
+  if (!connStatus) return;
   const dot = connStatus.querySelector('.dot');
   const text = connStatus.querySelector('.text');
+  if (!dot || !text) return;
   if (connected) {
     dot.className = 'dot online';
     text.textContent = translate('online');
@@ -153,6 +167,8 @@ function updateConnectionUI(connected) {
 
 function renderStatus(status) {
   if (!status) return;
+  const requiredElements = [hpBar, hpVal, foodBar, foodVal, posVal, dimVal, biomeVal, timeVal, heldVal, armorHelmet, armorChest, armorLegs, armorBoots, invCount, invContainer, entitiesContainer, taskText, btnCancel, showAllInventoryButton, inventoryModal];
+  if (requiredElements.some(el => !el)) return;
   lastRenderedStatus = status;
 
   // HP & Food
@@ -329,25 +345,27 @@ function getLocalizedEntityName(entity) {
   return String(entity.displayName || entity.name || translate('unknownEntity'));
 }
 
-showAllInventoryButton.addEventListener('click', () => {
-  if (!lastRenderedStatus) return;
+on(showAllInventoryButton, 'click', () => {
+  if (!lastRenderedStatus || !inventoryModal) return;
   const inventory = Array.isArray(lastRenderedStatus.inventory) ? lastRenderedStatus.inventory.filter(item => item && Number(item.count) > 0) : [];
   renderInventoryCards(inventory, inventoryModalContainer);
   inventoryModal.hidden = false;
-  inventoryModal.querySelector('.inventory-modal-close').focus();
+  inventoryModal.querySelector('.inventory-modal-close')?.focus();
 });
 
-inventoryModal.querySelectorAll('[data-close-inventory]').forEach(button => {
-  button.addEventListener('click', () => {
-    inventoryModal.hidden = true;
-    showAllInventoryButton.focus();
+if (inventoryModal) {
+  inventoryModal.querySelectorAll('[data-close-inventory]').forEach(button => {
+    button.addEventListener('click', () => {
+      inventoryModal.hidden = true;
+      if (showAllInventoryButton) showAllInventoryButton.focus();
+    });
   });
-});
+}
 
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && !inventoryModal.hidden) {
+  if (event.key === 'Escape' && inventoryModal && !inventoryModal.hidden) {
     inventoryModal.hidden = true;
-    showAllInventoryButton.focus();
+    if (showAllInventoryButton) showAllInventoryButton.focus();
   }
 });
 
@@ -360,6 +378,7 @@ function createGridEmptyState(message) {
 }
 
 function appendLog(log) {
+  if (!logsContainer) return;
   const entry = document.createElement('div');
   entry.className = `log-entry ${log.status || 'acting'}`;
 
@@ -393,8 +412,9 @@ function escapeHtml(str) {
 }
 
 // フォーム送信
-commandForm.addEventListener('submit', (e) => {
+on(commandForm, 'submit', (e) => {
   e.preventDefault();
+  if (!commandInput) return;
   const text = commandInput.value.trim();
   if (!text) return;
 
@@ -403,7 +423,7 @@ commandForm.addEventListener('submit', (e) => {
 });
 
 // タスク中断
-btnCancel.addEventListener('click', () => {
+on(btnCancel, 'click', () => {
   socket.emit('cancelTask');
 });
 
@@ -430,8 +450,10 @@ const minecraftVersionSelect = document.getElementById('setting-mc-version');
 const minecraftVersionCustomInput = document.getElementById('setting-mc-version-custom');
 const languageSelect = document.getElementById('setting-language');
 const apiKeyInput = document.getElementById('setting-api-key');
-languageSelect.value = window.craftMateI18n.language;
-languageSelect.addEventListener('change', () => window.craftMateI18n.setLanguage(languageSelect.value));
+if (languageSelect) {
+  languageSelect.value = window.craftMateI18n.language;
+  on(languageSelect, 'change', () => window.craftMateI18n.setLanguage(languageSelect.value));
+}
 const modelsByProvider = {
   gemini: ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'],
   groq: ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'openai/gpt-oss-120b'],
@@ -440,6 +462,7 @@ const modelsByProvider = {
 };
 
 function populateModelOptions(provider, selectedModel) {
+  if (!modelSelect) return;
   const models = [...(modelsByProvider[provider] || modelsByProvider.gemini)];
   if (selectedModel && !models.includes(selectedModel)) models.unshift(selectedModel);
   modelSelect.replaceChildren(...models.map(model => {
@@ -452,17 +475,20 @@ function populateModelOptions(provider, selectedModel) {
 }
 
 function showSettingsMessage(message, state) {
+  if (!settingsMessage) return;
   settingsMessage.textContent = message || '';
   settingsMessage.className = `settings-message${state ? ` ${state}` : ''}`;
 }
 
 function updateCustomMinecraftVersionVisibility() {
+  if (!minecraftVersionSelect || !minecraftVersionCustomInput) return;
   const isCustom = minecraftVersionSelect.value === 'custom';
   minecraftVersionCustomInput.hidden = !isCustom;
   minecraftVersionCustomInput.required = isCustom;
 }
 
 function setMinecraftVersionSetting(version) {
+  if (!minecraftVersionSelect || !minecraftVersionCustomInput) return;
   const value = String(version || 'auto').trim() || 'auto';
   const hasOption = Array.from(minecraftVersionSelect.options).some(option => option.value === value && option.value !== 'custom');
   if (hasOption) {
@@ -475,11 +501,12 @@ function setMinecraftVersionSetting(version) {
   updateCustomMinecraftVersionVisibility();
 }
 
-minecraftVersionSelect.addEventListener('change', updateCustomMinecraftVersionVisibility);
+on(minecraftVersionSelect, 'change', updateCustomMinecraftVersionVisibility);
 
 function setConnectionState(name, connected) {
   const dot = document.getElementById(`${name}-health-dot`);
   const label = document.getElementById(`${name}-health-label`);
+  if (!dot || !label) return;
   dot.className = `connection-dot ${connected ? 'online' : 'offline'}`;
   label.textContent = connected ? translate('connected') : translate('disconnected');
   label.style.color = connected ? 'var(--accent-green)' : 'var(--accent-red)';
@@ -492,11 +519,13 @@ async function refreshHealth() {
     const health = await response.json();
     setConnectionState('minecraft', health.minecraftConnected);
     setConnectionState('ai', health.aiConnected);
-    document.getElementById('health-checked').textContent = translate('checked', { time: new Date().toLocaleTimeString() });
+    const healthChecked = document.getElementById('health-checked');
+    if (healthChecked) healthChecked.textContent = translate('checked', { time: new Date().toLocaleTimeString() });
   } catch {
     setConnectionState('minecraft', false);
     setConnectionState('ai', false);
-    document.getElementById('health-checked').textContent = translate('healthUnavailable');
+    const healthChecked = document.getElementById('health-checked');
+    if (healthChecked) healthChecked.textContent = translate('healthUnavailable');
   }
 }
 
@@ -522,25 +551,28 @@ async function loadSettings() {
   }
 }
 
-document.getElementById('btn-settings').addEventListener('click', () => {
-  settingsModal.hidden = false;
-  document.getElementById('setting-mc-port').focus();
+on(document.getElementById('btn-settings'), 'click', () => {
+  if (settingsModal) settingsModal.hidden = false;
+  document.getElementById('setting-mc-port')?.focus();
   loadSettings();
 });
-document.getElementById('btn-close-settings').addEventListener('click', () => { settingsModal.hidden = true; });
-settingsModal.querySelector('[data-close-settings]').addEventListener('click', () => { settingsModal.hidden = true; });
+on(document.getElementById('btn-close-settings'), 'click', () => { if (settingsModal) settingsModal.hidden = true; });
+if (settingsModal) {
+  on(settingsModal.querySelector('[data-close-settings]'), 'click', () => { settingsModal.hidden = true; });
+}
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && !settingsModal.hidden) settingsModal.hidden = true;
+  if (event.key === 'Escape' && settingsModal && !settingsModal.hidden) settingsModal.hidden = true;
 });
-providerSelect.addEventListener('change', () => {
+on(providerSelect, 'change', () => {
   populateModelOptions(providerSelect.value);
   const needsKey = providerSelect.value !== 'ollama';
-  document.getElementById('api-key-help').textContent = needsKey
+  const keyHelp = document.getElementById('api-key-help');
+  if (keyHelp) keyHelp.textContent = needsKey
     ? translate('keepKey')
     : translate('ollamaNoKey');
 });
 
-settingsForm.addEventListener('submit', async event => {
+on(settingsForm, 'submit', async event => {
   event.preventDefault();
   const saveButton = document.getElementById('btn-save-settings');
   saveButton.disabled = true;
@@ -607,7 +639,7 @@ async function fetchWithLocalSettingsAuth(url, options = {}) {
   throw new Error(translate('updateAuthMissing'));
 }
 
-document.getElementById('btn-create-backup').addEventListener('click', async event => {
+on(document.getElementById('btn-create-backup'), 'click', async event => {
   const button = event.currentTarget;
   button.disabled = true;
   try {
@@ -635,8 +667,8 @@ document.getElementById('btn-create-backup').addEventListener('click', async eve
 });
 
 const backupFileInput = document.getElementById('settings-backup-file');
-document.getElementById('btn-restore-backup').addEventListener('click', () => backupFileInput.click());
-backupFileInput.addEventListener('change', async () => {
+on(document.getElementById('btn-restore-backup'), 'click', () => backupFileInput?.click());
+on(backupFileInput, 'change', async () => {
   const file = backupFileInput.files?.[0];
   backupFileInput.value = '';
   if (!file) return;
@@ -685,7 +717,7 @@ backupFileInput.addEventListener('change', async () => {
   }
 });
 
-document.getElementById('btn-reconnect').addEventListener('click', async event => {
+on(document.getElementById('btn-reconnect'), 'click', async event => {
   const button = event.currentTarget;
   button.disabled = true;
   try {
@@ -700,7 +732,7 @@ document.getElementById('btn-reconnect').addEventListener('click', async event =
   }
 });
 
-document.getElementById('btn-ai-restart').addEventListener('click', async event => {
+on(document.getElementById('btn-ai-restart'), 'click', async event => {
   const button = event.currentTarget;
   button.disabled = true;
   try {
@@ -715,7 +747,7 @@ document.getElementById('btn-ai-restart').addEventListener('click', async event 
   }
 });
 
-document.getElementById('btn-check-updates').addEventListener('click', async event => {
+on(document.getElementById('btn-check-updates'), 'click', async event => {
   const button = event.currentTarget;
   button.disabled = true;
   showSettingsMessage(translate('launchingUpdater'));
@@ -735,7 +767,7 @@ document.getElementById('btn-check-updates').addEventListener('click', async eve
   }
 });
 
-document.getElementById('btn-download-logs').addEventListener('click', () => {
+on(document.getElementById('btn-download-logs'), 'click', () => {
   const lines = Array.from(logsContainer.querySelectorAll('.log-entry')).map(entry => entry.innerText.trim());
   const blob = new Blob([lines.join('\n\n') + '\n'], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
