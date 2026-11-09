@@ -61,6 +61,21 @@ export class SkillManager {
   public blueprintProgress: ((message: string) => void) | null = null;
 
   /**
+   * クリエイティブモードでなければ /gamemode creative を試行する。
+   */
+  private async ensureCreativeMode(): Promise<boolean> {
+    if (this.bot.player.gamemode === 1) return true;
+    try {
+      this.bot.chat('/gamemode creative @s');
+      await new Promise(r => setTimeout(r, 1200));
+      if (this.bot.player.gamemode === 1) return true;
+      this.bot.chat('/gamemode creative');
+      await new Promise(r => setTimeout(r, 1200));
+      return this.bot.player.gamemode === 1;
+    } catch { return false; }
+  }
+
+  /**
    * 設計図JSONをBot足元を原点として建築する（クリエイティブモード推奨）。
    * structure 内の各セクション配列 {x,y,z,block} を順に設置する。
    */
@@ -85,9 +100,8 @@ export class SkillManager {
     if (entries.length > 1500) {
       return { success: false, message: `設計図のブロック数が多すぎます（${entries.length}個、上限1500）。もっとコンパクトな設計にしてください。` };
     }
-    const creative = this.bot.player.gamemode === 1;
-    if (!creative) {
-      return { success: false, message: '手作業での建築にはクリエイティブモードが必要です（アイテムが無いため設置できません）。コマンドブロック建築もクリエイティブモードが必要です。' };
+    if (!(await this.ensureCreativeMode())) {
+      return { success: false, message: '手作業での建築にはクリエイティブモードが必要です（アイテムが無いため設置できません）。コマンドブロック建築もクリエイティブモードが必要です。サーバーで /gamemode creative を実行する権限があるか確認してください。' };
     }
     let placed = 0;
     let failed = 0;
@@ -345,8 +359,8 @@ export class SkillManager {
     const cmd = (command || '').replace(/[\r\n]/g, ' ').trim().slice(0, 32500);
     if (!cmd) return failPlace('コマンドが空です。');
 
-    if (this.bot.player.gamemode !== 1) {
-      return failPlace('コマンドブロックの設定にはクリエイティブモードが必要です。');
+    if (!(await this.ensureCreativeMode())) {
+      return failPlace('コマンドブロックの設定にはクリエイティブモードが必要です。サーバーで /gamemode creative を実行する権限があるか確認してください。');
     }
 
     try {
@@ -355,6 +369,15 @@ export class SkillManager {
         if (slot < 0) {
           await this.bot.creative.setInventorySlot(36, { name: 'command_block', count: 1 } as any);
           slot = this.bot.inventory.items().findIndex(i => i.name === 'command_block');
+        }
+        if (slot < 0) {
+          // クリエイティブでも取れない場合は /give を試行
+          try {
+            this.bot.chat('/give @s minecraft:command_block 1');
+            await new Promise(r => setTimeout(r, 1200));
+            await this.bot.creative.setInventorySlot(36, { name: 'command_block', count: 1 } as any);
+            slot = this.bot.inventory.items().findIndex(i => i.name === 'command_block');
+          } catch { /* ignore */ }
         }
         if (slot < 0) return failPlace('コマンドブロックのアイテムが見つかりません。');
         await this.bot.equip(this.bot.inventory.items()[slot], 'hand');
@@ -413,8 +436,8 @@ export class SkillManager {
     if (!blueprint || !blueprint.structure) {
       return { success: false, message: '設計図がありません。' };
     }
-    if (this.bot.player.gamemode !== 1) {
-      return { success: false, message: 'コマンドブロック建築にはクリエイティブモードが必要です。' };
+    if (!(await this.ensureCreativeMode())) {
+      return { success: false, message: 'コマンドブロック建築にはクリエイティブモードが必要です。サーバーで /gamemode creative を実行する権限があるか確認してください。' };
     }
     const entries: Array<{ x: number; y: number; z: number; block: string }> = [];
     for (const list of Object.values(blueprint.structure as Record<string, any[]>)) {

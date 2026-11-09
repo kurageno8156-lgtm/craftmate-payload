@@ -144,7 +144,7 @@ export class AutonomousAgent extends EventEmitter {
     let lastActionFailed = false;
     let lastFailureMessage = '';
     let taskCompleted = false;
-    const MAX_CHATS_PER_TASK = 2;
+    const MAX_CHATS_PER_TASK = 3;
     let chatCount = 0;
     let blockedChatCount = 0;
     let silentNudges = 0; // チャット上限後の無言継続カウント
