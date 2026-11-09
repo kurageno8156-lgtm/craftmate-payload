@@ -477,25 +477,43 @@ export class SkillManager {
     }
 
     try {
-      // コマンドブロック設置場所: Botの足元の4ブロック先・足元Y（空気を確保）
+      // コマンドブロック設置場所を探索: Bot近傍で「空気」かつ「隣に固体ブロック」がある場所
       const bp = this.bot.entity.position.floored();
-      const cbPos = new Vec3(bp.x + 3, bp.y, bp.z);
-      for (let dx = 3; dx <= 8; dx++) {
-        const p = new Vec3(bp.x + dx, bp.y, bp.z);
-        const b = this.bot.blockAt(p);
-        if (b && (b.name === 'air' || b.name === 'cave_air' || b.name === 'void_air')) {
-          const below = this.bot.blockAt(p.offset(0, -1, 0));
-          if (below && below.name !== 'air') { cbPos.x = p.x; cbPos.z = p.z; break; }
+      const airNames = new Set(['air', 'cave_air', 'void_air']);
+      const isAir = (p: Vec3) => { const b = this.bot.blockAt(p); return !!b && airNames.has(b.name); };
+      const hasSolidNeighbor = (p: Vec3) => {
+        for (const d of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]) {
+          const b = this.bot.blockAt(new Vec3(p.x + d[0], p.y + d[1], p.z + d[2]));
+          if (b && !airNames.has(b.name)) return true;
+        }
+        return false;
+      };
+      const spots: Vec3[] = [];
+      for (let dy = 0; dy <= 2 && spots.length < 12; dy++) {
+        for (let dx = 2; dx <= 8 && spots.length < 12; dx++) {
+          for (const dz of [0, 1, -1, 2, -2]) {
+            const p = new Vec3(bp.x + dx, bp.y + dy, bp.z + dz);
+            if (isAir(p) && hasSolidNeighbor(p)) spots.push(p);
+            if (spots.length >= 12) break;
+          }
         }
       }
-      // コマンドブロックを設置
-      const existing = this.bot.blockAt(cbPos);
-      if (!existing || !existing.name.includes('command_block')) {
-        await this.placeCommandBlock(cbPos.x, cbPos.y, cbPos.z, 'time set day', 'impulse');
+      // 候補位置に順番に設置を試行し、実際に設置されたか検証する
+      let cbPos: Vec3 | null = null;
+      let lastErr = '設置可能な場所が見つかりませんでした';
+      for (const spot of spots) {
+        try {
+          const res = await this.placeCommandBlock(spot.x, spot.y, spot.z, 'time set day', 'impulse');
+          const cb = this.bot.blockAt(spot);
+          if (cb && cb.name.includes('command_block')) { cbPos = spot; break; }
+          lastErr = res.message || 'コマンドブロックが設置されませんでした';
+        } catch (e: any) {
+          lastErr = e?.message || '設置中にエラーが発生しました';
+        }
+        console.warn(`[Build] Command block placement failed at (${spot.x},${spot.y},${spot.z}): ${lastErr}`);
       }
-      const cbBlock = this.bot.blockAt(cbPos);
-      if (!cbBlock || !cbBlock.name.includes('command_block')) {
-        return { success: false, message: 'コマンドブロックを設置できませんでした。' };
+      if (!cbPos) {
+        return { success: false, message: `コマンドブロックを設置できませんでした（${lastErr}）。` };
       }
 
       // レッドストーントーチを隣に置いてパルス発動（設置→掘削でON/OFF）

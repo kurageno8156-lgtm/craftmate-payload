@@ -176,7 +176,9 @@ namespace CraftMateUpdater
 
         private void UpdateWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            if (e.ProgressPercentage >= 0 && e.ProgressPercentage <= 100) _progress.Value = e.ProgressPercentage;
+            // 進行バーは後退させない（ステップ間の表示ずれ防止）
+            if (e.ProgressPercentage >= 0 && e.ProgressPercentage <= 100)
+                _progress.Value = Math.Max(_progress.Value, e.ProgressPercentage);
             string message = e.UserState as string;
             if (String.IsNullOrEmpty(message)) return;
             _status.Text = message;
@@ -310,6 +312,7 @@ namespace CraftMateUpdater
                 Dictionary<string, object> verifiedPackage = DeserializeObject(File.ReadAllText(packagePath));
                 string verifiedVersion = Convert.ToString(verifiedPackage["version"]);
                 if (CompareVersions(verifiedVersion, latestVersion) != 0) throw new InvalidDataException("更新後のバージョン確認に失敗しました。");
+                Report(worker, 99, "更新を確認しています... (v" + verifiedVersion + ")");
                 StartInstalledLauncher();
                 Report(worker, 100, "アップデートが完了しました (v" + verifiedVersion + ")。");
                 return UpdateOutcome.Updated;
@@ -491,7 +494,10 @@ namespace CraftMateUpdater
                         entry.ExtractToFile(destination, true);
                     }
                     count++;
-                    Report(worker, 58, "ZIP を解凍中... " + count + "/" + archive.Entries.Count + ": " + entry.FullName);
+                    // 進捗%を実際の解凍率に連動させ、イベント過多を防ぐため5件毎に報告
+                    if (count % 5 == 0 || count == archive.Entries.Count)
+                        Report(worker, 58 + (int)(count / (double)archive.Entries.Count * 4),
+                            "ZIP を解凍中... " + count + "/" + archive.Entries.Count + ": " + entry.FullName);
                 }
             }
             Report(worker, 62, "ZIP の解凍が完了しました。ファイルを置き換えています...");
