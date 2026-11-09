@@ -449,7 +449,7 @@ export class SkillManager {
       }
       i = j + 1;
     }
-    if (commands.length > 150) {
+    if (commands.length > 500) {
       return { success: false, message: `コマンド数が多すぎます（${commands.length}）。buildBlueprint での手作業建築を使ってください。` };
     }
 

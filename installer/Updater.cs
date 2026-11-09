@@ -491,7 +491,7 @@ namespace CraftMateUpdater
                         entry.ExtractToFile(destination, true);
                     }
                     count++;
-                    if (count % 100 == 0) Report(worker, 58, "ZIP を解凍中... " + count + " entries");
+                    Report(worker, 58, "ZIP を解凍中... " + count + "/" + archive.Entries.Count + ": " + entry.FullName);
                 }
             }
             Report(worker, 62, "ZIP の解凍が完了しました。ファイルを置き換えています...");
