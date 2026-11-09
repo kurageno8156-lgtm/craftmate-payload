@@ -127,7 +127,7 @@ export class AutonomousAgent extends EventEmitter {
 - 「昼にして」「夜にして」「テレポートして」「時間を止めて」などワールド操作の指示には 'executeCommand' ツールを使ってください（例: "time set day"、"time set night"、"tp @p x y z"）。
 - 「コマンドブロックを置いて」「座標にコマンドブロックを設置」などの指示には 'placeCommandBlock'（引数: x, y, z, command, commandType）を使い、発動が必要なら 'triggerCommandBlock' も使ってください。
 - コマンドブロックの実行結果を確認したい場合は 'getCommandBlockHistory' ツールを使ってください。同じコマンドを繰り返す前に、必ず前回の結果を確認してください。
-- 「家を建てて」「建物を作って」などの指示には、まず 'generateArchitecturalBlueprint' で設計図を生成し、次に 'buildWithCommandBlock' でコマンドブロックによる一括建築を試してください（/fill や /setblock コマンドを使用）。コマンドブロックが使えない場合や権限がない場合は 'buildBlueprint' で手作業で建ててください。建築中の進捗はダッシュボードのログに表示されます（チャットには送らないでください）。設計図を生成したら、'buildWithCommandBlock' または 'buildBlueprint' を引数なしで呼び出してください（設計図は自動的に読み込まれます）。
+- 「家を建てて」「建物を作って」などの指示には、まず 'generateArchitecturalBlueprint' で設計図を生成し、次に 'buildWithCommandBlock' でコマンドブロックによる一括建築を試してください（/fill や /setblock コマンドを使用）。コマンドブロックが使えない場合や権限がない場合は 'buildBlueprint' で手作業で建ててください。建築中の進捗はダッシュボードのログに表示されます（チャットには送らないでください）。設計図を生成したら、'buildWithCommandBlock' または 'buildBlueprint' を引数を空にして呼び出してください（設計図は自動的に読み込まれます。blueprint 引数は絶対に渡さないでください）。
 
 【狩りと食料確保】
 - プレイヤーが「狩りをして」「動物を狩って食料を集めて」などと指示したら、'huntMob' を使ってください。'targetType' は動物だけなら 'animals'、敵対Mobだけなら 'hostiles'、指定がなければ 'any' にします。

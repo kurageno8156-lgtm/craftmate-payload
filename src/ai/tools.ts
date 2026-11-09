@@ -595,13 +595,16 @@ export async function executeBotTool(
         if (cfg.botAllowCommands === false) {
           return { success: false, message: '管理者設定でコマンド実行が無効になっているため、コマンドブロック建築は使えません。buildBlueprint で手作業建築してください。' };
         }
-        // blueprint がJSON文字列で来た場合はパース、無ければ pendingBlueprint を使う
+        // blueprint が空・JSON文字列・無効な場合は pendingBlueprint を使う
         let bp = args.blueprint;
         if (typeof bp === 'string') {
-          try { bp = JSON.parse(bp); } catch { bp = null; }
+          const trimmed = bp.trim();
+          if (trimmed) { try { bp = JSON.parse(trimmed); } catch { bp = null; } }
+          else bp = null;
         }
-        bp = bp || skills.pendingBlueprint;
-        if (!bp || !bp.structure) return { success: false, message: '設計図がありません。先に generateArchitecturalBlueprint を実行してください。' };
+        const isValidBlueprint = (v: any) => v && typeof v === 'object' && (v.structure || v.blocks);
+        if (!isValidBlueprint(bp)) bp = skills.pendingBlueprint;
+        if (!isValidBlueprint(bp)) return { success: false, message: '設計図がありません。先に generateArchitecturalBlueprint を実行してください。' };
         skills.pendingBlueprint = bp;
         const pos = botWrapper.bot?.entity?.position?.floored?.();
         const ox = Number.isFinite(Number(args.originX)) ? Number(args.originX) : (pos?.x ?? 0);
@@ -610,12 +613,15 @@ export async function executeBotTool(
         return await skills.buildWithCommandBlocks(bp, ox, oy, oz);
       }
       case 'buildBlueprint': {
-        // blueprint がJSON文字列/オブジェクトで来た場合はパースして pendingBlueprint に反映
+        // blueprint が空・JSON文字列・無効な場合は pendingBlueprint を使う
         let bp = args.blueprint;
         if (typeof bp === 'string') {
-          try { bp = JSON.parse(bp); } catch { bp = null; }
+          const trimmed = bp.trim();
+          if (trimmed) { try { bp = JSON.parse(trimmed); } catch { bp = null; } }
+          else bp = null;
         }
-        if (bp && bp.structure) skills.pendingBlueprint = bp;
+        const isValidBp = (v: any) => v && typeof v === 'object' && (v.structure || v.blocks);
+        if (isValidBp(bp)) skills.pendingBlueprint = bp;
         return await skills.buildBlueprint();
       }
       case 'getCommandBlockHistory': {
