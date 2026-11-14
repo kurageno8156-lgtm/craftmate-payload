@@ -34,6 +34,18 @@
       </div>
     </header>
 
+    <!-- ワークスペース: チャットルーム + ダッシュボード -->
+    <div class="workspace">
+    <!-- 左サイドバー: チャットルーム -->
+    <aside class="chat-sidebar">
+      <div class="chat-sidebar-header">
+        <span class="chat-sidebar-title" data-i18n="chatRooms">チャットルーム</span>
+        <button id="btn-new-room" class="btn-new-room" type="button" data-i18n="newChatRoom">＋ 新規</button>
+      </div>
+      <div class="chat-room-list" id="chat-room-list"></div>
+      <div class="chat-messages" id="chat-messages"></div>
+    </aside>
+
     <!-- メインコンテンツ -->
     <main class="dashboard-grid">
       <!-- 左カラム: ステータス & インベントリ -->
@@ -135,6 +147,7 @@
         </div>
       </section>
     </main>
+    </div>
   </div>
 
   <div id="settings-modal" class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>

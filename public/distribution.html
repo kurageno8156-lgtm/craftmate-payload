@@ -12,7 +12,7 @@
 <body>
   <header class="site-header">
     <a class="brand" href="distribution.html" aria-label="CraftMate ホーム"><img src="app.ico" alt="" width="36" height="36"><span>CraftMate</span></a>
-    <nav aria-label="メインナビゲーション"><a href="#features">特徴</a><a href="#preview">ダッシュボード</a><a class="nav-download" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe">ダウンロード <span aria-hidden="true">↗</span></a></nav>
+    <nav aria-label="メインナビゲーション"><a href="#features">特徴</a><a href="#preview">ダッシュボード</a><a href="#reviews">レビュー</a><a class="github-button" href="https://github.com/kurageno8156-lgtm/craftmate-payload" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span></a><a class="nav-download" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe">ダウンロード <span aria-hidden="true">↗</span></a></nav>
   </header>
   <main>
     <section class="hero">
@@ -20,7 +20,7 @@
         <p class="eyebrow"><span class="live-dot"></span> MINECRAFT AI AGENT</p>
         <h1>遊び方を伝えたら、<br><span>あとは CraftMate に。</span></h1>
         <p class="hero-description">Minecraftのための自律型AIエージェント。自然な言葉で目標を伝えると、考え、資材を集め、世界の中で行動します。</p>
-        <div class="hero-actions"><a class="download-button" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3h14v-3"/></svg><span><strong>Download for Windows</strong><small>最新バージョンを GitHub Releases から入手</small></span><span class="button-arrow" aria-hidden="true">↗</span></a><span class="requirements"><span aria-hidden="true">▦</span> Windows 10 / 11</span></div>
+        <div class="hero-actions"><a class="download-button" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3h14v-3"/></svg><span><strong>Download for Windows</strong><small>最新バージョンを GitHub Releases から入手</small></span><span class="button-arrow" aria-hidden="true">↗</span></a><span class="requirements"><span aria-hidden="true">▦</span> Windows 10 / 11</span></div>
         <div class="hero-proof"><span>⛏</span> あなたの Minecraft ワールドで動く、ローカル AI エージェント</div>
       </div>
       <div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="hero-glow"></div><div class="pickaxe-mark"><img src="app.ico" alt=""></div><div class="float-card card-task"><span class="card-icon">⌘</span><span><small>ACTIVE TASK</small><strong>木材を集めて作業台を作る</strong></span><i>●</i></div><div class="float-card card-brain"><span class="brain-icon">✳</span><span><small>AI THINKING</small><strong>次のアクションを計画中</strong></span></div><div class="pixel pixel-a"></div><div class="pixel pixel-b"></div><div class="pixel pixel-c"></div></div>
@@ -38,7 +38,98 @@
       <div class="preview-copy"><p class="eyebrow">YOUR CONTROL ROOM</p><h2>状況も、思考も、<br>ひとつの画面に。</h2><p>CraftMate の Web ダッシュボードで、Minecraft の接続状態から AI のアクションログまで確認。指示の送信もブラウザーから行えます。</p><ul class="preview-list"><li><span>✓</span> ボットの体力・満腹度・位置を表示</li><li><span>✓</span> タスクの進行と AI の行動ログを確認</li><li><span>✓</span> ブラウザーから自然な言葉で指示</li></ul></div>
       <div class="dashboard-frame"><div class="frame-top"><div class="window-dots"><i></i><i></i><i></i></div><span>CRAFTMATE CONTROL</span><b>● CONNECTED</b></div><img src="dashboard-preview.svg" alt="CraftMate Web ダッシュボードのプレビュー。ボットの状態、AI 脳、タスクログが表示されています。" width="1200" height="760" loading="lazy"></div>
     </section>
-    <section class="download-cta"><div><p class="eyebrow">READY WHEN YOU ARE</p><h2>次の冒険を、始めよう。</h2><p>CraftMate をダウンロードして、AI と一緒に Minecraft の世界へ。</p></div><a class="download-button" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3h14v-3"/></svg><span><strong>Download for Windows</strong><small>GitHub Releases</small></span><span class="button-arrow" aria-hidden="true">↗</span></a></section>
+    <!-- CraftMateとは？ -->
+    <section class="info-section" id="about">
+      <div class="section-heading"><p class="eyebrow">ABOUT CRAFTMATE</p><h2>CraftMateとは？</h2></div>
+      <div class="about-grid">
+        <div class="about-text">
+          <p>CraftMate は、<strong>Minecraft Java Edition</strong> の世界で一緒に遊んでくれる自律型 AI エージェントです。「家を建てて」「鉄のツルハシを作って」「このモンスターを倒して」といった自然な言葉で指示を出すだけで、AI が状況を判断し、採掘・クラフト・建築・戦闘・会話を自分で進めます。</p>
+          <p>ボットはあなたの Minecraft ワールドにログインして動作します。進行状況や AI の思考は、パソコンのブラウザーに表示される <strong>Web ダッシュボード</strong> でリアルタイムに確認できます。Minecraft のチャットから直接話しかけることもできます。</p>
+          <p>AI エンジンは自分で選べます。Google Gemini、Groq、OpenAI、または自分のパソコンで動く Ollama（無料・オフライン）など、お好みのプロバイダーとモデルを設定画面から切り替えられます。</p>
+        </div>
+        <div class="about-facts">
+          <div class="about-fact"><span class="fact-icon">🧠</span><div><strong>自律的な判断</strong><p>指示を小さなステップに分解し、失敗したら自分で方法を変えて再試行します。</p></div></div>
+          <div class="about-fact"><span class="fact-icon">🏠</span><div><strong>建築もおまかせ</strong><p>設計図を自動生成し、コマンドブロックまたは手作業で家や建物を建てます。</p></div></div>
+          <div class="about-fact"><span class="fact-icon">🛡️</span><div><strong>自動防御</strong><p>敵対モブが近づくと自動で戦い、体力管理や食事も行います。</p></div></div>
+          <div class="about-fact"><span class="fact-icon">💬</span><div><strong>自然な会話</strong><p>チャットで雑談や質問にも答え、過去のやり取りを覚えて文脈を理解します。</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 主な機能（スクリーンショット付き） -->
+    <section class="info-section" id="features-detail">
+      <div class="section-heading"><p class="eyebrow">KEY FEATURES</p><h2>主な機能</h2><p>採掘から建築、戦闘、会話まで。Minecraft の世界でできることを、自然な言葉で指示できます。</p></div>
+      <div class="features-detail-grid">
+        <div class="features-detail-list">
+          <div class="detail-item"><h3>🪓 採掘・クラフト・建築</h3><p>「原木を10個集めて」「石のツルハシを作って」「家を建てて」と伝えるだけ。必要な素材集めから道具作り、設計図の生成と建築まで自動で進めます。</p></div>
+          <div class="detail-item"><h3>⚔️ 戦闘と生存</h3><p>モンスターの討伐、動物の狩り、食料確保、装備の管理を自動で行います。危険を察知すると自動で身を守ります。</p></div>
+          <div class="detail-item"><h3>🖥️ 見える化ダッシュボード</h3><p>体力・満腹度・インベントリ・周囲のエンティティ・AI の思考ログをひと目で確認。指示の送信もブラウザーから行えます。</p></div>
+          <div class="detail-item"><h3>📺 画面共有</h3><p>ボットの一人称視点をブラウザーで見ることができ、何をしているかをリアルタイムに確認できます。</p></div>
+          <div class="detail-item"><h3>💾 記憶と履歴</h3><p>過去の指示と結果を覚えているので、「さっきの続き」「さっき建てた家の隣に…」のような文脈を理解します。</p></div>
+          <div class="detail-item"><h3>🗂️ チャットルーム</h3><p>ダッシュボードのサイドバーで会話をルームごとに整理。履歴はブラウザーに保存され、あとから読み返せます。</p></div>
+        </div>
+        <div class="features-detail-shot">
+          <div class="dashboard-frame"><div class="frame-top"><div class="window-dots"><i></i><i></i><i></i></div><span>CRAFTMATE CONTROL</span><b>● CONNECTED</b></div><img src="dashboard-preview.svg" alt="CraftMate ダッシュボードの画面。ボットの状態、AI の思考ログ、チャットルームが表示されています。" loading="lazy"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 使い方 3ステップ -->
+    <section class="info-section" id="howto">
+      <div class="section-heading"><p class="eyebrow">GET STARTED</p><h2>使い方は3ステップ</h2><p>インストールから AI との会話まで、すぐに始められます。</p></div>
+      <ol class="steps-grid">
+        <li class="step-card"><span class="step-number">1</span><h3>インストール</h3><p>「Download for Windows」から CraftMate_Setup.exe をダウンロードして実行。インストーラーが必要なファイルをすべて配置します。</p></li>
+        <li class="step-card"><span class="step-number">2</span><h3>接続と AI を設定</h3><p>アプリを起動したら設定画面で、使いたい AI プロバイダー（Gemini / Groq / OpenAI / Ollama）と API キーを設定。Minecraft のワールドにボットが参加します。</p></li>
+        <li class="step-card"><span class="step-number">3</span><h3>自然な言葉で指示</h3><p>「こんにちは」「家を建てて」「敵から守って」など、普段の言葉で指示するだけ。ダッシュボードで進行を見守れます。</p></li>
+      </ol>
+    </section>
+
+    <!-- 対応AIプロバイダー -->
+    <section class="info-section" id="providers">
+      <div class="section-heading"><p class="eyebrow">AI PROVIDERS</p><h2>対応AIプロバイダー</h2><p>設定画面から好きな AI を選べます。API キーはあなたのパソコンの中だけで使われます。</p></div>
+      <div class="provider-grid">
+        <div class="provider-card"><span class="provider-name">Google Gemini</span><p>高速で賢い Google の最新モデル。無料枠でも十分に使えます。</p></div>
+        <div class="provider-card"><span class="provider-name">Groq</span><p>超高速推論で応答が速い。Llama などのオープンモデルが使えます。</p></div>
+        <div class="provider-card"><span class="provider-name">OpenAI</span><p>GPT-4o など高性能なモデルを利用できます。</p></div>
+        <div class="provider-card"><span class="provider-name">Ollama</span><p>自分のパソコンで動くローカル AI。API キー不要・完全無料・オフラインでも使えます。</p></div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="info-section" id="faq">
+      <div class="section-heading"><p class="eyebrow">FAQ</p><h2>よくある質問</h2></div>
+      <div class="faq-list">
+        <details class="faq-item"><summary>どの Minecraft バージョンに対応していますか？</summary><p>Java Edition の 1.12 〜 最新版（1.21.x / 26.x 系）に対応しています。設定画面でバージョンを自動検出するか、手動で選べます。</p></details>
+        <details class="faq-item"><summary>AI を使うのにお金はかかりますか？</summary><p>AI プロバイダーによります。Google Gemini には無料枠があり、Ollama を使えば完全に無料・オフラインで動作します。有料 API を使う場合は各プロバイダーの料金体系に従います。</p></details>
+        <details class="faq-item"><summary>API キーは安全ですか？</summary><p>はい。API キーはあなたのパソコンにインストールされた CraftMate の中だけで使われ、外部に送信・公開されることはありません。</p></details>
+        <details class="faq-item"><summary>サバイバルワールドでも使えますか？</summary><p>はい。ただし建築などの多くの操作はクリエイティブモードを前提としています。サバイバルでは、Bot が自分で素材を集めて道具を作る「生存プレイ」モードとして動作します。</p></details>
+        <details class="faq-item"><summary>対応 OS は？</summary><p>Windows 10 / 11 です。インストーラー（CraftMate_Setup.exe）から導入できます。</p></details>
+        <details class="faq-item"><summary>アンインストールはできますか？</summary><p>はい。Windows の「アプリと機能」から CraftMate を削除するか、インストール先の Uninstall.exe を実行してください。設定ファイル（.env）はバックアップとして残ります。</p></details>
+      </div>
+    </section>
+
+    <!-- レビュー -->
+    <section class="info-section" id="reviews">
+      <div class="section-heading"><p class="eyebrow">REVIEWS</p><h2>ユーザーレビュー</h2><p id="review-summary">CraftMate を使った感想を投稿できます。</p></div>
+      <div class="review-layout">
+        <form class="review-form" id="review-form">
+          <h3>レビューを書く</h3>
+          <div class="star-input" id="star-input" role="radiogroup" aria-label="評価">
+            <button type="button" class="star" data-value="1" aria-label="1">★</button>
+            <button type="button" class="star" data-value="2" aria-label="2">★</button>
+            <button type="button" class="star" data-value="3" aria-label="3">★</button>
+            <button type="button" class="star" data-value="4" aria-label="4">★</button>
+            <button type="button" class="star" data-value="5" aria-label="5">★</button>
+          </div>
+          <input type="text" id="review-name" maxlength="30" placeholder="ニックネーム（任意）">
+          <textarea id="review-text" rows="4" maxlength="1000" placeholder="使ってみた感想を書いてください…" required></textarea>
+          <button type="submit" class="review-submit">レビューを投稿</button>
+        </form>
+        <div class="review-list" id="review-list"></div>
+      </div>
+    </section>
+
+    <section class="download-cta"><div><p class="eyebrow">READY WHEN YOU ARE</p><h2>次の冒険を、始めよう。</h2><p>CraftMate をダウンロードして、AI と一緒に Minecraft の世界へ。</p></div><a class="download-button" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3h14v-3"/></svg><span><strong>Download for Windows</strong><small>GitHub Releases</small></span><span class="button-arrow" aria-hidden="true">↗</span></a></section>
   
 
 
@@ -47,122 +138,123 @@
   <details>
     <summary style="cursor: pointer; font-size: 1.2rem; color: #10b981;">過去のバージョン (Previous Versions)</summary>
     <ul style="margin-top: 1rem; line-height: 1.8; list-style: none; padding-left: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem;">
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.110 (最新)</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/archive/refs/tags/v1.3.110.zip" style="color: #10b981;">v1.3.110 (Source)</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.106</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.105</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.104</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.103</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.102</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.101</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.100</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.99</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.98</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.97</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.96</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.95</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.94</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.93</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.92</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.91</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.90</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.89</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.88</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.87</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.86</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.85</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.84</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.83</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.82</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.81</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.80</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.79</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.78</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.77</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.76</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.75</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.74</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.73</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.72</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.71</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.70</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.69</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.68</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.67</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.66</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.65</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.64</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.63</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.62</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.61</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.60</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.59</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.58</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.57</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.56</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.55</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.54</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.53</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.52</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.51</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.50</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.49</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.48</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.47</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.46</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.45</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.44</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.43</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.42</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.41</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.40</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.39</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.38</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.37</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.36</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.35</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.34</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.33</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.32</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.31</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.30</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.29</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.28</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.27</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.26</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.25</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.24</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.23</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.22</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.21</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.20</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.19</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.18</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.17</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.16</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.15</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.14</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.13</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.11</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.10</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.9</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.8</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.7</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.6</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.5</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.4</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.3</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.2</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.1</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.3.0</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.2.0</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.111 (最新)</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/archive/refs/tags/v1.3.111.zip" style="color: #10b981;">v1.3.111 (Source)</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.106</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.105</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.104</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.103</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.102</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.101</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.100</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.99</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.98</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.97</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.96</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.95</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.94</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.93</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.92</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.91</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.90</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.89</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.88</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.87</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.86</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.85</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.84</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.83</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.82</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.81</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.80</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.79</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.78</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.77</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.76</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.75</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.74</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.73</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.72</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.71</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.70</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.69</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.68</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.67</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.66</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.65</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.64</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.63</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.62</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.61</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.60</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.59</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.58</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.57</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.56</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.55</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.54</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.53</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.52</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.51</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.50</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.49</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.48</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.47</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.46</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.45</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.44</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.43</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.42</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.41</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.40</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.39</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.38</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.37</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.36</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.35</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.34</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.33</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.32</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.31</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.30</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.29</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.28</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.27</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.26</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.25</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.24</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.23</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.22</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.21</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.20</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.19</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.18</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.17</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.16</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.15</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.14</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.13</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.11</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.10</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.9</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.8</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.7</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.6</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.5</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.4</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.3</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.2</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.1</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.3.0</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.2.0</a></li>
       <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/archive/refs/tags/v1.3.110.zip" style="color: #10b981;">v1.1.0</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.110/CraftMate_Setup.exe" style="color: #10b981;">v1.0.0</a></li>
+      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.111/CraftMate_Setup.exe" style="color: #10b981;">v1.0.0</a></li>
       
     </ul>
   </details>
 </section>
 </main>
   <footer class="site-footer"><a class="brand" href="distribution.html"><img src="app.ico" alt="" width="27" height="27"><span>CraftMate</span></a><span>Minecraft の冒険に、自律型 AI エージェントを。</span><a href="https://github.com/kurageno8156-lgtm/craftmate-payload">GitHub <span aria-hidden="true">↗</span></a></footer>
+  <script src="distribution.js"></script>
 </body>
 </html>

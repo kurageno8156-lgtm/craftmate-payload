@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -131,44 +132,86 @@ namespace CraftMateLauncher
             string browser = FindBrowser();
             if (browser == null)
             {
-                Log("Edge/Chrome not found. Falling back to default browser.");
-                Process.Start(new ProcessStartInfo(DashboardUrl) { UseShellExecute = true });
+                MessageBox.Show(
+                    "開けるブラウザが見つかりません。ChromeかEdgeをインストールしてください。",
+                    "CraftMate",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
                 return;
             }
             Log("Browser: " + browser);
 
-            string profileDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "CraftMate",
-                "BrowserProfile");
-            Directory.CreateDirectory(profileDirectory);
-
-            string arguments = "--app=\"" + DashboardUrl + "\" --user-data-dir=\"" +
-                profileDirectory + "\" --no-first-run --no-default-browser-check";
-
-            // Chromium has no supported --icon switch for arbitrary app-mode URLs.
-            // The PWA manifest and page favicon provide the CraftMate icon instead.
-            Process browserProcess = Process.Start(new ProcessStartInfo(browser, arguments) { UseShellExecute = false });
-            if (browserProcess == null)
+            try
             {
-                throw new InvalidOperationException("Windows could not start Edge or Chrome.");
+                // Firefox など Chromium 系でないブラウザは --app= を解釈できないため通常起動
+                bool chromium = IsChromiumBrowser(browser);
+                if (!chromium)
+                {
+                    Process.Start(new ProcessStartInfo(browser, "\"" + DashboardUrl + "\"") { UseShellExecute = false });
+                    return;
+                }
+
+                string profileDirectory = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "CraftMate",
+                    "BrowserProfile");
+                Directory.CreateDirectory(profileDirectory);
+
+                string arguments = "--app=\"" + DashboardUrl + "\" --user-data-dir=\"" +
+                    profileDirectory + "\" --no-first-run --no-default-browser-check";
+
+                // Chromium has no supported --icon switch for arbitrary app-mode URLs.
+                // The PWA manifest and page favicon provide the CraftMate icon instead.
+                Process browserProcess = Process.Start(new ProcessStartInfo(browser, arguments) { UseShellExecute = false });
+                if (browserProcess == null)
+                {
+                    throw new InvalidOperationException("Windows could not start the browser.");
+                }
+                browserProcess.Dispose();
             }
-            browserProcess.Dispose();
+            catch (Exception browserError)
+            {
+                Log("Browser launch failed: " + browserError);
+                MessageBox.Show(
+                    "ブラウザの起動に失敗しました: " + browserError.Message,
+                    "CraftMate",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private static bool IsChromiumBrowser(string browserPath)
+        {
+            string name = Path.GetFileName(browserPath).ToLowerInvariant();
+            return name.Contains("chrome") || name.Contains("msedge") || name.Contains("brave")
+                || name.Contains("vivaldi") || name.Contains("opera") || name.Contains("chromium");
+        }
+
+        private static IEnumerable<string> BrowserCandidates()
+        {
+            string pf = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            string pf86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+            // 優先順位: Chrome → Edge → Brave → Vivaldi → Opera → Firefox
+            foreach (string dir in new[] { pf, pf86, local })
+                yield return Path.Combine(dir, "Google", "Chrome", "Application", "chrome.exe");
+            foreach (string dir in new[] { pf, pf86, local })
+                yield return Path.Combine(dir, "Microsoft", "Edge", "Application", "msedge.exe");
+            foreach (string dir in new[] { pf, pf86, local })
+                yield return Path.Combine(dir, "BraveSoftware", "Brave-Browser", "Application", "brave.exe");
+            foreach (string dir in new[] { pf, pf86, local })
+                yield return Path.Combine(dir, "Vivaldi", "Application", "vivaldi.exe");
+            foreach (string dir in new[] { pf, pf86, local })
+                yield return Path.Combine(dir, "Programs", "Opera", "opera.exe");
+            foreach (string dir in new[] { pf, pf86, local, roaming })
+                yield return Path.Combine(dir, "Mozilla Firefox", "firefox.exe");
         }
 
         private static string FindBrowser()
         {
-            string[] candidates = new string[]
-            {
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Google", "Chrome", "Application", "chrome.exe"),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Google", "Chrome", "Application", "chrome.exe"),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Google", "Chrome", "Application", "chrome.exe"),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Google", "Chrome", "Application", "chrome.exe"),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Google", "Chrome", "Application", "chrome.exe"),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Google", "Chrome", "Application", "chrome.exe")
-            };
-
-            foreach (string candidate in candidates)
+            foreach (string candidate in BrowserCandidates())
             {
                 if (File.Exists(candidate)) return candidate;
             }

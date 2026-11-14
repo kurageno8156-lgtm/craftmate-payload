@@ -170,6 +170,11 @@ socket.on('chatMessage', (chat) => {
     timestamp: chat.timestamp,
     thought: `💬 <${chat.sender}> ${chat.text}`,
   });
+  appendRoomMessage('mc', `<${chat.sender}> ${chat.text}`);
+});
+
+socket.on('aiChatMessage', (data) => {
+  if (data && data.text) appendRoomMessage('ai', data.text);
 });
 
 // UI更新関数
@@ -433,6 +438,142 @@ function escapeHtml(str) {
             .replace(/"/g, '&quot;');
 }
 
+// ---- チャットルーム（localStorage に永続化）----
+const chatRoomList = document.getElementById('chat-room-list');
+const chatMessages = document.getElementById('chat-messages');
+const btnNewRoom = document.getElementById('btn-new-room');
+const CHAT_ROOMS_KEY = 'craftmate.chatRooms.v1';
+
+function loadChatState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CHAT_ROOMS_KEY));
+    if (saved && Array.isArray(saved.rooms)) return saved;
+  } catch (e) { /* ignore */ }
+  return { activeId: null, rooms: [] };
+}
+const chatState = loadChatState();
+
+function saveChatState() {
+  try { localStorage.setItem(CHAT_ROOMS_KEY, JSON.stringify(chatState)); } catch (e) { /* ignore */ }
+}
+
+function currentRoom() {
+  return chatState.rooms.find(r => r.id === chatState.activeId) || null;
+}
+
+function isDefaultRoomTitle(title) {
+  return !title || title === translate('newChatRoom') || title === '新しいチャット' || title === 'New chat';
+}
+
+function createRoom() {
+  const room = {
+    id: 'room-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    title: translate('newChatRoom') || '新しいチャット',
+    createdAt: Date.now(),
+    messages: [],
+  };
+  chatState.rooms.unshift(room);
+  chatState.activeId = room.id;
+  saveChatState();
+  renderChatRooms();
+  renderChatMessages();
+  return room;
+}
+
+function ensureRoom() {
+  return currentRoom() || createRoom();
+}
+
+function renderChatRooms() {
+  if (!chatRoomList) return;
+  chatRoomList.innerHTML = '';
+  if (chatState.rooms.length === 0) {
+    const hint = document.createElement('div');
+    hint.className = 'chat-empty-hint';
+    hint.textContent = translate('chatEmptyHint');
+    chatRoomList.appendChild(hint);
+    return;
+  }
+  for (const room of chatState.rooms) {
+    const item = document.createElement('div');
+    item.className = 'chat-room-item' + (room.id === chatState.activeId ? ' active' : '');
+    const label = document.createElement('span');
+    label.className = 'chat-room-title';
+    label.textContent = room.title || translate('newChatRoom');
+    label.title = label.textContent;
+    label.addEventListener('click', () => {
+      chatState.activeId = room.id;
+      saveChatState();
+      renderChatRooms();
+      renderChatMessages();
+    });
+    const del = document.createElement('button');
+    del.className = 'chat-room-delete';
+    del.type = 'button';
+    del.textContent = '×';
+    del.title = translate('deleteChatRoom');
+    del.addEventListener('click', (e) => {
+      e.stopPropagation();
+      chatState.rooms = chatState.rooms.filter(r => r.id !== room.id);
+      if (chatState.activeId === room.id) chatState.activeId = chatState.rooms[0] ? chatState.rooms[0].id : null;
+      saveChatState();
+      renderChatRooms();
+      renderChatMessages();
+    });
+    item.appendChild(label);
+    item.appendChild(del);
+    chatRoomList.appendChild(item);
+  }
+}
+
+function renderChatMessages() {
+  if (!chatMessages) return;
+  chatMessages.innerHTML = '';
+  const room = currentRoom();
+  if (!room || room.messages.length === 0) {
+    const hint = document.createElement('div');
+    hint.className = 'chat-empty-hint';
+    hint.textContent = translate('chatEmptyHint');
+    chatMessages.appendChild(hint);
+    return;
+  }
+  for (const msg of room.messages) {
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble chat-bubble-' + msg.role;
+    const who = document.createElement('div');
+    who.className = 'chat-bubble-who';
+    who.textContent = msg.role === 'user' ? translate('chatYou') : msg.role === 'ai' ? 'CraftMate AI' : translate('chatMinecraft');
+    const body = document.createElement('div');
+    body.className = 'chat-bubble-text';
+    body.textContent = msg.text;
+    bubble.appendChild(who);
+    bubble.appendChild(body);
+    chatMessages.appendChild(bubble);
+  }
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function appendRoomMessage(role, text) {
+  if (!text) return;
+  const room = ensureRoom();
+  room.messages.push({ role, text: String(text), time: Date.now() });
+  if (room.messages.length > 500) room.messages.splice(0, room.messages.length - 500);
+  if (isDefaultRoomTitle(room.title) && role === 'user') {
+    room.title = String(text).slice(0, 30) + (String(text).length > 30 ? '…' : '');
+  }
+  saveChatState();
+  renderChatRooms();
+  renderChatMessages();
+}
+
+on(btnNewRoom, 'click', () => createRoom());
+document.addEventListener('craftmate-language-changed', () => {
+  renderChatRooms();
+  renderChatMessages();
+});
+renderChatRooms();
+renderChatMessages();
+
 // フォーム送信
 on(commandForm, 'submit', (e) => {
   e.preventDefault();
@@ -440,6 +581,7 @@ on(commandForm, 'submit', (e) => {
   const text = commandInput.value.trim();
   if (!text) return;
 
+  appendRoomMessage('user', text);
   socket.emit('sendInstruction', { instruction: text, sender: 'WebDashboard' });
   commandInput.value = '';
 });
@@ -457,6 +599,7 @@ document.querySelectorAll('.quick-btn').forEach(btn => {
       if (cmd === 'ストップ' || cmd === translate('stopInMinecraft')) {
         socket.emit('cancelTask');
       } else {
+        appendRoomMessage('user', cmd);
         socket.emit('sendInstruction', { instruction: cmd, sender: 'WebDashboard' });
       }
     }

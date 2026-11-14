@@ -14,6 +14,28 @@ export class AutonomousAgent extends EventEmitter {
   private abortController: AbortController | null = null;
   private currentExecutionPromise: Promise<void> | null = null;
   private instructionQueue: Promise<void> = Promise.resolve();
+  // 過去タスクの記憶（新しい指示でも文脈を理解できるようにする）
+  private conversationMemory: Array<{ at: string; requester: string; task: string; outcome: string }> = [];
+
+  private rememberTask(requester: string, task: string, outcome: string): void {
+    this.conversationMemory.push({
+      at: new Date().toLocaleString(),
+      requester,
+      task: task.length > 80 ? task.slice(0, 80) + '…' : task,
+      outcome,
+    });
+    if (this.conversationMemory.length > 15) {
+      this.conversationMemory.splice(0, this.conversationMemory.length - 15);
+    }
+  }
+
+  // ユーザーに見せる発言をチャット送信し、ダッシュボードのチャットルームにも記録する
+  private async sayChat(text: string): Promise<void> {
+    const res = await this.botWrapper.skills.chat(text);
+    if (res && res.success !== false) {
+      this.emit('aiChat', { text, timestamp: new Date().toLocaleTimeString() });
+    }
+  }
 
   constructor(botWrapper: MinecraftBot) {
     super();
@@ -48,13 +70,16 @@ export class AutonomousAgent extends EventEmitter {
 
       const executionPromise = (async () => {
         try {
-          await this.runReActLoop(instruction, requester, abortCtrl.signal);
+          const outcome = await this.runReActLoop(instruction, requester, abortCtrl.signal);
+          this.rememberTask(requester, instruction, outcome);
         } catch (err: any) {
           if (abortCtrl.signal.aborted) {
             console.log(`[Agent] Task "${instruction}" was interrupted.`);
+            this.rememberTask(requester, instruction, 'interrupted');
             return;
           }
           console.error('[Agent] Task failed with error:', err.message);
+          this.rememberTask(requester, instruction, 'error');
           const failLog: AgentStepLog = {
             timestamp: new Date().toLocaleTimeString(),
             stepNumber: 0,
@@ -62,7 +87,7 @@ export class AutonomousAgent extends EventEmitter {
             status: 'failure',
           };
           this.emit('stepLog', failLog);
-          await this.botWrapper.skills.chat(`申し訳ありません、タスク中にエラーが発生しました: ${err.message}`);
+          await this.sayChat(`申し訳ありません、タスク中にエラーが発生しました: ${err.message}`);
         } finally {
           if (this.abortController === abortCtrl) {
             this.isProcessing = false;
@@ -83,7 +108,7 @@ export class AutonomousAgent extends EventEmitter {
     await this.instructionQueue;
   }
 
-  private async runReActLoop(goal: string, requester: string, signal: AbortSignal): Promise<void> {
+  private async runReActLoop(goal: string, requester: string, signal: AbortSignal): Promise<string> {
     const maxSteps = this.botWrapper.config.maxAgentSteps;
     const history: Array<{ role: 'user' | 'model' | 'assistant'; content: string }> = [];
 
@@ -135,10 +160,18 @@ export class AutonomousAgent extends EventEmitter {
 - ${this.botWrapper.config.autoEat ? '満腹度が15以下なら autoEat がインベントリにある安全な食料を自動で食べます。食料がない時は、依頼に応じて huntMob で動物を狩るか、食料を入手できる別の行動をしてください。' : 'autoEat は設定で無効です。食料が必要なら huntMob で動物を狩るなど、指示に合った方法で食料を確保してください。'}
 `.trim();
 
+    // 過去のタスク履歴を文脈として注入（「さっきの続き」などに対応）
+    const memoryLines = this.conversationMemory.slice(-8)
+      .map(m => `- ${m.at} | ${m.requester}: "${m.task}" → ${m.outcome}`)
+      .join('\n');
+    const memoryBlock = memoryLines
+      ? `【これまでの会話履歴（文脈理解のための参考）】\n${memoryLines}\n\n`
+      : '';
+
     // 初期メッセージ
     history.push({
       role: 'user',
-      content: `【プレイヤー (${requester}) からの指示】\n"${goal}"\n\n【初期環境状況】\n${this.botWrapper.perception.generateEnvironmentPrompt(goal)}\n\n目標達成のために最初のアクションを実行してください。`,
+      content: `${memoryBlock}【プレイヤー (${requester}) からの指示】\n"${goal}"\n\n【初期環境状況】\n${this.botWrapper.perception.generateEnvironmentPrompt(goal)}\n\n目標達成のために最初のアクションを実行してください。`,
     });
 
     let lastActionFailed = false;
@@ -241,7 +274,7 @@ export class AutonomousAgent extends EventEmitter {
           continue;
         }
 
-        await this.botWrapper.skills.chat(text);
+        await this.sayChat(text);
         chatCount++;
 
         // 雑談・質問（作業指示を含まない目標）には1回の返答で即終了し、余分なLLM呼び出しを省略する
@@ -290,7 +323,7 @@ export class AutonomousAgent extends EventEmitter {
         const completedSummary = summary || '目標を完了しました。';
         // チャット上限・戦闘中は完了報告のチャットを送らない
         if (!guardActive() && chatCount < MAX_CHATS_PER_TASK) {
-          await this.botWrapper.skills.chat(completedSummary);
+          await this.sayChat(completedSummary);
           chatCount++;
         }
         stepLog.status = 'finished';
@@ -357,6 +390,7 @@ export class AutonomousAgent extends EventEmitter {
         remark = remark || `了解！これから「${shortGoal}」に取りかかるね。少し待ってて！`;
         const remarkResult = await this.botWrapper.skills.chat(remark);
         if (remarkResult.success) {
+          this.emit('aiChat', { text: remark, timestamp: new Date().toLocaleTimeString() });
           chatCount++;
           stepLog.observation = `開始の発言: ${remark}`;
           this.emit('stepLog', stepLog);
@@ -422,7 +456,7 @@ ${currentEnv}
 
     if (!taskCompleted && !signal.aborted) {
       const message = `最大${maxSteps}ステップに到達したため停止しました。目標は未完了です。タスクを続けるには新しい指示を送ってください。`;
-      await this.botWrapper.skills.chat(message);
+      await this.sayChat(message);
       this.emit('stepLog', {
         timestamp: new Date().toLocaleTimeString(),
         stepNumber: maxSteps,
@@ -430,6 +464,9 @@ ${currentEnv}
         status: 'failure',
       } as AgentStepLog);
     }
+
+    if (signal.aborted) return 'interrupted';
+    return taskCompleted ? 'completed' : 'max_steps';
   }
 
   /**

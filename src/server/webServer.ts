@@ -736,6 +736,11 @@ export class WebServer {
       this.io.emit('taskFinished', data);
     });
 
+    // AIがチャットで発言した内容をダッシュボードのチャットルームへ転送
+    this.agent.on('aiChat', (data: { text: string; timestamp: string }) => {
+      this.io.emit('aiChatMessage', data);
+    });
+
     this.botWrapper.on('playerMessage', (chat: ChatMessage) => {
       this.io.emit('chatMessage', chat);
     });

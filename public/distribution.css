@@ -10,3 +10,78 @@
 @media(max-width:900px){.hero{grid-template-columns:1.1fr .8fr;min-height:515px;padding-top:75px}.hero-art{transform:scale(.87);margin:0 -30px}.feature-grid{grid-template-columns:repeat(2,1fr)}.preview-section{gap:28px;grid-template-columns:.75fr 1.25fr}.download-cta{margin-left:24px;margin-right:24px}}
 @media(max-width:640px){.site-header{height:65px;padding:0 19px}.brand{font-size:18px}.brand img{width:31px;height:31px}nav{gap:14px;font-size:11px}nav>a:first-child,nav>a:nth-child(2){display:none}nav .nav-download{padding:8px 11px}.hero{display:flex;min-height:0;padding:64px 22px 58px;flex-direction:column;align-items:stretch;gap:9px}.hero h1{font-size:43px}.hero-description{font-size:13px}.hero-art{height:250px;margin:0;transform:scale(.84);transform-origin:center top;margin-bottom:-34px}.card-task{left:4%}.card-brain{right:2%}.feature-section{padding:62px 20px 68px}.section-heading{margin-bottom:27px}.section-heading h2{font-size:27px}.feature-grid{gap:10px}.feature-card{min-height:202px;padding:17px 14px}.feature-card h3{font-size:12px}.feature-card p{font-size:10px}.feature-icon{width:35px;height:35px;margin-bottom:13px}.preview-section{padding:68px 20px;grid-template-columns:1fr;gap:28px}.preview-copy h2{font-size:30px}.dashboard-frame{transform:none;margin:0 -5px}.frame-top{height:32px}.download-cta{margin:0 18px 56px;padding:25px 21px;align-items:flex-start;flex-direction:column}.download-cta h2{font-size:23px}.download-cta .download-button{width:100%;min-width:0}.site-footer{padding:18px 20px;flex-wrap:wrap;gap:8px 15px}.site-footer>span{order:3;width:100%}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
+
+/* GitHub ボタン（ヘッダー） */
+.github-button{color:#e4e4e7;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);padding:9px 14px;border-radius:9px;font-weight:700}
+.github-button:hover{color:#fff;border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.1)}
+
+/* 新規セクション共通 */
+.info-section{max-width:var(--max);margin:0 auto;padding:80px 24px;border-top:1px solid var(--border)}
+.info-section .section-heading{margin-bottom:36px}
+.info-section .section-heading h2{font-size:clamp(26px,3vw,36px)}
+.about-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:start}
+.about-text p{color:#b5b5bf;font-size:14px;line-height:2;margin:0 0 16px}
+.about-text strong{color:var(--text)}
+.about-facts{display:grid;gap:12px}
+.about-fact{display:flex;gap:14px;padding:16px;border:1px solid var(--border);border-radius:13px;background:rgba(42,42,51,.55)}
+.fact-icon{font-size:22px;line-height:1.3}
+.about-fact strong{display:block;font-size:13px;margin-bottom:3px}
+.about-fact p{margin:0;color:#a1a1aa;font-size:11px;line-height:1.75}
+
+/* 主な機能（詳細） */
+.features-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.detail-item{padding:14px 0;border-bottom:1px solid var(--border)}
+.detail-item:last-child{border-bottom:none}
+.detail-item h3{margin:0 0 6px;font-size:14px}
+.detail-item p{margin:0;color:#a1a1aa;font-size:12px;line-height:1.85}
+.features-detail-shot .dashboard-frame{transform:none}
+
+/* 使い方 3ステップ */
+.steps-grid{list-style:none;margin:0 auto;padding:0;max-width:900px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:step}
+.step-card{position:relative;padding:26px 22px 22px;border:1px solid var(--border);border-radius:14px;background:rgba(42,42,51,.6)}
+.step-number{display:inline-grid;place-items:center;width:34px;height:34px;margin-bottom:14px;border-radius:10px;background:rgba(16,185,129,.14);color:#34d399;font:800 15px 'DM Sans',sans-serif}
+.step-card h3{margin:0 0 8px;font-size:14px}
+.step-card p{margin:0;color:#a1a1aa;font-size:11px;line-height:1.85}
+
+/* AIプロバイダー */
+.provider-grid{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.provider-card{padding:20px;border:1px solid var(--border);border-radius:13px;background:rgba(42,42,51,.6);text-align:center}
+.provider-name{display:block;font-weight:800;font-size:14px;margin-bottom:8px;color:#34d399}
+.provider-card p{margin:0;color:#a1a1aa;font-size:11px;line-height:1.75}
+
+/* FAQ */
+.faq-list{max-width:760px;margin:0 auto;display:grid;gap:10px}
+.faq-item{border:1px solid var(--border);border-radius:11px;background:rgba(42,42,51,.5);padding:0}
+.faq-item summary{cursor:pointer;padding:15px 18px;font-size:13px;font-weight:700;color:var(--text);list-style:none}
+.faq-item summary::before{content:'＋ ';color:var(--green);font-weight:800}
+.faq-item[open] summary::before{content:'－ '}
+.faq-item p{margin:0;padding:0 18px 16px;color:#a1a1aa;font-size:12px;line-height:1.85}
+
+/* レビュー */
+.review-layout{max-width:960px;margin:0 auto;display:grid;grid-template-columns:340px 1fr;gap:28px;align-items:start}
+.review-form{padding:22px;border:1px solid var(--border);border-radius:14px;background:rgba(42,42,51,.6);display:grid;gap:12px}
+.review-form h3{margin:0;font-size:14px}
+.review-form input[type="text"],.review-form textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:#1a1a20;color:var(--text);font:inherit;font-size:13px;resize:vertical}
+.review-form input[type="text"]:focus,.review-form textarea:focus{outline:none;border-color:rgba(16,185,129,.5)}
+.star-input{display:flex;gap:4px}
+.star{background:none;border:none;font-size:26px;color:#52525b;cursor:pointer;padding:0;line-height:1;transition:transform .1s}
+.star:hover{transform:scale(1.15)}
+.star.on{color:#fbbf24}
+.review-submit{padding:11px;border:none;border-radius:9px;background:var(--green);color:#062117;font-weight:800;font-size:13px;cursor:pointer}
+.review-submit:hover{filter:brightness(1.08)}
+.review-list{display:grid;gap:12px}
+.review-empty{color:var(--muted);font-size:12px;text-align:center;padding:30px 0}
+.review-card{padding:16px 18px;border:1px solid var(--border);border-radius:12px;background:rgba(42,42,51,.55)}
+.review-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.review-stars{letter-spacing:2px}
+.review-star{color:#3f3f46;font-size:14px}
+.review-star.on{color:#fbbf24}
+.review-meta{color:var(--muted);font-size:11px}
+.review-card-body{margin:0;color:#c8c8cf;font-size:12px;line-height:1.85;white-space:pre-wrap;word-break:break-word}
+
+@media(max-width:900px){
+  .about-grid,.features-detail-grid,.review-layout{grid-template-columns:1fr}
+  .steps-grid{grid-template-columns:1fr}
+  .provider-grid{grid-template-columns:repeat(2,1fr)}
+  nav .github-button{display:none}
+}

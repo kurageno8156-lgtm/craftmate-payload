@@ -24,6 +24,7 @@
       statusIdle: 'IDLE', statusThinking: 'THINKING', statusActing: 'ACTING', statusSuccess: 'SUCCESS', statusError: 'ERROR', statusCompleted: 'COMPLETED', statusCancelled: 'CANCELLED', statusSystem: 'SYSTEM', statusUnknown: 'UNKNOWN',
       overworld: 'Overworld', nether: 'Nether', theEnd: 'The End', daytime: 'Day', nighttime: 'Night', bareHands: 'Bare hands',
       screenShareDesc: 'Share the bot view (for humans)', screenShareTitle: 'Screen share (for humans)', screenShareHelp: 'When on, the bot view is shown in the browser.', screenShareToggleLabel: 'Enable screen share', adminTitle: 'Admin settings', adminHelp: 'Manage permissions granted to the bot. Changes are saved to .env.', adminAllowCommands: 'Allow bot to run Minecraft commands', adminAllowDangerous: 'Allow dangerous commands (/kill, /ban, etc.)', adminAllowFileOps: 'Allow bot file operations (future use)', adminAllowAutoguard: 'Allow bot auto-defense', mcVersionTooNew: 'Minecraft version must be 26.1 or lower.', botScreenTitle: 'Bot view', closeBotScreen: 'Close bot view',
+      chatRooms: 'Chat rooms', newChatRoom: 'New chat', chatEmptyHint: 'No messages yet. Send an instruction to start chatting with the bot.', chatYou: 'You', chatMinecraft: 'Minecraft', deleteChatRoom: 'Delete chat',
     },
     ja: {
       pageTitle: 'Minecraft AI Agent ダッシュボード', connecting: '接続中...', settingsButton: '⚙️ 設定',
@@ -49,6 +50,7 @@
       statusIdle: '待機中', statusThinking: '思考中', statusActing: '行動中', statusSuccess: '成功', statusError: 'エラー', statusCompleted: '完了', statusCancelled: 'キャンセル', statusSystem: 'システム', statusUnknown: '不明',
       overworld: 'オーバーワールド', nether: 'ネザー', theEnd: 'ジ・エンド', daytime: '昼間', nighttime: '夜間', bareHands: '素手',
       screenShareDesc: 'ボット視点の画面共有（人間用）', screenShareTitle: '画面共有（人間用）', screenShareHelp: 'オンにすると、ボットの視点がブラウザに表示されます。', screenShareToggleLabel: '画面共有を有効にする', adminTitle: '管理者設定', adminHelp: 'Botに許可する権限を管理します。変更は .env に保存されます。', adminAllowCommands: 'BotにMinecraftコマンド実行権限を付与', adminAllowDangerous: 'Botに危険なコマンド（/kill, /ban等）の実行を許可', adminAllowFileOps: 'Botにファイル操作権限を付与（将来の拡張用）', adminAllowAutoguard: 'Botに自動防御を許可', mcVersionTooNew: 'Minecraft バージョンは 26.1 以下にしてください。', botScreenTitle: 'ボット視点', closeBotScreen: 'ボット視点を閉じる',
+      chatRooms: 'チャットルーム', newChatRoom: '新しいチャット', chatEmptyHint: 'まだメッセージがありません。指示を送るとボットとの会話がここに表示されます。', chatYou: 'あなた', chatMinecraft: 'Minecraft', deleteChatRoom: 'チャットを削除',
     },
     ko: {
       pageTitle: '마인크래프트 AI 에이전트 대시보드', connecting: '연결 중...', settingsButton: '⚙️ 설정',
