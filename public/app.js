@@ -935,6 +935,7 @@ on(settingsForm, 'submit', async event => {
     botAllowFileOps: document.getElementById('admin-allow-fileops')?.checked !== false,
     botAllowAutoguard: document.getElementById('admin-allow-autoguard')?.checked !== false,
   };
+  console.log('[Settings] Saving payload:', { ...payload, aiApiKey: payload.aiApiKey ? '<set>' : '' });
   try {
     const response = await fetch('/api/settings', {
       method: 'POST',
@@ -943,8 +944,11 @@ on(settingsForm, 'submit', async event => {
       signal: AbortSignal.timeout(8000),
     });
     const result = await response.json();
+    console.log('[Settings] Save response:', response.status, result);
     if (!response.ok) throw new Error(result.error || translate('settingsSaveFailed'));
     apiKeyInput.value = '';
+    // サーバーから再取得してフォームに反映（保存値が正しく読み戻せるか即時検証）
+    await loadSettings();
     showSettingsMessage(result.reconnecting ? translate('reconnecting') : translate('settingsSaved'), 'success');
     if (result.webPortChanged) {
       showSettingsMessage(translate('reopeningPort'), 'success');

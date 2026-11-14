@@ -223,6 +223,25 @@ export class WebServer {
     return supplied.length === this.updateToken.length && timingSafeEqual(supplied, this.updateToken);
   }
 
+  /** 設定保存の診断ログを %TEMP%\CraftMate_server.log に追記（APIキー等の秘密値はマスク） */
+  private debugLog(message: string): void {
+    try {
+      const line = `[${new Date().toISOString()}] ${message}\n`;
+      fs.promises.appendFile(path.join(os.tmpdir(), 'CraftMate_server.log'), line, 'utf8').catch(() => { });
+      console.log('[Debug]', message);
+    } catch { }
+  }
+
+  private maskSecrets(value: unknown): unknown {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = /key|secret|token|password/i.test(k) && typeof v === 'string' && v.length > 0
+        ? `<set:${v.length}chars>` : v;
+    }
+    return out;
+  }
+
   private setupRoutes(): void {
     this.app.get('/api/version', (req, res) => {
       try {
@@ -526,6 +545,7 @@ export class WebServer {
       const config = this.botWrapper.config;
       const portChanged = parsedWebPort !== this.port;
       const minecraftChanged = parsedMcPort !== config.mcPort || username.trim() !== config.mcUsername || selectedMinecraftVersion !== (config.mcVersion || 'auto');
+      this.debugLog(`POST /api/settings received: ${JSON.stringify(this.maskSecrets(req.body))} envPath=${this.envPath}`);
       const updates: Record<string, string> = {
         MC_PORT: String(parsedMcPort),
         MINECRAFT_VERSION: selectedMinecraftVersion || 'auto',
@@ -553,7 +573,9 @@ export class WebServer {
 
       try {
         await this.writeEnvUpdates(updates);
+        this.debugLog(`POST /api/settings .env written OK: keys=${Object.keys(updates).join(',')} -> ${this.envPath}`);
       } catch (error) {
+        this.debugLog(`POST /api/settings .env write FAILED: ${(error as Error).message} path=${this.envPath}`);
         console.error('[Settings] Could not save .env:', error);
         return res.status(500).json({ error: 'Could not save settings to .env.' });
       }
@@ -583,6 +605,7 @@ export class WebServer {
       }
       this.agent.restartAIClient();
       if (minecraftChanged) this.botWrapper.reconnect();
+      this.debugLog(`POST /api/settings applied: portChanged=${portChanged} mcChanged=${minecraftChanged} provider=${selectedProvider} model=${selectedModel}`);
 
       res.json({ success: true, reconnecting: minecraftChanged, webPortChanged: portChanged, webPort: parsedWebPort, provider: selectedProvider, model: selectedModel, mcVersion: config.mcVersion });
       if (portChanged) {
@@ -719,13 +742,17 @@ export class WebServer {
     }
 
     const lines = content.replace(/^\uFEFF/, '').split(/\r?\n/);
+    // 同一キーが複数行ある場合に備え、更新対象キーの既存行をすべて除去してから
+    // 末尾に1行だけ書き直す（dotenv は後勝ちのため、残存する古い行が新値を上書きする事故を防ぐ）
+    const updateKeys = new Set(Object.keys(updates));
+    const kept = lines.filter(line => {
+      const match = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=/.exec(line);
+      return !(match && updateKeys.has(match[1]));
+    });
     for (const [key, value] of Object.entries(updates)) {
-      const line = `${key}=${JSON.stringify(value)}`;
-      const index = lines.findIndex(existing => new RegExp(`^\\s*${key}\\s*=`).test(existing));
-      if (index >= 0) lines[index] = line;
-      else lines.push(line);
+      kept.push(`${key}=${JSON.stringify(value)}`);
     }
-    const output = `${lines.filter((line, index) => index < lines.length - 1 || line !== '').join('\n').trimEnd()}\n`;
+    const output = `${kept.filter((line, index) => index < kept.length - 1 || line !== '').join('\n').trimEnd()}\n`;
     const retryDelays = [50, 100, 150];
     for (let attempt = 0; ; attempt += 1) {
       try {
@@ -887,6 +914,7 @@ export class WebServer {
       this.server.once('error', onError);
       this.server.listen(this.port, () => {
         this.server.removeListener('error', onError);
+        this.debugLog(`WebServer listening on :${this.port} envPath=${this.envPath} cwd=${process.cwd()} execPath=${process.argv[1]}`);
         console.log('\n======================================================');
         console.log(`🌐 Web Dashboard is running at: http://localhost:${this.port}`);
         console.log('======================================================\n');
