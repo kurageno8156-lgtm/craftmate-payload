@@ -11,6 +11,10 @@ import * as fs from 'fs';
 import { randomBytes, timingSafeEqual } from 'crypto';
 import { spawn } from 'child_process';
 import dotenv from 'dotenv';
+import {
+  listChatRooms, createChatRoom, deleteChatRoom, listChatMessages, addChatMessage, setChatRoomTitleIfEmpty,
+  listReviews, addReview,
+} from '../db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -536,6 +540,50 @@ export class WebServer {
     this.app.post('/api/ai/restart', (req, res) => {
       this.agent.restartAIClient();
       res.json({ success: true });
+    });
+
+    // ---- チャットルーム（SQLite 永続化）----
+    this.app.get('/api/chat-rooms', (_req, res) => {
+      res.json({ rooms: listChatRooms() });
+    });
+
+    this.app.post('/api/chat-rooms', (req, res) => {
+      const id = String(req.body?.id || `room-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
+      const title = String(req.body?.title || '').slice(0, 100);
+      res.json({ room: createChatRoom(id, title) });
+    });
+
+    this.app.delete('/api/chat-rooms/:id', (req, res) => {
+      deleteChatRoom(String(req.params.id));
+      res.json({ success: true });
+    });
+
+    this.app.get('/api/chat-rooms/:id/messages', (req, res) => {
+      res.json({ messages: listChatMessages(String(req.params.id)) });
+    });
+
+    this.app.post('/api/chat-rooms/:id/messages', (req, res) => {
+      const sender = String(req.body?.sender || 'user');
+      const content = String(req.body?.content || '');
+      if (!content) return res.status(400).json({ error: 'content is required' });
+      const roomId = String(req.params.id);
+      const message = addChatMessage(roomId, sender, content.slice(0, 4000));
+      // 最初のユーザーメッセージをルーム名にする
+      if (sender === 'user') setChatRoomTitleIfEmpty(roomId, content);
+      res.json({ message });
+    });
+
+    // ---- レビュー（SQLite 永続化・全ユーザー共有）----
+    this.app.get('/api/reviews', (_req, res) => {
+      res.json(listReviews());
+    });
+
+    this.app.post('/api/reviews', (req, res) => {
+      const rating = Math.max(1, Math.min(5, parseInt(String(req.body?.rating), 10) || 0));
+      const name = String(req.body?.name || '').slice(0, 30);
+      const comment = String(req.body?.comment || '').slice(0, 1000);
+      if (!comment.trim()) return res.status(400).json({ error: 'comment is required' });
+      res.json({ review: addReview(rating, name || '匿名', comment.trim()) });
     });
   }
 

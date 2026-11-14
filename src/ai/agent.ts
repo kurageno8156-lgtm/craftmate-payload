@@ -2,6 +2,7 @@ import { MinecraftBot } from '../bot/mcBot.js';
 import { LLMClient, LLMResponse } from './llmClient.js';
 import { executeBotTool } from './tools.js';
 import { AgentStepLog, ChatMessage } from '../types.js';
+import { addAiMemory, getRecentAiMemory } from '../db.js';
 import { EventEmitter } from 'events';
 
 const ACTION_GOAL_PATTERN = /採掘|掘|伐|切|作|クラフト|建|設置|置|取|集め|狩|殺|倒|行|探|拾|mine|craft|build|place|chop|dig|gather|hunt|kill|attack|fight|fetch|get|make|find|go to/i;
@@ -14,18 +15,13 @@ export class AutonomousAgent extends EventEmitter {
   private abortController: AbortController | null = null;
   private currentExecutionPromise: Promise<void> | null = null;
   private instructionQueue: Promise<void> = Promise.resolve();
-  // 過去タスクの記憶（新しい指示でも文脈を理解できるようにする）
-  private conversationMemory: Array<{ at: string; requester: string; task: string; outcome: string }> = [];
 
+  // 過去タスクの記憶を SQLite に永続化（アンインストール後も残る）
   private rememberTask(requester: string, task: string, outcome: string): void {
-    this.conversationMemory.push({
-      at: new Date().toLocaleString(),
-      requester,
-      task: task.length > 80 ? task.slice(0, 80) + '…' : task,
-      outcome,
-    });
-    if (this.conversationMemory.length > 15) {
-      this.conversationMemory.splice(0, this.conversationMemory.length - 15);
+    try {
+      addAiMemory(requester, task, outcome);
+    } catch (err) {
+      console.warn('[Agent] Failed to persist task memory:', err);
     }
   }
 
@@ -161,9 +157,12 @@ export class AutonomousAgent extends EventEmitter {
 `.trim();
 
     // 過去のタスク履歴を文脈として注入（「さっきの続き」などに対応）
-    const memoryLines = this.conversationMemory.slice(-8)
-      .map(m => `- ${m.at} | ${m.requester}: "${m.task}" → ${m.outcome}`)
-      .join('\n');
+    let memoryLines = '';
+    try {
+      memoryLines = getRecentAiMemory(8)
+        .map(m => `- ${new Date(m.created_at).toLocaleString()} | ${m.requester}: "${m.task}" → ${m.outcome}`)
+        .join('\n');
+    } catch { /* DB未初期化時は記憶なしで続行 */ }
     const memoryBlock = memoryLines
       ? `【これまでの会話履歴（文脈理解のための参考）】\n${memoryLines}\n\n`
       : '';

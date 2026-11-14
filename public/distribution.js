@@ -1,9 +1,6 @@
-// CraftMate 配布ページ: ユーザーレビュー（localStorage 保存）
+// CraftMate 配布ページ: ユーザーレビュー（サーバー SQLite 共有）
 (function () {
   'use strict';
-
-  var STORAGE_KEY = 'craftmate.distributionReviews.v1';
-  var MAX_REVIEWS = 100;
 
   var form = document.getElementById('review-form');
   var listEl = document.getElementById('review-list');
@@ -13,20 +10,6 @@
   var starButtons = Array.prototype.slice.call(document.querySelectorAll('#star-input .star'));
   var selectedRating = 0;
 
-  function loadReviews() {
-    try {
-      var saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      if (Array.isArray(saved)) return saved;
-    } catch (e) { /* ignore */ }
-    return [];
-  }
-
-  function saveReviews(reviews) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews.slice(0, MAX_REVIEWS)));
-    } catch (e) { /* ignore */ }
-  }
-
   function starsHtml(rating) {
     var html = '';
     for (var i = 1; i <= 5; i++) {
@@ -35,9 +18,13 @@
     return html;
   }
 
-  function renderReviews() {
+  function formatDate(ts) {
+    try { return new Date(ts).toLocaleDateString('ja-JP'); } catch (e) { return ''; }
+  }
+
+  function renderReviews(data) {
     if (!listEl) return;
-    var reviews = loadReviews();
+    var reviews = (data && data.reviews) || [];
     listEl.innerHTML = '';
 
     if (reviews.length === 0) {
@@ -45,33 +32,41 @@
       empty.className = 'review-empty';
       empty.textContent = 'まだレビューはありません。最初のレビューを投稿してみましょう。';
       listEl.appendChild(empty);
-    } else {
-      var total = reviews.reduce(function (sum, r) { return sum + (r.rating || 0); }, 0);
-      var avg = (total / reviews.length).toFixed(1);
-      if (summaryEl) {
-        summaryEl.textContent = '平均評価 ' + avg + ' / 5（' + reviews.length + '件のレビュー）';
-      }
-      reviews.forEach(function (review) {
-        var card = document.createElement('article');
-        card.className = 'review-card';
-        var head = document.createElement('div');
-        head.className = 'review-card-head';
-        var stars = document.createElement('span');
-        stars.className = 'review-stars';
-        stars.innerHTML = starsHtml(review.rating);
-        var meta = document.createElement('span');
-        meta.className = 'review-meta';
-        meta.textContent = (review.name || '匿名') + ' ・ ' + (review.date || '');
-        head.appendChild(stars);
-        head.appendChild(meta);
-        var body = document.createElement('p');
-        body.className = 'review-card-body';
-        body.textContent = review.text || '';
-        card.appendChild(head);
-        card.appendChild(body);
-        listEl.appendChild(card);
-      });
+      if (summaryEl) summaryEl.textContent = 'CraftMate を使った感想を投稿できます。';
+      return;
     }
+
+    if (summaryEl && typeof data.average === 'number') {
+      summaryEl.textContent = '平均評価 ' + data.average + ' / 5（' + (data.count || reviews.length) + '件のレビュー）';
+    }
+
+    reviews.forEach(function (review) {
+      var card = document.createElement('article');
+      card.className = 'review-card';
+      var head = document.createElement('div');
+      head.className = 'review-card-head';
+      var stars = document.createElement('span');
+      stars.className = 'review-stars';
+      stars.innerHTML = starsHtml(review.rating);
+      var meta = document.createElement('span');
+      meta.className = 'review-meta';
+      meta.textContent = (review.name || '匿名') + ' ・ ' + formatDate(review.created_at);
+      head.appendChild(stars);
+      head.appendChild(meta);
+      var body = document.createElement('p');
+      body.className = 'review-card-body';
+      body.textContent = review.comment || '';
+      card.appendChild(head);
+      card.appendChild(body);
+      listEl.appendChild(card);
+    });
+  }
+
+  function loadReviews() {
+    fetch('/api/reviews')
+      .then(function (res) { return res.ok ? res.json() : { reviews: [], average: 0, count: 0 }; })
+      .then(renderReviews)
+      .catch(function () { renderReviews({ reviews: [] }); });
   }
 
   function updateStarButtons() {
@@ -93,21 +88,26 @@
       e.preventDefault();
       var text = textInput ? textInput.value.trim() : '';
       if (!text || selectedRating < 1) return;
-      var reviews = loadReviews();
-      reviews.unshift({
-        name: nameInput && nameInput.value.trim() ? nameInput.value.trim() : '匿名',
-        rating: selectedRating,
-        text: text,
-        date: new Date().toLocaleDateString('ja-JP')
+      fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating: selectedRating,
+          name: nameInput ? nameInput.value.trim() : '',
+          comment: text
+        })
+      }).then(function (res) {
+        if (!res.ok) throw new Error('post failed');
+        textInput.value = '';
+        if (nameInput) nameInput.value = '';
+        selectedRating = 0;
+        updateStarButtons();
+        loadReviews();
+      }).catch(function () {
+        alert('レビューの投稿に失敗しました。もう一度お試しください。');
       });
-      saveReviews(reviews);
-      textInput.value = '';
-      if (nameInput) nameInput.value = '';
-      selectedRating = 0;
-      updateStarButtons();
-      renderReviews();
     });
   }
 
-  renderReviews();
+  loadReviews();
 })();

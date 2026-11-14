@@ -404,8 +404,7 @@ function createGridEmptyState(message) {
   return empty;
 }
 
-function appendLog(log) {
-  if (!logsContainer) return;
+function buildLogEntry(log) {
   const entry = document.createElement('div');
   entry.className = `log-entry ${log.status || 'acting'}`;
 
@@ -426,8 +425,20 @@ function appendLog(log) {
   }
 
   entry.innerHTML = html;
-  logsContainer.appendChild(entry);
+  return entry;
+}
+
+function appendLog(log) {
+  if (!logsContainer) return;
+  logsContainer.appendChild(buildLogEntry(log));
   logsContainer.scrollTop = logsContainer.scrollHeight;
+  // ルームごとのログとして保存（activeRoomId は後述のチャットルーム初期化で定義）
+  if (typeof activeRoomId !== 'undefined' && activeRoomId && typeof logsForRoom === 'function') {
+    const arr = logsForRoom(activeRoomId);
+    arr.push(log);
+    if (arr.length > 300) arr.splice(0, arr.length - 300);
+    saveRoomLogs();
+  }
 }
 
 function escapeHtml(str) {
@@ -438,87 +449,96 @@ function escapeHtml(str) {
             .replace(/"/g, '&quot;');
 }
 
-// ---- チャットルーム（localStorage に永続化）----
+// ---- チャットルーム（サーバー SQLite 永続化 + ルーム別AIログ）----
 const chatRoomList = document.getElementById('chat-room-list');
 const chatMessages = document.getElementById('chat-messages');
 const btnNewRoom = document.getElementById('btn-new-room');
-const CHAT_ROOMS_KEY = 'craftmate.chatRooms.v1';
+const ROOM_LOGS_KEY = 'craftmate.roomLogs.v1';
+const LEGACY_ROOMS_KEY = 'craftmate.chatRooms.v1';
 
-function loadChatState() {
+let chatRooms = [];
+let activeRoomId = null;
+const roomMessagesCache = {};
+
+function loadRoomLogs() {
   try {
-    const saved = JSON.parse(localStorage.getItem(CHAT_ROOMS_KEY));
-    if (saved && Array.isArray(saved.rooms)) return saved;
-  } catch (e) { /* ignore */ }
-  return { activeId: null, rooms: [] };
+    const saved = JSON.parse(localStorage.getItem(ROOM_LOGS_KEY));
+    return saved && typeof saved === 'object' ? saved : {};
+  } catch (e) { return {}; }
 }
-const chatState = loadChatState();
-
-function saveChatState() {
-  try { localStorage.setItem(CHAT_ROOMS_KEY, JSON.stringify(chatState)); } catch (e) { /* ignore */ }
+const roomLogs = loadRoomLogs();
+function saveRoomLogs() {
+  try { localStorage.setItem(ROOM_LOGS_KEY, JSON.stringify(roomLogs)); } catch (e) { /* ignore */ }
 }
-
-function currentRoom() {
-  return chatState.rooms.find(r => r.id === chatState.activeId) || null;
+function logsForRoom(id) {
+  return roomLogs[id] || (roomLogs[id] = []);
 }
 
-function isDefaultRoomTitle(title) {
-  return !title || title === translate('newChatRoom') || title === '新しいチャット' || title === 'New chat';
+async function apiGet(p) {
+  const r = await fetch(p);
+  if (!r.ok) throw new Error('GET ' + p + ' -> ' + r.status);
+  return r.json();
+}
+async function apiSend(method, p, body) {
+  const r = await fetch(p, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  return r.json();
 }
 
-function createRoom() {
-  const room = {
-    id: 'room-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-    title: translate('newChatRoom') || '新しいチャット',
-    createdAt: Date.now(),
-    messages: [],
-  };
-  chatState.rooms.unshift(room);
-  chatState.activeId = room.id;
-  saveChatState();
+async function refreshRooms(selectId) {
+  try {
+    const data = await apiGet('/api/chat-rooms');
+    chatRooms = data.rooms || [];
+  } catch (e) { chatRooms = []; }
+  if (selectId && chatRooms.find(r => r.id === selectId)) activeRoomId = selectId;
+  else if (!chatRooms.find(r => r.id === activeRoomId)) activeRoomId = chatRooms.length ? chatRooms[0].id : null;
   renderChatRooms();
-  renderChatMessages();
-  return room;
+  if (activeRoomId) await loadRoom(activeRoomId);
+  else { renderChatMessages(); renderActivityLog(); }
 }
 
-function ensureRoom() {
-  return currentRoom() || createRoom();
+async function loadRoom(id) {
+  try {
+    const data = await apiGet('/api/chat-rooms/' + encodeURIComponent(id) + '/messages');
+    roomMessagesCache[id] = data.messages || [];
+  } catch (e) { roomMessagesCache[id] = []; }
+  if (id === activeRoomId) {
+    renderChatMessages();
+    renderActivityLog();
+  }
 }
 
 function renderChatRooms() {
   if (!chatRoomList) return;
   chatRoomList.innerHTML = '';
-  if (chatState.rooms.length === 0) {
+  if (chatRooms.length === 0) {
     const hint = document.createElement('div');
     hint.className = 'chat-empty-hint';
     hint.textContent = translate('chatEmptyHint');
     chatRoomList.appendChild(hint);
     return;
   }
-  for (const room of chatState.rooms) {
+  for (const room of chatRooms) {
     const item = document.createElement('div');
-    item.className = 'chat-room-item' + (room.id === chatState.activeId ? ' active' : '');
+    item.className = 'chat-room-item' + (room.id === activeRoomId ? ' active' : '');
     const label = document.createElement('span');
     label.className = 'chat-room-title';
     label.textContent = room.title || translate('newChatRoom');
     label.title = label.textContent;
     label.addEventListener('click', () => {
-      chatState.activeId = room.id;
-      saveChatState();
+      activeRoomId = room.id;
       renderChatRooms();
-      renderChatMessages();
+      loadRoom(room.id);
     });
     const del = document.createElement('button');
     del.className = 'chat-room-delete';
     del.type = 'button';
     del.textContent = '×';
     del.title = translate('deleteChatRoom');
-    del.addEventListener('click', (e) => {
+    del.addEventListener('click', async (e) => {
       e.stopPropagation();
-      chatState.rooms = chatState.rooms.filter(r => r.id !== room.id);
-      if (chatState.activeId === room.id) chatState.activeId = chatState.rooms[0] ? chatState.rooms[0].id : null;
-      saveChatState();
-      renderChatRooms();
-      renderChatMessages();
+      try { await apiSend('DELETE', '/api/chat-rooms/' + encodeURIComponent(room.id)); } catch (err) { /* ignore */ }
+      delete roomMessagesCache[room.id];
+      await refreshRooms();
     });
     item.appendChild(label);
     item.appendChild(del);
@@ -526,26 +546,30 @@ function renderChatRooms() {
   }
 }
 
+const SENDER_TO_ROLE = { user: 'user', ai: 'ai', minecraft: 'mc' };
+const ROLE_TO_SENDER = { user: 'user', ai: 'ai', mc: 'minecraft' };
+
 function renderChatMessages() {
   if (!chatMessages) return;
   chatMessages.innerHTML = '';
-  const room = currentRoom();
-  if (!room || room.messages.length === 0) {
+  const msgs = activeRoomId ? (roomMessagesCache[activeRoomId] || []) : [];
+  if (msgs.length === 0) {
     const hint = document.createElement('div');
     hint.className = 'chat-empty-hint';
     hint.textContent = translate('chatEmptyHint');
     chatMessages.appendChild(hint);
     return;
   }
-  for (const msg of room.messages) {
+  for (const msg of msgs) {
+    const role = SENDER_TO_ROLE[msg.sender] || 'mc';
     const bubble = document.createElement('div');
-    bubble.className = 'chat-bubble chat-bubble-' + msg.role;
+    bubble.className = 'chat-bubble chat-bubble-' + role;
     const who = document.createElement('div');
     who.className = 'chat-bubble-who';
-    who.textContent = msg.role === 'user' ? translate('chatYou') : msg.role === 'ai' ? 'CraftMate AI' : translate('chatMinecraft');
+    who.textContent = role === 'user' ? translate('chatYou') : role === 'ai' ? 'CraftMate AI' : translate('chatMinecraft');
     const body = document.createElement('div');
     body.className = 'chat-bubble-text';
-    body.textContent = msg.text;
+    body.textContent = msg.content;
     bubble.appendChild(who);
     bubble.appendChild(body);
     chatMessages.appendChild(bubble);
@@ -553,26 +577,77 @@ function renderChatMessages() {
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-function appendRoomMessage(role, text) {
-  if (!text) return;
-  const room = ensureRoom();
-  room.messages.push({ role, text: String(text), time: Date.now() });
-  if (room.messages.length > 500) room.messages.splice(0, room.messages.length - 500);
-  if (isDefaultRoomTitle(room.title) && role === 'user') {
-    room.title = String(text).slice(0, 30) + (String(text).length > 30 ? '…' : '');
+function renderActivityLog() {
+  if (!logsContainer) return;
+  logsContainer.innerHTML = '';
+  const logs = activeRoomId ? logsForRoom(activeRoomId) : [];
+  if (logs.length === 0) {
+    const entry = document.createElement('div');
+    entry.className = 'log-entry system';
+    entry.innerHTML = '<span class="log-time">System</span><span class="log-text">' + escapeHtml(translate('systemReady')) + '</span>';
+    logsContainer.appendChild(entry);
+    return;
   }
-  saveChatState();
-  renderChatRooms();
-  renderChatMessages();
+  logs.forEach(l => logsContainer.appendChild(buildLogEntry(l)));
+  logsContainer.scrollTop = logsContainer.scrollHeight;
 }
 
-on(btnNewRoom, 'click', () => createRoom());
+async function ensureActiveRoom() {
+  if (activeRoomId && chatRooms.find(r => r.id === activeRoomId)) return activeRoomId;
+  const data = await apiSend('POST', '/api/chat-rooms', {});
+  await refreshRooms(data.room ? data.room.id : null);
+  return activeRoomId;
+}
+
+function appendRoomMessage(role, text) {
+  if (!text) return;
+  (async () => {
+    try {
+      const roomId = await ensureActiveRoom();
+      if (!roomId) return;
+      const sender = ROLE_TO_SENDER[role] || 'user';
+      // 楽観的にキャッシュへ追加してからサーバーへ保存
+      (roomMessagesCache[roomId] = roomMessagesCache[roomId] || []).push({ sender, content: String(text), created_at: Date.now() });
+      renderChatMessages();
+      await apiSend('POST', '/api/chat-rooms/' + encodeURIComponent(roomId) + '/messages', { sender, content: String(text) });
+      renderChatRooms(); // タイトルが更新された可能性があるため再描画
+    } catch (e) { console.warn('Failed to save chat message:', e); }
+  })();
+}
+
+// 旧 localStorage 形式のルームをサーバーへ一度だけ移行
+(async function migrateLegacyRooms() {
+  try {
+    const legacy = JSON.parse(localStorage.getItem(LEGACY_ROOMS_KEY));
+    if (!legacy || !Array.isArray(legacy.rooms) || legacy.rooms.length === 0) return;
+    const existing = await apiGet('/api/chat-rooms');
+    if ((existing.rooms || []).length > 0) { localStorage.removeItem(LEGACY_ROOMS_KEY); return; }
+    for (const room of legacy.rooms) {
+      const created = await apiSend('POST', '/api/chat-rooms', { id: room.id, title: room.title || '' });
+      const rid = created.room ? created.room.id : room.id;
+      for (const msg of (room.messages || [])) {
+        await apiSend('POST', '/api/chat-rooms/' + encodeURIComponent(rid) + '/messages', {
+          sender: ROLE_TO_SENDER[msg.role] || 'user',
+          content: msg.text || '',
+        });
+      }
+    }
+    localStorage.removeItem(LEGACY_ROOMS_KEY);
+  } catch (e) { /* 移行失敗は無視 */ }
+})();
+
+on(btnNewRoom, 'click', async () => {
+  try {
+    const data = await apiSend('POST', '/api/chat-rooms', {});
+    await refreshRooms(data.room ? data.room.id : null);
+  } catch (e) { console.warn('Failed to create chat room:', e); }
+});
 document.addEventListener('craftmate-language-changed', () => {
   renderChatRooms();
   renderChatMessages();
+  renderActivityLog();
 });
-renderChatRooms();
-renderChatMessages();
+refreshRooms();
 
 // フォーム送信
 on(commandForm, 'submit', (e) => {
