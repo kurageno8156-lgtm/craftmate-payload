@@ -35,6 +35,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Updater compilation failed.' }
 if (-not (Test-Path -LiteralPath $updaterPath -PathType Leaf)) { throw 'Updater compilation did not create CraftMate_Updater.exe.' }
 & $compiler /nologo /target:winexe "/out:$(Join-Path $projectRoot 'Launcher.exe')" "/win32icon:$iconPath" /r:System.dll /r:System.Windows.Forms.dll $launcherSourcePath
 if ($LASTEXITCODE -ne 0) { throw 'Launcher compilation failed.' }
+# CraftMate.exe はデスクトップショートカットが指す実行ファイル。
+# 必ず最新の Launcher.exe と同一内容にする（古いバイナリが残ると起動しない）。
+Copy-Item -LiteralPath (Join-Path $projectRoot 'Launcher.exe') -Destination (Join-Path $projectRoot 'CraftMate.exe') -Force
 & $compiler /nologo /target:winexe "/out:$screenViewerPath" "/win32icon:$iconPath" /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Web.Extensions.dll (Join-Path $PSScriptRoot 'ScreenViewer.cs')
 if ($LASTEXITCODE -ne 0) { throw 'ScreenViewer compilation failed.' }
 if (-not (Test-Path -LiteralPath $screenViewerPath -PathType Leaf)) { throw 'ScreenViewer compilation did not create CraftMate_ScreenViewer.exe.' }

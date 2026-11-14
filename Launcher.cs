@@ -12,19 +12,33 @@ namespace CraftMateLauncher
     {
         private const string DashboardUrl = "http://localhost:3000";
 
+        // コンソール版(/target:exe)でビルドした場合にデバッグログを出力する。
+        // winexe版ではコンソールが無いため出力は破棄される。
+        private static void Log(string message)
+        {
+            try { Console.WriteLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] " + message); } catch { }
+        }
+
         [STAThread]
         private static void Main(string[] args)
         {
             try
             {
                 string installDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                Log("Install directory: " + installDirectory);
                 if (!IsDashboardReady() && !IsPortOpen())
                 {
+                    Log("Dashboard is not running. Starting server...");
                     StartServer(installDirectory);
+                }
+                else
+                {
+                    Log("Dashboard server is already running.");
                 }
 
                 if (!WaitForDashboard())
                 {
+                    Log("ERROR: Dashboard did not become ready on port 3000.");
                     MessageBox.Show(
                         "CraftMate server did not become ready on port 3000. Check the installation and try again.",
                         "CraftMate",
@@ -33,10 +47,12 @@ namespace CraftMateLauncher
                     return;
                 }
 
+                Log("Dashboard is ready. Launching browser...");
                 LaunchBrowser();
             }
             catch (Exception error)
             {
+                Log("ERROR: " + error);
                 MessageBox.Show("Could not start CraftMate: " + error.Message, "CraftMate", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -62,6 +78,7 @@ namespace CraftMateLauncher
             {
                 throw new InvalidOperationException("Windows could not start the CraftMate server process.");
             }
+            Log("Server process started (PID " + server.Id + ").");
             server.Dispose();
         }
 
@@ -114,9 +131,11 @@ namespace CraftMateLauncher
             string browser = FindBrowser();
             if (browser == null)
             {
+                Log("Edge/Chrome not found. Falling back to default browser.");
                 Process.Start(new ProcessStartInfo(DashboardUrl) { UseShellExecute = true });
                 return;
             }
+            Log("Browser: " + browser);
 
             string profileDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
