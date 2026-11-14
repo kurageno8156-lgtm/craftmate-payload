@@ -480,7 +480,12 @@ ${currentEnv}
         this.botWrapper.guard.stopDefending();
       }
     } catch { }
-    await this.botWrapper.skills.stopActions();
+    // collectBlock.cancelTask() 等が応答しない場合に備え、停止処理全体に
+    // タイムアウトを設ける（APIの /api/cancel がハングするのを防ぐ）
+    await Promise.race([
+      this.botWrapper.skills.stopActions(),
+      new Promise(resolve => setTimeout(resolve, 1500)),
+    ]).catch(() => { });
     if (this.currentExecutionPromise) {
       await Promise.race([
         this.currentExecutionPromise,

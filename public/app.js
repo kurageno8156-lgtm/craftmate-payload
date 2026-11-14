@@ -1085,11 +1085,15 @@ on(document.getElementById('btn-reconnect'), 'click', async event => {
   const button = event.currentTarget;
   button.disabled = true;
   try {
-    const response = await fetch('/api/reconnect', { method: 'POST', signal: AbortSignal.timeout(15000) });
+    const response = await fetch('/api/reconnect', { method: 'POST', signal: AbortSignal.timeout(8000) });
     if (!response.ok) throw new Error(translate('reconnectFailed'));
     showSettingsMessage(translate('reconnectStarted'), 'success');
   } catch (error) {
-    showSettingsMessage(error.message, 'error');
+    if (error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+      showSettingsMessage(translate('processingInBackground'), 'success');
+    } else {
+      showSettingsMessage(error.message, 'error');
+    }
   } finally {
     button.disabled = false;
     refreshHealth();
@@ -1100,12 +1104,16 @@ on(document.getElementById('btn-ai-restart'), 'click', async event => {
   const button = event.currentTarget;
   button.disabled = true;
   try {
-    const response = await fetch('/api/ai/restart', { method: 'POST', signal: AbortSignal.timeout(15000) });
+    const response = await fetch('/api/ai/restart', { method: 'POST', signal: AbortSignal.timeout(8000) });
     if (!response.ok) throw new Error(translate('aiRestartFailed'));
     showSettingsMessage(translate('aiRestarted'), 'success');
     refreshHealth();
   } catch (error) {
-    showSettingsMessage(error.message, 'error');
+    if (error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+      showSettingsMessage(translate('processingInBackground'), 'success');
+    } else {
+      showSettingsMessage(error.message, 'error');
+    }
   } finally {
     button.disabled = false;
   }

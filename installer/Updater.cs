@@ -231,6 +231,30 @@ namespace CraftMateUpdater
                 _status.ForeColor = System.Drawing.Color.DarkGreen;
             }
             _closeButton.Enabled = true;
+            ScheduleWorkerDirCleanup();
+        }
+
+        /// <summary>
+        /// ワーカー自身の実行フォルダ (%TEMP%\CraftMateUpdater-*) は実行中は
+        /// exe がロックされているため削除できない。フォームを閉じた後に
+        /// 別プロセスで遅延削除させ、Temp フォルダの肥大化を防ぐ。
+        /// </summary>
+        private void ScheduleWorkerDirCleanup()
+        {
+            try
+            {
+                string workerDir = Path.GetDirectoryName(Application.ExecutablePath);
+                if (String.IsNullOrEmpty(workerDir)) return;
+                if (workerDir.IndexOf("CraftMateUpdater-", StringComparison.OrdinalIgnoreCase) < 0) return;
+                ProcessStartInfo cleanup = new ProcessStartInfo();
+                cleanup.FileName = "cmd.exe";
+                cleanup.Arguments = "/d /s /c ping 127.0.0.1 -n 5 >nul & rd /s /q \"" + workerDir + "\"";
+                cleanup.UseShellExecute = false;
+                cleanup.CreateNoWindow = true;
+                cleanup.WindowStyle = ProcessWindowStyle.Hidden;
+                Process.Start(cleanup);
+            }
+            catch { }
         }
 
         private void Report(BackgroundWorker worker, int percent, string message)

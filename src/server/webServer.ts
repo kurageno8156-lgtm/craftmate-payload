@@ -47,6 +47,9 @@ export class WebServer {
   private selfCheckTimer: NodeJS.Timeout | null = null;
   private selfCheckFailures: number = 0;
   private lastSelfRestartAt: number = 0;
+  private tempCleanupTimer: NodeJS.Timeout | null = null;
+  private loopLagTimer: NodeJS.Timeout | null = null;
+  private loopLagCount: number = 0;
 
 
   constructor(
@@ -362,6 +365,20 @@ export class WebServer {
         child.once('error', error => {
           this.debugLog(`POST /api/launch-updater spawn error: ${error.message}`);
           console.error('[Updater] Could not start the desktop updater:', error);
+          // フォールバック: cmd.exe の start 経由で起動を試みる
+          try {
+            const fallback = spawn('cmd.exe', ['/d', '/s', '/c', 'start', '""', updaterPath, '--install-dir', this.installationPath()], {
+              cwd: this.installationPath(), detached: true, stdio: 'ignore', windowsHide: true,
+            });
+            fallback.once('error', e => this.debugLog(`launch-updater fallback spawn error: ${e.message}`));
+            fallback.unref();
+            this.debugLog('launch-updater fallback via cmd.exe start issued');
+          } catch (fallbackError) {
+            this.debugLog(`launch-updater fallback failed: ${(fallbackError as Error).message}`);
+          }
+        });
+        child.once('exit', (code, signal) => {
+          this.debugLog(`launch-updater child exited code=${code} signal=${signal}`);
         });
         child.unref();
         this.debugLog(`POST /api/launch-updater spawned pid=${child.pid} ${Date.now() - startedAt}ms`);
@@ -964,7 +981,7 @@ export class WebServer {
             capturing = true;
             try {
               // screenshot-desktop は1フレーム毎に cmd.exe+bat をspawnするため、
-              // 高頻度だとプロセス生成が激しくなりサーバーが不安定になる。300ms間隔に抑える。
+              // 高頻度だとプロセス生成が激しくなりサーバーが不安定になる。500ms間隔に抑える。
               const img = await captureScreenRegion(0, 0, 1920, 1080);
               if (img) {
                 this.lastScreenFrameAt = Date.now();
@@ -975,7 +992,7 @@ export class WebServer {
             } finally {
               capturing = false;
             }
-          }, 300);
+          }, 500);
         }
       });
 
@@ -1055,6 +1072,7 @@ export class WebServer {
         console.log(`🌐 Web Dashboard is running at: http://localhost:${this.port}`);
         console.log('======================================================\n');
         this.startSelfCheck();
+        this.startMaintenance();
       });
     };
     tryListen(0);
@@ -1091,6 +1109,76 @@ export class WebServer {
     }
   }
 
+  /**
+   * 定期メンテナンス: %TEMP% 内の古い CraftMate 関連一時ファイルを削除し、
+   * イベントループの遅延（同期的な重い処理によるブロック）を監視する。
+   */
+  private startMaintenance(): void {
+    void this.cleanupTempFiles();
+    this.tempCleanupTimer = setInterval(() => { void this.cleanupTempFiles(); }, 6 * 60 * 60 * 1000);
+    this.tempCleanupTimer.unref?.();
+
+    let lastTick = Date.now();
+    this.loopLagTimer = setInterval(() => {
+      const now = Date.now();
+      const lag = now - lastTick - 1000;
+      lastTick = now;
+      if (lag > 2000) {
+        this.loopLagCount += 1;
+        this.debugLog(`Event loop lag detected: ${lag}ms (streak=${this.loopLagCount})`);
+        // イベントループが数秒単位でブロックされるとリクエストボディが
+        // 届かず BODY_TIMEOUT になる。連続する場合は自己診断の失敗としてカウントし、
+        // 既存ウォッチドッグの自動再起動に繋げる。
+        this.selfCheckFailures += 1;
+      } else {
+        this.loopLagCount = 0;
+      }
+    }, 1000);
+    this.loopLagTimer.unref?.();
+  }
+
+  /**
+   * %TEMP% 内の古い CraftMate 関連一時ファイルを削除する。
+   * リリース作業フォルダ (CraftMate-release-*)、Updater の作業/ワーカーフォルダ
+   * (CraftMateUpdate-*, CraftMateUpdater-*)、Setup の一時コピーを対象に、
+   * 24時間以上前のものだけを削除する（実行中のワーカーはロックで失敗→スキップ）。
+   */
+  private async cleanupTempFiles(): Promise<void> {
+    try {
+      const tempDir = os.tmpdir();
+      const maxAgeMs = 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      let entries: string[];
+      try {
+        entries = await fs.promises.readdir(tempDir);
+      } catch { return; }
+
+      let removed = 0;
+      for (const name of entries) {
+        const isTarget = name.startsWith('CraftMate-release-')
+          || name.startsWith('CraftMateUpdate-')
+          || name.startsWith('CraftMateUpdater-')
+          || /^CraftMate_Setup_.*\.exe$/i.test(name)
+          || /^craftmate[_-].*\.tmp$/i.test(name);
+        if (!isTarget) continue;
+        const fullPath = path.join(tempDir, name);
+        try {
+          const stat = await fs.promises.stat(fullPath);
+          if (now - stat.mtimeMs < maxAgeMs) continue;
+          if (stat.isDirectory()) {
+            await fs.promises.rm(fullPath, { recursive: true, force: true, maxRetries: 2 });
+          } else {
+            await fs.promises.unlink(fullPath);
+          }
+          removed += 1;
+        } catch { /* 使用中・権限不足はスキップ */ }
+      }
+      if (removed > 0) this.debugLog(`Temp cleanup removed ${removed} stale CraftMate item(s) from ${tempDir}`);
+    } catch (error) {
+      this.debugLog(`Temp cleanup failed: ${(error as Error).message}`);
+    }
+  }
+
   private attemptSelfRestart(): void {
     const now = Date.now();
     // 無限再起動ループ防止: 5分以内の再起動は1回まで
@@ -1124,6 +1212,8 @@ export class WebServer {
   public stop(): void {
     if (this.statusTimer) clearInterval(this.statusTimer);
     if (this.selfCheckTimer) clearInterval(this.selfCheckTimer);
+    if (this.tempCleanupTimer) clearInterval(this.tempCleanupTimer);
+    if (this.loopLagTimer) clearInterval(this.loopLagTimer);
     this.io.close();
   }
 }

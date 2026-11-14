@@ -58,21 +58,29 @@ export class MinecraftBot extends EventEmitter {
       this.reconnectTimeout = null;
     }
 
+    console.log('[Bot] Manual reconnect requested. Closing current connection...');
     this.suppressReconnect = true;
     this.isConnected = false;
     const oldBot = this.bot;
     if (oldBot) {
       this.bot = undefined as unknown as Bot;
+      // 旧botのイベントリスナーを全て除去してから切断する。
+      // quit() は未スポーン状態で例外になることがあるため end() を優先し、
+      // リスナー除去で 'end'/'kicked' 経由の二重スケジュールを防ぐ。
+      try { oldBot.removeAllListeners(); } catch { }
       try {
-        oldBot.quit();
-      } catch (err) {
-        console.warn('[Bot] Could not close the previous connection cleanly:', err);
+        oldBot.end();
+      } catch {
+        try { oldBot.quit(); } catch (err) {
+          console.warn('[Bot] Could not close the previous connection cleanly:', err);
+        }
       }
     }
 
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
       this.suppressReconnect = false;
+      console.log('[Bot] Reconnecting to Minecraft server...');
       this.start();
     }, 500);
   }
