@@ -89,7 +89,9 @@ export class WebServer {
       res.setHeader('Expires', '0');
       next();
     });
-    this.app.use(express.json({ limit: '256kb' }));
+    // body-parser/express.json は環境によってボディ読み取りがハングする
+    // 「wedged」状態が観測されたため、タイムアウト付きの独自パーサーに置き換える
+    this.app.use((req, res, next) => this.readJsonBody(req, res, next));
     const publicPath = path.resolve(__dirname, '../../public');
     this.app.get('/', (_req, res) => {
       try {
@@ -108,6 +110,72 @@ export class WebServer {
         return res.status(400).json({ error: 'The request body must contain valid JSON.', code: 'INVALID_JSON' });
       }
       next(error);
+    });
+  }
+
+  /**
+   * JSONボディを読み取る独自ミドルウェア。
+   * body読み取りが10秒を超えた場合は408を返して無限ハングを防ぐ。
+   * wedged状態の検出・自動復旧は startSelfCheck() のウォッチドッグが担当する。
+   */
+  private readJsonBody(req: express.Request, res: express.Response, next: express.NextFunction): void {
+    const method = req.method.toUpperCase();
+    const mime = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+    const wantsJson = mime === 'application/json' || mime.endsWith('+json');
+    const declaresBody = req.headers['transfer-encoding'] !== undefined || Number(req.headers['content-length'] || 0) > 0;
+
+    if (!wantsJson || !declaresBody || method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+      // JSON以外のボディは読み捨てて接続を健全に保つ
+      if (declaresBody) req.resume();
+      (req as any).body = {};
+      next();
+      return;
+    }
+
+    const chunks: Buffer[] = [];
+    let received = 0;
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      console.error('[Web] Request body timed out (possible wedged state):', req.method, req.url);
+      try {
+        res.status(408).json({ error: 'Request body timed out. The server is unresponsive and will restart automatically.', code: 'BODY_TIMEOUT' });
+      } catch { }
+      try { req.resume(); } catch { }
+    }, 10000);
+    (timer as any).unref?.();
+
+    req.on('data', (chunk: Buffer) => {
+      if (settled) return;
+      received += chunk.length;
+      if (received > 256 * 1024) {
+        settled = true;
+        clearTimeout(timer);
+        try { res.status(413).json({ error: 'Payload too large.', code: 'PAYLOAD_TOO_LARGE' }); } catch { }
+        try { req.resume(); } catch { }
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      try {
+        const text = Buffer.concat(chunks).toString('utf8');
+        (req as any).body = text ? JSON.parse(text) : {};
+      } catch {
+        res.status(400).json({ error: 'The request body must contain valid JSON.', code: 'INVALID_JSON' });
+        return;
+      }
+      next();
+    });
+    req.on('error', () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      next();
     });
   }
 

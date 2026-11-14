@@ -182,7 +182,26 @@ namespace CraftMateUpdater
             string message = e.UserState as string;
             if (String.IsNullOrEmpty(message)) return;
             _status.Text = message;
-            _log.AppendText(DateTime.Now.ToString("HH:mm:ss") + "  " + message + Environment.NewLine);
+            AppendLog(DateTime.Now.ToString("HH:mm:ss") + "  " + message);
+        }
+
+        /// <summary>
+        /// ログ追記。node_modules の数万ファイル分の進捗報告で TextBox が肥大化し
+        /// UIスレッドが応答不能になるのを防ぐため、古い行を間引く。
+        /// </summary>
+        private void AppendLog(string line)
+        {
+            const int MaxLogLength = 120000;
+            _log.AppendText(line + Environment.NewLine);
+            if (_log.TextLength > MaxLogLength)
+            {
+                // 先頭半分を削除してテキスト量を抑える（TextBox の AppendText は
+                // 全文再描画に近いコストがかかるため、長大化すると UI がフリーズする）
+                int cut = _log.TextLength / 2;
+                int newline = _log.Text.IndexOf('\n', cut);
+                if (newline > 0 && newline < _log.TextLength - 1)
+                    _log.Text = _log.Text.Substring(newline + 1);
+            }
             _log.SelectionStart = _log.TextLength;
             _log.ScrollToCaret();
         }
@@ -192,7 +211,7 @@ namespace CraftMateUpdater
             if (e.Error != null)
             {
                 _status.Text = "アップデートに失敗しました。ログを確認してください。";
-                _log.AppendText(DateTime.Now.ToString("HH:mm:ss") + "  エラー: " + e.Error.Message + Environment.NewLine);
+                AppendLog(DateTime.Now.ToString("HH:mm:ss") + "  エラー: " + e.Error.Message);
                 _status.ForeColor = System.Drawing.Color.DarkRed;
             }
             else if (e.Result is UpdateOutcome && (UpdateOutcome)e.Result == UpdateOutcome.Updated)
@@ -480,6 +499,10 @@ namespace CraftMateUpdater
             using (ZipArchive archive = ZipFile.OpenRead(archivePath))
             {
                 int count = 0;
+                int total = archive.Entries.Count;
+                // node_modules は数万ファイルになるため、報告は最大100回程度に抑える
+                // （報告のたびにUIへメッセージが飛び、ログ追記コストが累積してフリーズするのを防ぐ）
+                int reportEvery = Math.Max(20, total / 100);
                 foreach (ZipArchiveEntry entry in archive.Entries)
                 {
                     string destination = Path.GetFullPath(Path.Combine(stageDirectory, entry.FullName));
@@ -494,10 +517,9 @@ namespace CraftMateUpdater
                         entry.ExtractToFile(destination, true);
                     }
                     count++;
-                    // 進捗%を実際の解凍率に連動させ、イベント過多を防ぐため5件毎に報告
-                    if (count % 5 == 0 || count == archive.Entries.Count)
-                        Report(worker, 58 + (int)(count / (double)archive.Entries.Count * 4),
-                            "ZIP を解凍中... " + count + "/" + archive.Entries.Count + ": " + entry.FullName);
+                    if (count % reportEvery == 0 || count == total)
+                        Report(worker, 58 + (int)(count / (double)total * 4),
+                            "ZIP を解凍中... " + count + "/" + total);
                 }
             }
             Report(worker, 62, "ZIP の解凍が完了しました。ファイルを置き換えています...");
