@@ -75,6 +75,7 @@ export class WebServer {
     this.io = new SocketIOServer(this.server, {
       cors: { origin: '*' },
     });
+    this.installEarlyBodyCapture();
 
     this.setupMiddlewares();
     this.setupRoutes();
@@ -114,6 +115,52 @@ export class WebServer {
   }
 
   /**
+   * wedged対策: JSONボディをサーバーの 'request' イベント最速段階でバッファする。
+   * Express到達前に何らかの理由で req が resume/flowing 化され 'data'/'end' が
+   * 誰にも届かず破棄されるケースを根絶する。socket.io の polling パスは除外する
+   * （Engine.IO が自身でボディを読むため）。
+   */
+  private installEarlyBodyCapture(): void {
+    this.server.prependListener('request', (req, res) => {
+      try {
+        const url = req.url || '';
+        if (url.startsWith('/socket.io')) return;
+        const method = (req.method || '').toUpperCase();
+        if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return;
+        const mime = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+        const wantsJson = mime === 'application/json' || mime.endsWith('+json');
+        if (!wantsJson) return;
+        const hasBody = req.headers['transfer-encoding'] !== undefined || Number(req.headers['content-length'] || 0) > 0;
+        if (!hasBody) return;
+
+        const r = req as any;
+        r.__jsonBodyChunks = [] as Buffer[];
+        r.__jsonBodyBytes = 0;
+        r.__jsonBodyDone = false;
+        r.__jsonBodyError = false;
+        r.__jsonBodyTooLarge = false;
+        req.on('data', (chunk: Buffer) => {
+          if (r.__jsonBodyTooLarge) return;
+          r.__jsonBodyBytes += chunk.length;
+          if (r.__jsonBodyBytes > 512 * 1024) {
+            r.__jsonBodyTooLarge = true;
+            return;
+          }
+          r.__jsonBodyChunks.push(chunk);
+        });
+        const finish = () => {
+          if (r.__jsonBodyDone) return;
+          r.__jsonBodyDone = true;
+        };
+        req.on('end', finish);
+        req.on('error', () => { r.__jsonBodyError = true; finish(); });
+        req.on('aborted', () => { r.__jsonBodyError = true; finish(); });
+        req.on('close', () => { if (!req.complete) { r.__jsonBodyError = true; finish(); } });
+      } catch { }
+    });
+  }
+
+  /**
    * JSONボディを読み取る独自ミドルウェア。
    * body読み取りが10秒を超えた場合は408を返して無限ハングを防ぐ。
    * wedged状態の検出・自動復旧は startSelfCheck() のウォッチドッグが担当する。
@@ -132,13 +179,56 @@ export class WebServer {
       return;
     }
 
+    const r = req as any;
+    // installEarlyBodyCapture がバッファ済みならそれを使う（最も確実）
+    const useEarlyBuffer = Array.isArray(r.__jsonBodyChunks);
+
+    const finishWithBody = (): void => {
+      if (r.__jsonBodyTooLarge) {
+        try { res.status(413).json({ error: 'Payload too large.', code: 'PAYLOAD_TOO_LARGE' }); } catch { }
+        return;
+      }
+      try {
+        const chunks: Buffer[] = useEarlyBuffer ? r.__jsonBodyChunks : [];
+        const text = Buffer.concat(chunks).toString('utf8');
+        (req as any).body = text ? JSON.parse(text) : {};
+        next();
+      } catch {
+        res.status(400).json({ error: 'The request body must contain valid JSON.', code: 'INVALID_JSON' });
+      }
+    };
+
+    if (useEarlyBuffer) {
+      // バッファ完了をポーリング（'end' がミドルウェア到達前に発火済みでも拾える）
+      const startedAt = Date.now();
+      const poll = setInterval(() => {
+        if (!r.__jsonBodyDone) {
+          if (Date.now() - startedAt > 10000) {
+            clearInterval(poll);
+            console.error('[Web] Request body timed out (possible wedged state):', req.method, req.url,
+              `bytes=${r.__jsonBodyBytes} flowing=${req.readableFlowing} ended=${req.readableEnded} complete=${req.complete}`);
+            try { res.status(408).json({ error: 'Request body timed out. The server is unresponsive and will restart automatically.', code: 'BODY_TIMEOUT' }); } catch { }
+            try { req.resume(); } catch { }
+          }
+          return;
+        }
+        clearInterval(poll);
+        finishWithBody();
+      }, 20);
+      (poll as any).unref?.();
+      // 既に完了済みなら即時処理
+      if (r.__jsonBodyDone) { clearInterval(poll); finishWithBody(); }
+      return;
+    }
+
+    // フォールバック: early capture が無い場合はストリームを直接読む
     const chunks: Buffer[] = [];
     let received = 0;
     let settled = false;
     const timer = setTimeout(() => {
       if (settled) return;
       settled = true;
-      console.error('[Web] Request body timed out (possible wedged state):', req.method, req.url);
+      console.error('[Web] Request body timed out (fallback path):', req.method, req.url);
       try {
         res.status(408).json({ error: 'Request body timed out. The server is unresponsive and will restart automatically.', code: 'BODY_TIMEOUT' });
       } catch { }
@@ -254,17 +344,30 @@ export class WebServer {
     });
 
     this.app.post('/api/launch-updater', (req, res) => {
-      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'The updater can be launched only from the authenticated local dashboard.' });
+      const startedAt = Date.now();
+      this.debugLog('POST /api/launch-updater start');
+      if (!this.isLocalUpdateRequest(req, true)) {
+        this.debugLog('POST /api/launch-updater rejected: not a local authenticated request');
+        return res.status(403).json({ error: 'The updater can be launched only from the authenticated local dashboard.' });
+      }
       const updaterPath = path.join(this.installationPath(), 'CraftMate_Updater.exe');
-      if (!fs.existsSync(updaterPath)) return res.status(404).json({ error: 'CraftMate_Updater.exe was not found. Reinstall CraftMate to add the updater.' });
+      if (!fs.existsSync(updaterPath)) {
+        this.debugLog(`POST /api/launch-updater failed: updater not found at ${updaterPath}`);
+        return res.status(404).json({ error: 'CraftMate_Updater.exe was not found. Reinstall CraftMate to add the updater.' });
+      }
       try {
         const child = spawn(updaterPath, ['--install-dir', this.installationPath()], {
           cwd: this.installationPath(), detached: true, stdio: 'ignore', windowsHide: true,
         });
-        child.once('error', error => console.error('[Updater] Could not start the desktop updater:', error));
+        child.once('error', error => {
+          this.debugLog(`POST /api/launch-updater spawn error: ${error.message}`);
+          console.error('[Updater] Could not start the desktop updater:', error);
+        });
         child.unref();
+        this.debugLog(`POST /api/launch-updater spawned pid=${child.pid} ${Date.now() - startedAt}ms`);
         res.status(202).json({ success: true });
       } catch (error) {
+        this.debugLog(`POST /api/launch-updater FAILED ${Date.now() - startedAt}ms: ${(error as Error).message}`);
         console.error('[Updater] Could not start the desktop updater:', error);
         res.status(500).json({ error: 'Could not start CraftMate_Updater.exe.' });
       }
@@ -316,7 +419,12 @@ export class WebServer {
     });
 
     this.app.get('/api/backup', (req, res) => {
-      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Backups are available only to the authenticated local dashboard.' });
+      const startedAt = Date.now();
+      this.debugLog(`GET /api/backup start remote=${req.socket.remoteAddress}`);
+      if (!this.isLocalUpdateRequest(req, true)) {
+        this.debugLog('GET /api/backup rejected: not a local authenticated request');
+        return res.status(403).json({ error: 'Backups are available only to the authenticated local dashboard.' });
+      }
       try {
         let env = '';
         try { env = fs.readFileSync(this.envPath, 'utf8'); }
@@ -328,14 +436,21 @@ export class WebServer {
         const fileName = `craftmate_backup_${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.json`;
         res.setHeader('Cache-Control', 'no-store');
         res.json({ format: 'craftmate-settings-backup', version: 1, createdAt: now.toISOString(), fileName, env });
+        this.debugLog(`GET /api/backup done ${Date.now() - startedAt}ms fileName=${fileName}`);
       } catch (error) {
+        this.debugLog(`GET /api/backup FAILED ${Date.now() - startedAt}ms: ${(error as Error).message}`);
         console.error('[Backup] Could not read .env:', error);
         res.status(500).json({ error: 'Could not create a settings backup.' });
       }
     });
 
     this.app.post('/api/restore', async (req, res) => {
-      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Restore is available only to the authenticated local dashboard.' });
+      const startedAt = Date.now();
+      this.debugLog(`POST /api/restore start`);
+      if (!this.isLocalUpdateRequest(req, true)) {
+        this.debugLog('POST /api/restore rejected: not a local authenticated request');
+        return res.status(403).json({ error: 'Restore is available only to the authenticated local dashboard.' });
+      }
       const body = req.body as unknown;
       if (!body || typeof body !== 'object' || Array.isArray(body)) {
         return res.status(400).json({ error: 'This is not a supported CraftMate settings backup.', code: 'INVALID_BACKUP_DATA' });
@@ -447,8 +562,10 @@ export class WebServer {
       this.agent.restartAIClient();
       if (minecraftChanged) this.botWrapper.reconnect();
 
-      res.json({ success: true, reconnecting: minecraftChanged, webPortChanged: portChanged, webPort });
+      this.debugLog(`POST /api/restore .env replaced OK ${Date.now() - startedAt}ms portChanged=${portChanged} mcChanged=${minecraftChanged}`);
+      res.json({ success: true, reconnecting: minecraftChanged, webPortChanged: portChanged, webPort, provider, model: this.getModelName() });
       if (portChanged) setTimeout(() => this.changePort(webPort), 300);
+      this.debugLog(`POST /api/restore done ${Date.now() - startedAt}ms`);
     });
 
     this.app.get('/api/status', (req, res) => {
@@ -614,27 +731,46 @@ export class WebServer {
     });
 
     this.app.post('/api/command', async (req, res) => {
-      const { instruction, sender } = req.body;
+      const { instruction, sender } = req.body || {};
       if (!instruction) {
         return res.status(400).json({ error: '指示(instruction)が必要です' });
       }
-      this.agent.handleInstruction(instruction, sender || 'WebDashboard');
+      this.debugLog(`POST /api/command: "${String(instruction).slice(0, 120)}"`);
+      // handleInstruction は内部でキューイングされるため await しない（長時間タスクでAPIを塞がない）
+      void this.agent.handleInstruction(instruction, sender || 'WebDashboard');
       res.json({ success: true, message: 'タスクを開始しました' });
     });
 
     this.app.post('/api/cancel', async (req, res) => {
+      this.debugLog('POST /api/cancel');
       await this.agent.cancelTask();
       res.json({ success: true, message: 'タスクを中断しました' });
     });
 
     this.app.post('/api/reconnect', (req, res) => {
-      this.botWrapper.reconnect();
-      res.json({ success: true });
+      const startedAt = Date.now();
+      this.debugLog('POST /api/reconnect start');
+      try {
+        this.botWrapper.reconnect();
+        this.debugLog(`POST /api/reconnect done ${Date.now() - startedAt}ms`);
+        res.json({ success: true });
+      } catch (error) {
+        this.debugLog(`POST /api/reconnect FAILED ${Date.now() - startedAt}ms: ${(error as Error).message}`);
+        res.status(500).json({ error: 'Reconnect failed.' });
+      }
     });
 
     this.app.post('/api/ai/restart', (req, res) => {
-      this.agent.restartAIClient();
-      res.json({ success: true });
+      const startedAt = Date.now();
+      this.debugLog('POST /api/ai/restart start');
+      try {
+        this.agent.restartAIClient();
+        this.debugLog(`POST /api/ai/restart done ${Date.now() - startedAt}ms`);
+        res.json({ success: true });
+      } catch (error) {
+        this.debugLog(`POST /api/ai/restart FAILED ${Date.now() - startedAt}ms: ${(error as Error).message}`);
+        res.status(500).json({ error: 'AI restart failed.' });
+      }
     });
 
     // ---- チャットルーム（SQLite 永続化）----

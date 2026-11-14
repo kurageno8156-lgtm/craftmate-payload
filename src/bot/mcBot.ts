@@ -179,6 +179,8 @@ export class MinecraftBot extends EventEmitter {
     this.bot.on('messagestr', (messageStr: string) => {
       if (this.bot !== connectedBot) return;
       if (!messageStr) return;
+      // 受信チャットの診断ログ（ダッシュボードに反映されない問題の切り分け用）
+      console.log(`[Chat:raw] ${messageStr}`);
       const trimmed = messageStr.trim();
       const chatMatch = trimmed.match(/^<([^>]+)>\s+(.+)$/);
       if (chatMatch) {
@@ -215,14 +217,21 @@ export class MinecraftBot extends EventEmitter {
 
     this.bot.on('kicked', (reason: any) => {
       if (this.bot !== connectedBot) return;
-      let reasonStr = reason;
-      try {
-        if (typeof reason === 'object') {
-          reasonStr = reason.text || reason.value || JSON.stringify(reason);
+      let reasonStr = typeof reason === 'string' ? reason : '';
+      if (!reasonStr) {
+        try {
+          if (reason && typeof reason === 'object') {
+            const r = reason as any;
+            reasonStr = r.text || r.value || r.message || r.translate || '';
+            if (!reasonStr) reasonStr = JSON.stringify(reason);
+          } else if (reason !== undefined && reason !== null) {
+            reasonStr = String(reason);
+          }
+        } catch {
+          reasonStr = '[unprintable reason]';
         }
-      } catch {
-        // ignore
       }
+      if (!reasonStr) reasonStr = '(no reason)';
       console.warn(`[Bot] ⚠️ Kicked from server: ${reasonStr}`);
       this.isConnected = false;
       this.emit('kicked', reasonStr);
