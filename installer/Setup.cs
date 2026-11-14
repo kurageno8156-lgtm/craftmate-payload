@@ -368,9 +368,9 @@ namespace CraftMateSetup
         private ProgressBar _progressBar;
         private PictureBox _picAppIcon;
 
-        private const string CurrentVersion = "1.3.102";
+        private const string CurrentVersion = "1.3.101";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.102/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.101/app_payload.zip";
 
         public InstallerForm(string lang)
         {
@@ -609,45 +609,13 @@ namespace CraftMateSetup
 
                     Invoke(new Action(delegate { _txtLog.AppendText(UITexts.Get(_lang, "CreatingShortcuts") + "\r\n"); }));
 
-                    
-// --- Launcher.exe のコピー ---
-string srcLauncher = Path.Combine(extractDir, "Launcher.exe");
-string dstLauncher = Path.Combine(installDir, "Launcher.exe");
-if (File.Exists(srcLauncher)) {
-    File.Copy(srcLauncher, dstLauncher, true);
-}
-// ----------------------------
-CreateShortcut(Path.Combine(desktopDirectory, "CraftMate.lnk"), executable, target);
-                    
-// --- Launcher.exe のコピー ---
-string srcLauncher = Path.Combine(extractDir, "Launcher.exe");
-string dstLauncher = Path.Combine(installDir, "Launcher.exe");
-if (File.Exists(srcLauncher)) {
-    File.Copy(srcLauncher, dstLauncher, true);
-}
-// ----------------------------
-CreateShortcut(Path.Combine(startMenuFolder, "CraftMate.lnk"), executable, target);
-                    
-// --- Launcher.exe のコピー ---
-string srcLauncher = Path.Combine(extractDir, "Launcher.exe");
-string dstLauncher = Path.Combine(installDir, "Launcher.exe");
-if (File.Exists(srcLauncher)) {
-    File.Copy(srcLauncher, dstLauncher, true);
-}
-// ----------------------------
-CreateShortcut(Path.Combine(startMenuFolder, "CraftMate Updater.lnk"), updaterExecutable, target);
+                    CreateShortcut(Path.Combine(desktopDirectory, "CraftMate.lnk"), executable, target);
+                    CreateShortcut(Path.Combine(startMenuFolder, "CraftMate.lnk"), executable, target);
+                    CreateShortcut(Path.Combine(startMenuFolder, "CraftMate Updater.lnk"), updaterExecutable, target);
                     string screenViewerExecutable = Path.Combine(target, "CraftMate_ScreenViewer.exe");
                     if (File.Exists(screenViewerExecutable))
                     {
-                        
-// --- Launcher.exe のコピー ---
-string srcLauncher = Path.Combine(extractDir, "Launcher.exe");
-string dstLauncher = Path.Combine(installDir, "Launcher.exe");
-if (File.Exists(srcLauncher)) {
-    File.Copy(srcLauncher, dstLauncher, true);
-}
-// ----------------------------
-CreateShortcut(Path.Combine(startMenuFolder, "CraftMate 画面共有ビューア.lnk"), screenViewerExecutable, target);
+                        CreateShortcut(Path.Combine(startMenuFolder, "CraftMate 画面共有ビューア.lnk"), screenViewerExecutable, target);
                     }
 
                     Invoke(new Action(delegate { _txtLog.AppendText(UITexts.Get(_lang, "ShortcutsCreated") + "\r\n"); }));
@@ -819,15 +787,7 @@ CreateShortcut(Path.Combine(startMenuFolder, "CraftMate 画面共有ビューア
             }
         }
 
-        private static void 
-// --- Launcher.exe のコピー ---
-string srcLauncher = Path.Combine(extractDir, "Launcher.exe");
-string dstLauncher = Path.Combine(installDir, "Launcher.exe");
-if (File.Exists(srcLauncher)) {
-    File.Copy(srcLauncher, dstLauncher, true);
-}
-// ----------------------------
-CreateShortcut(string shortcutPath, string targetPath, string workingDirectory)
+        private static void CreateShortcut(string shortcutPath, string targetPath, string workingDirectory)
         {
             targetPath = Path.GetFullPath(targetPath);
             workingDirectory = Path.GetFullPath(workingDirectory);
@@ -850,15 +810,7 @@ CreateShortcut(string shortcutPath, string targetPath, string workingDirectory)
             object shortcut = null;
             try
             {
-                shortcut = shellType.InvokeMember("
-// --- Launcher.exe のコピー ---
-string srcLauncher = Path.Combine(extractDir, "Launcher.exe");
-string dstLauncher = Path.Combine(installDir, "Launcher.exe");
-if (File.Exists(srcLauncher)) {
-    File.Copy(srcLauncher, dstLauncher, true);
-}
-// ----------------------------
-CreateShortcut", BindingFlags.InvokeMethod, null, shell, new object[] { shortcutPath });
+                shortcut = shellType.InvokeMember("CreateShortcut", BindingFlags.InvokeMethod, null, shell, new object[] { shortcutPath });
                 Type shortcutType = shortcut.GetType();
                 shortcutType.InvokeMember("TargetPath", BindingFlags.SetProperty, null, shortcut, new object[] { targetPath });
                 shortcutType.InvokeMember("WorkingDirectory", BindingFlags.SetProperty, null, shortcut, new object[] { workingDirectory });
