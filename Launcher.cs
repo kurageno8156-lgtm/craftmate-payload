@@ -86,6 +86,22 @@ namespace CraftMateLauncher
                 return;
             }
 
+            // TCPは開いているがHTTPが応答しない「 wedged 」状態のサーバーを検出する。
+            // この状態ではダッシュボードのボタンが全て反応しなくなるため、起動を中止して再起動を促す。
+            if (!VerifyDashboardHttp())
+            {
+                Log("ERROR: Server accepts TCP connections but does not respond to HTTP.");
+                MessageBox.Show(
+                    "CraftMate server is not responding. Another instance may be stuck." +
+                    Environment.NewLine + "Please restart CraftMate (or reboot the PC) and try again." +
+                    Environment.NewLine + Environment.NewLine +
+                    "詳細ログ: " + LogPath,
+                    "CraftMate",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
+            }
+
             Log("Server is ready. Launching browser...");
             LaunchBrowser();
         }
@@ -236,6 +252,95 @@ namespace CraftMateLauncher
                 Thread.Sleep(1000);
             }
             return false;
+        }
+
+        /// <summary>
+        /// TCP接続は成功するがHTTPが応答しない「wedged」状態のサーバーを検出する。
+        /// GET /api/version に加え、body付きPOST（/api/command に空JSON）でも応答を確認する。
+        /// body解析でハングするサーバーはダッシュボードの全ボタンが無反応になるため起動を中止する。
+        /// </summary>
+        private static bool VerifyDashboardHttp()
+        {
+            // 1) GET /api/version でHTTP自体が生きているか確認
+            bool getOk = false;
+            for (int attempt = 0; attempt < 3 && !getOk; attempt++)
+            {
+                try
+                {
+                    System.Net.HttpWebRequest request =
+                        (System.Net.HttpWebRequest)System.Net.WebRequest.Create(DashboardUrl + "/api/version");
+                    request.Timeout = 3000;
+                    request.ReadWriteTimeout = 3000;
+                    using (System.Net.HttpWebResponse response =
+                        (System.Net.HttpWebResponse)request.GetResponse())
+                    {
+                        getOk = (int)response.StatusCode < 500;
+                    }
+                }
+                catch (System.Net.WebException webError)
+                {
+                    if (webError.Response != null)
+                    {
+                        try { webError.Response.Close(); } catch { }
+                        getOk = true; // HTTPエラー応答 = サーバーは生きている
+                    }
+                    else Log("GET /api/version attempt " + (attempt + 1) + " failed: " + webError.Message);
+                }
+                catch (Exception ex)
+                {
+                    Log("GET /api/version attempt " + (attempt + 1) + " failed: " + ex.Message);
+                }
+                if (!getOk) Thread.Sleep(1000);
+            }
+            if (!getOk)
+            {
+                Log("ERROR: /api/version did not respond.");
+                return false;
+            }
+            Log("GET /api/version OK.");
+
+            // 2) body付きPOSTでbody解析のハングを検出（/api/command は空instructionで400を返すだけで副作用なし）
+            try
+            {
+                System.Net.HttpWebRequest post =
+                    (System.Net.HttpWebRequest)System.Net.WebRequest.Create(DashboardUrl + "/api/command");
+                post.Method = "POST";
+                post.ContentType = "application/json";
+                post.Timeout = 5000;
+                post.ReadWriteTimeout = 5000;
+                byte[] body = System.Text.Encoding.UTF8.GetBytes("{}");
+                post.ContentLength = body.Length;
+                using (System.IO.Stream stream = post.GetRequestStream())
+                {
+                    stream.Write(body, 0, body.Length);
+                }
+                try
+                {
+                    using (System.Net.HttpWebResponse response =
+                        (System.Net.HttpWebResponse)post.GetResponse())
+                    {
+                        Log("POST probe OK: /api/command -> " + (int)response.StatusCode);
+                        return true;
+                    }
+                }
+                catch (System.Net.WebException postError)
+                {
+                    if (postError.Response != null)
+                    {
+                        // 4xx/5xx でも応答があればbody解析は機能している
+                        try { postError.Response.Close(); } catch { }
+                        Log("POST probe OK (error response): server parses request bodies.");
+                        return true;
+                    }
+                    Log("ERROR: POST probe failed: " + postError.Message);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("ERROR: POST probe exception: " + ex.Message);
+                return false;
+            }
         }
 
         private static void LaunchBrowser()

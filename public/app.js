@@ -517,11 +517,17 @@ async function apiSend(method, p, body) {
   } catch (e) { uiError('API ' + method + ' ' + p, e); throw e; }
 }
 
+let roomsLoadError = false;
+
 async function refreshRooms(selectId) {
   try {
     const data = await apiGet('/api/chat-rooms');
     chatRooms = data.rooms || [];
-  } catch (e) { chatRooms = []; }
+    roomsLoadError = false;
+  } catch (e) {
+    chatRooms = [];
+    roomsLoadError = true;
+  }
   if (selectId && chatRooms.find(r => r.id === selectId)) activeRoomId = selectId;
   else if (!chatRooms.find(r => r.id === activeRoomId)) activeRoomId = chatRooms.length ? chatRooms[0].id : null;
   renderChatRooms();
@@ -543,6 +549,14 @@ async function loadRoom(id) {
 function renderChatRooms() {
   if (!chatRoomList) return;
   chatRoomList.innerHTML = '';
+  if (roomsLoadError) {
+    const err = document.createElement('div');
+    err.className = 'chat-empty-hint';
+    err.style.color = 'var(--accent-red)';
+    err.textContent = translate('chatRoomsLoadFailed');
+    chatRoomList.appendChild(err);
+    return;
+  }
   if (chatRooms.length === 0) {
     const hint = document.createElement('div');
     hint.className = 'chat-empty-hint';
@@ -569,7 +583,8 @@ function renderChatRooms() {
     del.title = translate('deleteChatRoom');
     del.addEventListener('click', async (e) => {
       e.stopPropagation();
-      try { await apiSend('DELETE', '/api/chat-rooms/' + encodeURIComponent(room.id)); } catch (err) { /* ignore */ }
+      try { await apiSend('DELETE', '/api/chat-rooms/' + encodeURIComponent(room.id)); }
+      catch (err) { uiError('チャットルーム削除', err); return; }
       delete roomMessagesCache[room.id];
       await refreshRooms();
     });
@@ -673,7 +688,7 @@ on(btnNewRoom, 'click', async () => {
   try {
     const data = await apiSend('POST', '/api/chat-rooms', {});
     await refreshRooms(data.room ? data.room.id : null);
-  } catch (e) { console.warn('Failed to create chat room:', e); }
+  } catch (e) { uiError('チャットルーム作成', e); }
 });
 document.addEventListener('craftmate-language-changed', () => {
   renderChatRooms();
