@@ -61,6 +61,25 @@ namespace CraftMateLauncher
             Log("Install directory: " + installDirectory);
             Log("Log file: " + LogPath);
 
+            // ポート3000を占有しているプロセスが「このインストール先の node.exe」
+            // でない場合（例: 開発フォルダの古いサーバー）、強制終了して
+            // 必ず自分のインストール先のサーバーを起動する。
+            // これをしないと Launcher.exe を起動しても古いコードのサーバーが
+            // 使われ続け、修正が反映されない状態になる。
+            foreach (int foreignPid in GetPortListenerPids(ServerPort))
+            {
+                if (IsOurServerProcess(foreignPid, installDirectory))
+                {
+                    Log("Port " + ServerPort + " is held by our own server (PID " + foreignPid + "); reusing it.");
+                    continue;
+                }
+                Log("Port " + ServerPort + " is held by a foreign process (PID " + foreignPid +
+                    ") that is not this install's node.exe. Killing it so the correct server can start.");
+                KillProcessOnPort(ServerPort);
+                Thread.Sleep(1500);
+                break; // KillProcessOnPort がポートの全リスナーを処理する
+            }
+
             // サーバーが既に動いているか確認。動いていなければ起動する。
             bool startedByUs = false;
             if (IsServerReady())
@@ -137,11 +156,9 @@ namespace CraftMateLauncher
         }
 
         /// <summary>
-        /// 指定ポートを LISTEN しているプロセスを特定して終了する。
-        /// netstat -ano の出力からPIDを取得し、node.exe の場合のみ kill する
-        /// （他アプリのnodeプロセスを誤って終了しないため）。
+        /// 指定ポートを LISTEN しているプロセスのPID一覧を netstat から取得する。
         /// </summary>
-        private static void KillProcessOnPort(int port)
+        private static System.Collections.Generic.HashSet<int> GetPortListenerPids(int port)
         {
             var pids = new System.Collections.Generic.HashSet<int>();
             try
@@ -152,7 +169,7 @@ namespace CraftMateLauncher
                     CreateNoWindow = true,
                     RedirectStandardOutput = true,
                 });
-                if (netstat == null) { Log("netstat could not be started."); return; }
+                if (netstat == null) { Log("netstat could not be started."); return pids; }
                 string output = netstat.StandardOutput.ReadToEnd();
                 netstat.WaitForExit(10000);
                 foreach (string line in output.Split('\n'))
@@ -170,8 +187,45 @@ namespace CraftMateLauncher
             catch (Exception ex)
             {
                 Log("netstat lookup failed: " + ex.Message);
-                return;
             }
+            return pids;
+        }
+
+        /// <summary>
+        /// 指定PIDのプロセスが「このインストール先の node.exe」かどうかを判定する。
+        /// MainModule のパスが installDirectory\node.exe と一致すれば自サーバーとみなす。
+        /// 判定不能（権限不足など）の場合は false を返し、呼び出し側で安全側（再起動）に倒す。
+        /// </summary>
+        private static bool IsOurServerProcess(int pid, string installDirectory)
+        {
+            try
+            {
+                using (Process proc = Process.GetProcessById(pid))
+                {
+                    if (!string.Equals(proc.ProcessName, "node", StringComparison.OrdinalIgnoreCase))
+                        return false;
+                    string modulePath = null;
+                    try { modulePath = proc.MainModule == null ? null : proc.MainModule.FileName; }
+                    catch { return false; }
+                    if (String.IsNullOrEmpty(modulePath)) return false;
+                    string expected = Path.GetFullPath(Path.Combine(installDirectory, "node.exe"));
+                    return String.Equals(Path.GetFullPath(modulePath), expected, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 指定ポートを LISTEN しているプロセスを特定して終了する。
+        /// netstat -ano の出力からPIDを取得し、node.exe の場合のみ kill する
+        /// （他アプリのnodeプロセスを誤って終了しないため）。
+        /// </summary>
+        private static void KillProcessOnPort(int port)
+        {
+            var pids = GetPortListenerPids(port);
 
             foreach (int pid in pids)
             {

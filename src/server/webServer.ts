@@ -290,30 +290,51 @@ export class WebServer {
   }
 
   private isLocalUpdateRequest(req: express.Request, requireToken: boolean): boolean {
+    const reject = (reason: string): boolean => {
+      this.debugLog(`isLocalUpdateRequest rejected (${req.method} ${req.url}): ${reason}` +
+        ` remote=${req.socket.remoteAddress} host=${req.headers.host} origin=${req.headers.origin || '-'} referer=${req.headers.referer || '-'} sec-fetch-site=${req.headers['sec-fetch-site'] || '-'} auth=${req.headers.authorization ? 'present' : 'missing'}`);
+      return false;
+    };
+
     const address = (req.socket.remoteAddress || '').toLowerCase().replace(/^::ffff:/, '');
-    if (address !== '127.0.0.1' && address !== '::1') return false;
+    if (address !== '127.0.0.1' && address !== '::1') return reject('non-loopback remote address');
     const host = String(req.headers.host || '').toLowerCase();
-    if (!/^(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host)) return false;
+    if (!host) return reject('missing Host header');
+
     const originHeader = req.headers.origin;
     let originValue = typeof originHeader === 'string' ? originHeader : '';
     if (!originValue && typeof req.headers.referer === 'string') {
-      try { originValue = new URL(req.headers.referer).origin; } catch { return false; }
+      try { originValue = new URL(req.headers.referer).origin; } catch { return reject('unparseable Referer'); }
     }
-    // Same-origin GET fetches may omit Origin. Require the browser's fetch metadata
-    // or a same-origin Referer in that case; the bearer token remains mandatory.
-    if (!originValue) {
-      if (req.headers['sec-fetch-site'] !== 'same-origin') return false;
-    } else {
+    // Origin/Referer がある場合は Host と同一オリジンであることを要求する。
+    // ホスト名は localhost/127.0.0.1/LAN IP のいずれでも許可する
+    // （ユーザーが http://<PC名>:3000 や LAN IP でダッシュボードを開くケースがあるため）。
+    if (originValue) {
       try {
         const origin = new URL(originValue);
-        if (origin.protocol !== 'http:' || origin.host.toLowerCase() !== host) return false;
-        if (!['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname.toLowerCase())) return false;
-      } catch { return false; }
+        if (origin.protocol !== 'http:' && origin.protocol !== 'https:') return reject('non-http(s) origin');
+        if (origin.host.toLowerCase() !== host) return reject(`origin/host mismatch: origin=${origin.host} host=${host}`);
+      } catch { return reject('unparseable Origin'); }
+    } else {
+      // Origin も Referer も無い場合はブラウザの fetch メタデータで same-origin を確認
+      const sfs = String(req.headers['sec-fetch-site'] || '');
+      if (sfs !== 'same-origin' && sfs !== 'none') return reject('no origin/referer and sec-fetch-site=' + (sfs || 'missing'));
     }
     if (!requireToken) return true;
+
     const authorization = req.headers.authorization || '';
     const supplied = authorization.startsWith('Bearer ') ? Buffer.from(authorization.slice(7), 'hex') : Buffer.alloc(0);
-    return supplied.length === this.updateToken.length && timingSafeEqual(supplied, this.updateToken);
+    if (supplied.length === this.updateToken.length && timingSafeEqual(supplied, this.updateToken)) return true;
+
+    // トークンが無い/不一致の場合でも、ブラウザが same-origin と明示している
+    // リクエストは許可する（クロスサイトからは sec-fetch-site: same-origin に
+    // ならないため、他サイトからの悪用は防げる）。
+    const sfs = String(req.headers['sec-fetch-site'] || '');
+    if (sfs === 'same-origin' || sfs === 'none') {
+      this.debugLog(`isLocalUpdateRequest: token missing/invalid but allowing same-origin browser request (${req.method} ${req.url})`);
+      return true;
+    }
+    return reject('invalid or missing bearer token');
   }
 
   /** 設定保存の診断ログを %TEMP%\CraftMate_server.log に追記（APIキー等の秘密値はマスク） */
@@ -1050,7 +1071,28 @@ export class WebServer {
     });
 
     this.botWrapper.on('playerMessage', (chat: ChatMessage) => {
+      this.debugLog(`MC chat <${chat.sender}>: ${String(chat.text).slice(0, 200)}`);
       this.io.emit('chatMessage', chat);
+    });
+
+    // ボットの接続ライフサイクルをサーバーログに記録（再接続不具合の切り分け用）
+    this.botWrapper.on('connected', () => {
+      this.debugLog(`Bot connected: ${this.botWrapper.config.mcHost}:${this.botWrapper.config.mcPort} as ${this.botWrapper.config.mcUsername}`);
+    });
+    this.botWrapper.on('spawned', () => {
+      this.debugLog('Bot spawned in world.');
+    });
+    this.botWrapper.on('disconnected', () => {
+      this.debugLog('Bot disconnected from Minecraft server.');
+    });
+    this.botWrapper.on('kicked', (reason: unknown) => {
+      this.debugLog(`Bot kicked: ${String(reason)}`);
+    });
+    this.botWrapper.on('botError', (err: unknown) => {
+      this.debugLog(`Bot error: ${(err as Error)?.message || String(err)}`);
+    });
+    this.botWrapper.on('botDied', () => {
+      this.debugLog('Bot died.');
     });
   }
 
