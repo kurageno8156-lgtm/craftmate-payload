@@ -33,7 +33,7 @@ if (-not (Test-Path $compiler)) { throw 'The .NET Framework C# compiler was not 
 & $compiler /nologo /target:winexe "/out:$updaterPath" "/win32icon:$iconPath" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll /r:System.Web.Extensions.dll (Join-Path $projectRoot 'installer\Updater.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Updater compilation failed.' }
 if (-not (Test-Path -LiteralPath $updaterPath -PathType Leaf)) { throw 'Updater compilation did not create CraftMate_Updater.exe.' }
-& $compiler /nologo /target:winexe "/out:$(Join-Path $projectRoot 'CraftMate.exe')" "/win32icon:$iconPath" /r:System.dll /r:System.Windows.Forms.dll $launcherSourcePath
+& $compiler /nologo /target:winexe "/out:$(Join-Path $projectRoot 'Launcher.exe')" "/win32icon:$iconPath" /r:System.dll /r:System.Windows.Forms.dll $launcherSourcePath
 if ($LASTEXITCODE -ne 0) { throw 'Launcher compilation failed.' }
 & $compiler /nologo /target:winexe "/out:$screenViewerPath" "/win32icon:$iconPath" /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Web.Extensions.dll (Join-Path $PSScriptRoot 'ScreenViewer.cs')
 if ($LASTEXITCODE -ne 0) { throw 'ScreenViewer compilation failed.' }
