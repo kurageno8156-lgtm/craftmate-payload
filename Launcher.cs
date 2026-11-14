@@ -99,31 +99,61 @@ namespace CraftMateLauncher
             }
         }
 
+        private static string _lastCheckDetail = "not checked";
+
         private static bool IsDashboardReady()
         {
+            // localhost ではなく 127.0.0.1 を使い、IPv6/IPv4 の名前解決問題を回避する。
+            // 接続自体が確立できれば準備完了とみなす（API が 500 を返しても起動を妨げない）。
             try
             {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(DashboardUrl + "/api/status");
-                request.Timeout = 500;
-                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:3000/api/status");
+                request.Timeout = 3000;
+                request.ReadWriteTimeout = 3000;
+                try
                 {
-                    return response.StatusCode == HttpStatusCode.OK;
+                    using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                    {
+                        _lastCheckDetail = "HTTP " + (int)response.StatusCode;
+                        return true;
+                    }
+                }
+                catch (WebException webError)
+                {
+                    HttpWebResponse errorResponse = webError.Response as HttpWebResponse;
+                    if (errorResponse != null)
+                    {
+                        try
+                        {
+                            // HTTPエラー応答 = サーバーは応答しているので準備完了とみなす
+                            _lastCheckDetail = "HTTP " + (int)errorResponse.StatusCode;
+                            return true;
+                        }
+                        finally
+                        {
+                            errorResponse.Close();
+                        }
+                    }
+                    _lastCheckDetail = webError.Message;
+                    return false;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                _lastCheckDetail = ex.Message;
                 return false;
             }
         }
 
         private static bool WaitForDashboard()
         {
-            DateTime deadline = DateTime.UtcNow.AddSeconds(15);
+            DateTime deadline = DateTime.UtcNow.AddSeconds(120);
             while (DateTime.UtcNow < deadline)
             {
                 if (IsDashboardReady()) return true;
-                Thread.Sleep(500);
+                Thread.Sleep(1000);
             }
+            Log("Last readiness check: " + _lastCheckDetail);
             return false;
         }
 
