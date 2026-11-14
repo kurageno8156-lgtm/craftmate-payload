@@ -933,7 +933,7 @@ on(settingsForm, 'submit', async event => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(8000),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || translate('settingsSaveFailed'));
@@ -948,7 +948,11 @@ on(settingsForm, 'submit', async event => {
     if (data.config) updateLlmLabel(data.config.provider, data.config.model);
     }).catch(() => {});
   } catch (error) {
-    showSettingsMessage(error.message || translate('settingsSaveFailed'), 'error');
+    if (error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+      showSettingsMessage(translate('processingInBackground'), 'success');
+    } else {
+      showSettingsMessage(error.message || translate('settingsSaveFailed'), 'error');
+    }
   } finally {
     saveButton.disabled = false;
   }
@@ -974,8 +978,16 @@ async function fetchWithLocalSettingsAuth(url, options = {}) {
     const token = await getLocalSettingsToken(attempt > 0);
     const headers = new Headers(options.headers || {});
     headers.set('Authorization', `Bearer ${token}`);
-    const response = await fetch(url, { ...options, headers, cache: options.cache || 'no-store', signal: AbortSignal.timeout(30000) });
-    if (response.status !== 403 || attempt > 0) return response;
+    try {
+      const response = await fetch(url, { ...options, headers, cache: options.cache || 'no-store', signal: AbortSignal.timeout(10000) });
+      if (response.status !== 403 || attempt > 0) return response;
+    } catch (error) {
+      // タイムアウト時はサーバー側で処理が続いている可能性があるため、ユーザーに伝える
+      if (error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+        throw new Error(translate('processingInBackground'));
+      }
+      throw error;
+    }
   }
   throw new Error(translate('updateAuthMissing'));
 }

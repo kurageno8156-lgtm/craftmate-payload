@@ -314,7 +314,7 @@ export class WebServer {
         (values.MC_HOST || 'localhost') !== config.mcHost || auth !== config.mcAuth || minecraftVersion !== (config.mcVersion || 'auto');
       const temporaryPath = `${this.envPath}.restore-${randomBytes(8).toString('hex')}`;
       try {
-        fs.writeFileSync(temporaryPath, backup.env, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+        await fs.promises.writeFile(temporaryPath, backup.env, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
         await this.renameFileWithRetry(temporaryPath, this.envPath);
       } catch (error) {
         try { fs.rmSync(temporaryPath, { force: true }); } catch { }
@@ -652,7 +652,8 @@ export class WebServer {
     const retryDelays = [50, 100, 150];
     for (let attempt = 0; ; attempt += 1) {
       try {
-        fs.writeFileSync(envPath, output, 'utf8');
+        // 同期I/Oでイベントループを止めないよう非同期書き込みを使う
+        await fs.promises.writeFile(envPath, output, 'utf8');
         break;
       } catch (error) {
         const code = (error as NodeJS.ErrnoException).code || '';
@@ -667,7 +668,7 @@ export class WebServer {
     const retryableErrors = new Set(['EBUSY', 'EACCES', 'EPERM']);
     for (let attempt = 0; attempt < 5; attempt += 1) {
       try {
-        fs.renameSync(source, destination);
+        await fs.promises.rename(source, destination);
         return;
       } catch (error) {
         const code = (error as NodeJS.ErrnoException).code || '';
