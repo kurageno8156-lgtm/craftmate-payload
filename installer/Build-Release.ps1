@@ -67,7 +67,7 @@ try {
     foreach ($directory in @('dist', 'public', 'node_modules')) {
       & $addDirectory (Join-Path $projectRoot $directory) $directory
     }
-    foreach ($file in @('CraftMate.exe', 'node.exe', '.env.example', 'package.json', 'package-lock.json', 'README.md')) {
+    foreach ($file in @('CraftMate.exe', 'Launcher.exe', 'node.exe', '.env.example', 'package.json', 'package-lock.json', 'README.md')) {
       & $addFile (Join-Path $projectRoot $file) $file
     }
     & $addFile $uninstallPath 'Uninstall.exe'
