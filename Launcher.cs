@@ -4,6 +4,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace CraftMateLauncher
 {
@@ -13,6 +14,7 @@ namespace CraftMateLauncher
         private const int ServerPort = 3000;
         private static readonly string LogPath =
             Path.Combine(Path.GetTempPath(), "CraftMate_launcher.log");
+        private static Process _serverProcess;
 
         private static void Log(string message)
         {
@@ -55,7 +57,7 @@ namespace CraftMateLauncher
 
         private static void Run()
         {
-            string installDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            string installDirectory = ResolveInstallDirectory();
             Log("Install directory: " + installDirectory);
             Log("Log file: " + LogPath);
 
@@ -88,6 +90,58 @@ namespace CraftMateLauncher
             LaunchBrowser();
         }
 
+        /// <summary>
+        /// 実行ファイルと同じディレクトリを優先し、node.exe / dist\index.js が
+        /// 無い場合はレジストリの InstallLocation、最後に既定のインストール先を試す。
+        /// 開発フォルダや古いコピーから起動されても正しいインストール先を使えるようにする。
+        /// </summary>
+        private static string ResolveInstallDirectory()
+        {
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            if (HasServerFiles(baseDir)) return baseDir;
+
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(
+                    @"Software\Microsoft\Windows\CurrentVersion\Uninstall\CraftMate", false))
+                {
+                    string installLocation = key == null ? null : key.GetValue("InstallLocation") as string;
+                    if (!string.IsNullOrEmpty(installLocation) && HasServerFiles(installLocation))
+                    {
+                        Log("Using registry InstallLocation: " + installLocation);
+                        return installLocation;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Registry lookup failed: " + ex.Message);
+            }
+
+            string fallback = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Programs", "CraftMate");
+            if (HasServerFiles(fallback))
+            {
+                Log("Using default install location: " + fallback);
+                return fallback;
+            }
+
+            Log("WARNING: No valid install directory found; falling back to " + baseDir);
+            return baseDir;
+        }
+
+        private static bool HasServerFiles(string directory)
+        {
+            try
+            {
+                return !string.IsNullOrEmpty(directory)
+                    && File.Exists(Path.Combine(directory, "node.exe"))
+                    && File.Exists(Path.Combine(directory, "dist", "index.js"));
+            }
+            catch { return false; }
+        }
+
         private static void StartServer(string installDirectory)
         {
             string nodePath = Path.Combine(installDirectory, "node.exe");
@@ -108,16 +162,29 @@ namespace CraftMateLauncher
             info.UseShellExecute = false;
             info.CreateNoWindow = true;
             info.WindowStyle = ProcessWindowStyle.Hidden;
-            info.RedirectStandardOutput = false;
-            info.RedirectStandardError = false;
+            info.RedirectStandardOutput = true;
+            info.RedirectStandardError = true;
 
             Process server = Process.Start(info);
             if (server == null)
             {
                 throw new InvalidOperationException("node.exe プロセスを起動できませんでした。");
             }
+            _serverProcess = server;
+
+            // サーバーの標準出力/エラーをログに転記し、起動失敗の原因を追跡できるようにする
+            server.OutputDataReceived += delegate(object s, DataReceivedEventArgs e)
+            {
+                if (e.Data != null) Log("[server] " + e.Data);
+            };
+            server.ErrorDataReceived += delegate(object s, DataReceivedEventArgs e)
+            {
+                if (e.Data != null) Log("[server:err] " + e.Data);
+            };
+            server.BeginOutputReadLine();
+            server.BeginErrorReadLine();
+
             Log("Server process started (PID " + server.Id + ").");
-            server.Dispose();
         }
 
         /// <summary>
@@ -152,6 +219,20 @@ namespace CraftMateLauncher
             while (DateTime.UtcNow < deadline)
             {
                 if (IsServerReady()) return true;
+
+                // サーバープロセスが早期に終了した場合は待たずに失敗とする
+                if (_serverProcess != null)
+                {
+                    try
+                    {
+                        if (_serverProcess.HasExited)
+                        {
+                            Log("ERROR: Server process exited early (code " + _serverProcess.ExitCode + ").");
+                            return false;
+                        }
+                    }
+                    catch { }
+                }
                 Thread.Sleep(1000);
             }
             return false;

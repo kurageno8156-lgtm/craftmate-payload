@@ -368,9 +368,9 @@ namespace CraftMateSetup
         private ProgressBar _progressBar;
         private PictureBox _picAppIcon;
 
-        private const string CurrentVersion = "1.3.115";
+        private const string CurrentVersion = "1.3.116";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.115/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.116/app_payload.zip";
 
         public InstallerForm(string lang)
         {
@@ -616,6 +616,7 @@ namespace CraftMateSetup
                 }
                 File.Delete(tempZip);
                 InstallEmbeddedUninstaller(target);
+                EnsureLauncherFiles(target);
                 string updaterExecutable = Path.Combine(target, "CraftMate_Updater.exe");
                 if (!File.Exists(updaterExecutable))
                 {
@@ -740,6 +741,30 @@ namespace CraftMateSetup
             finally
             {
                 Invoke(new Action(delegate { _btnInstall.Enabled = true; }));
+            }
+        }
+
+        // 展開後にランチャー実行ファイルが揃っているか確認し、欠けていれば補完する。
+        // 古いペイロードや部分的な展開で Launcher.exe / CraftMate.exe が無いと
+        // デスクトップショートカットから起動できなくなるため。
+        private static void EnsureLauncherFiles(string target)
+        {
+            string launcherPath = Path.Combine(target, "Launcher.exe");
+            string craftMatePath = Path.Combine(target, "CraftMate.exe");
+            bool hasLauncher = File.Exists(launcherPath);
+            bool hasCraftMate = File.Exists(craftMatePath);
+
+            if (hasLauncher && !hasCraftMate)
+            {
+                File.Copy(launcherPath, craftMatePath, true);
+            }
+            else if (hasCraftMate && !hasLauncher)
+            {
+                File.Copy(craftMatePath, launcherPath, true);
+            }
+            else if (!hasLauncher && !hasCraftMate)
+            {
+                throw new FileNotFoundException("Launcher.exe / CraftMate.exe がインストールパッケージに含まれていません。");
             }
         }
 
