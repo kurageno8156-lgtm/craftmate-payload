@@ -143,6 +143,11 @@ fetch('/api/status')
 // Socket.io イベント受信
 socket.on('connect', () => {
   console.log('Connected to Dashboard server');
+  // サーバー再起動後の再接続を検知したら更新オーバーレイを確実に閉じる
+  if (updatePending || document.getElementById('update-overlay')) {
+    hideUpdateOverlay();
+    showSettingsMessage(translate('updateCompleted'), 'success');
+  }
 });
 
 socket.on('status', (status) => {
@@ -157,11 +162,9 @@ socket.on('status', (status) => {
 
 socket.on('disconnect', () => {
   updateConnectionUI(false);
-  // アップデート中はサーバーが再起動されるため、オーバーレイの文言を更新する
-  const overlayText = document.getElementById('update-overlay-text');
-  if (overlayText && overlayText.dataset.phase === 'updating') {
-    overlayText.textContent = translate('serverRestarting');
-    overlayText.dataset.phase = 'restarting';
+  // アップデート起動後にソケットが切れた = サーバー停止中。オーバーレイを表示する
+  if (updatePending) {
+    showUpdateOverlay('restarting');
   }
 });
 
@@ -1132,7 +1135,16 @@ on(document.getElementById('btn-check-updates'), 'click', async event => {
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.error || translate('updaterLaunchFailed'));
     showSettingsMessage(translate('updaterLaunched'), 'success');
-    showUpdateOverlay('updating');
+    // オーバーレイはソケット切断（＝サーバー実停止）を検知してから表示する。
+    // ダウンロード・解凍中はサーバーが生きているためUIは操作可能なままにする。
+    updatePending = true;
+    // フェイルセーフ: 一定時間内に切断も再接続も起きない場合（最新版で更新不要等）は解除
+    setTimeout(() => {
+      if (updatePending && !document.getElementById('update-overlay')) {
+        updatePending = false;
+        showSettingsMessage(translate('currentVersion', { version: '' }).replace(' ()', ''), 'success');
+      }
+    }, 10 * 60 * 1000);
   } catch (error) {
     showSettingsMessage(error.message || translate('updaterLaunchFailed'), 'error');
   } finally {
@@ -1141,6 +1153,19 @@ on(document.getElementById('btn-check-updates'), 'click', async event => {
 });
 
 // アップデート中の全画面オーバーレイ（サーバー停止中も「更新中」と表示し続ける）
+let updatePending = false;
+let updateOverlayFailsafeTimer = null;
+
+function hideUpdateOverlay() {
+  updatePending = false;
+  if (updateOverlayFailsafeTimer) {
+    clearTimeout(updateOverlayFailsafeTimer);
+    updateOverlayFailsafeTimer = null;
+  }
+  const overlay = document.getElementById('update-overlay');
+  if (overlay) overlay.remove();
+}
+
 function showUpdateOverlay(phase) {
   let overlay = document.getElementById('update-overlay');
   if (!overlay) {
@@ -1149,17 +1174,33 @@ function showUpdateOverlay(phase) {
     overlay.className = 'update-overlay';
     overlay.innerHTML =
       '<div class="update-overlay-card">' +
+      '<button type="button" id="update-overlay-close" class="update-overlay-close" aria-label="close">&times;</button>' +
       '<div class="update-spinner"></div>' +
       '<h2>' + escapeHtml(translate('updaterLaunched')) + '</h2>' +
       '<p id="update-overlay-text"></p>' +
       '</div>';
     document.body.appendChild(overlay);
+    const closeBtn = document.getElementById('update-overlay-close');
+    if (closeBtn) closeBtn.addEventListener('click', () => hideUpdateOverlay());
   }
   const text = document.getElementById('update-overlay-text');
   if (text) {
     text.dataset.phase = phase;
     text.textContent = phase === 'updating' ? translate('updateInProgress') : translate('serverRestarting');
   }
+  // フェイルセーフ: 90秒再接続が検知できなければ手動リロードを促す
+  if (updateOverlayFailsafeTimer) clearTimeout(updateOverlayFailsafeTimer);
+  updateOverlayFailsafeTimer = setTimeout(() => {
+    const el = document.getElementById('update-overlay-text');
+    if (!el) return;
+    el.textContent = translate('serverUnresponsiveReload');
+    const reloadBtn = document.createElement('button');
+    reloadBtn.type = 'button';
+    reloadBtn.className = 'btn-primary update-overlay-reload';
+    reloadBtn.textContent = translate('reloadPage');
+    reloadBtn.addEventListener('click', () => window.location.reload());
+    el.parentElement.appendChild(reloadBtn);
+  }, 90000);
 }
 
 on(document.getElementById('btn-download-logs'), 'click', () => {

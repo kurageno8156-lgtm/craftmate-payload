@@ -858,6 +858,7 @@ details.status-panel[open] .status-toggle-hint { transform: rotate(180deg); }
   backdrop-filter: blur(4px);
 }
 .update-overlay-card {
+  position: relative;
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: 14px;
@@ -867,6 +868,22 @@ details.status-panel[open] .status-toggle-hint { transform: rotate(180deg); }
 }
 .update-overlay-card h2 { font-size: 18px; margin-bottom: 10px; }
 .update-overlay-card p { color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+.update-overlay-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.update-overlay-close:hover { background: var(--bg-hover, rgba(255,255,255,0.08)); color: var(--text-primary, #fff); }
+.update-overlay-reload { margin-top: 14px; }
 .update-spinner {
   width: 34px;
   height: 34px;
