@@ -160,6 +160,7 @@ namespace CraftMateUninstall
                 if (Directory.Exists(_installLocation)) CollectFiles(_installLocation, files);
 
                 BackupUserData(_installLocation);
+                HandleLocalAppDataDatabase();
 
                 int total = files.Count + (Directory.Exists(_installLocation) ? 1 : 0);
                 SetProgressRange(Math.Max(1, total));
@@ -350,6 +351,56 @@ namespace CraftMateUninstall
             catch (Exception ex)
             {
                 AppendLog("バックアップに失敗しました: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// %LOCALAPPDATA%\CraftMate\craftmate.db（チャット履歴・AI記憶・レビュー）の削除確認。
+        /// 「はい」で削除、「いいえ」でバックアップとして保持する。
+        /// </summary>
+        private void HandleLocalAppDataDatabase()
+        {
+            try
+            {
+                string dbPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "CraftMate", "craftmate.db");
+                if (!File.Exists(dbPath)) return;
+
+                DialogResult answer = MessageBox.Show(
+                    "チャット履歴とAI記憶を削除しますか？" + Environment.NewLine + Environment.NewLine +
+                    "削除すると、チャット履歴・AI記憶・レビューが失われます。バックアップする場合は「いいえ」を選んでください。",
+                    "CraftMate Uninstall",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+                if (answer != DialogResult.Yes)
+                {
+                    AppendLog("craftmate.db は保持しました（バックアップ）: " + dbPath);
+                    return;
+                }
+
+                // WALモードのサイドカーファイルも一緒に削除
+                foreach (string suffix in new string[] { "", "-wal", "-shm", "-journal" })
+                {
+                    string target = dbPath + suffix;
+                    try
+                    {
+                        if (File.Exists(target))
+                        {
+                            ClearReadOnlyAttributes(target);
+                            File.Delete(target);
+                            AppendLog("削除: " + target);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        AppendLog("削除できませんでした: " + target + " (" + ex.Message + ")");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLog("craftmate.db の処理に失敗しました: " + ex.Message);
             }
         }
 
