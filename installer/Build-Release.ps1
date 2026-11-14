@@ -47,13 +47,7 @@ Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $fileStream = [System.IO.File]::Open($payloadPath, [System.IO.FileMode]::Create)
 try {
-  
-  # Launcher.exe を ZIP に追加
-  $launcherExePath = Join-Path $projectRoot 'Launcher.exe'
-  if (Test-Path $launcherExePath) {
-    [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $launcherExePath, 'Launcher.exe') | Out-Null
-  }
-$archive = [System.IO.Compression.ZipArchive]::new($fileStream, [System.IO.Compression.ZipArchiveMode]::Create, $false)
+  $archive = [System.IO.Compression.ZipArchive]::new($fileStream, [System.IO.Compression.ZipArchiveMode]::Create, $false)
   try {
     $addFile = {
       param([string]$SourcePath, [string]$ArchivePath)
