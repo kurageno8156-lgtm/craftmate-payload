@@ -36,21 +36,34 @@
 
     <!-- ワークスペース: チャットルーム + ダッシュボード -->
     <div class="workspace">
-    <!-- 左サイドバー: チャットルーム -->
-    <aside class="chat-sidebar">
-      <div class="chat-sidebar-header">
+    <!-- メインチャット: ルーム一覧 + メッセージ + 入力 -->
+    <section class="chat-main">
+      <div class="chat-rooms-bar">
         <span class="chat-sidebar-title" data-i18n="chatRooms">チャットルーム</span>
+        <div class="chat-room-list" id="chat-room-list"></div>
         <button id="btn-new-room" class="btn-new-room" type="button" data-i18n="newChatRoom">＋ 新規</button>
       </div>
-      <div class="chat-room-list" id="chat-room-list"></div>
       <div class="chat-messages" id="chat-messages"></div>
-    </aside>
+      <div class="command-input-container chat-input-dock">
+        <div class="quick-commands">
+          <button class="quick-btn" data-cmd="私についてきて" data-cmd-ja="私についてきて" data-cmd-en="Follow me">🚶 <span data-i18n="quickFollow">Follow me</span></button>
+          <button class="quick-btn" data-cmd="木を3つ切って集めて" data-cmd-ja="木を3つ切って集めて" data-cmd-en="Chop and collect 3 logs">🌲 <span data-i18n="quickChop">Collect 3 logs</span></button>
+          <button class="quick-btn" data-cmd="木のツルハシを1個作って" data-cmd-ja="木のツルハシを1個作って" data-cmd-en="Craft a wooden pickaxe">⛏️ <span data-i18n="quickPickaxe">Craft a wooden pickaxe</span></button>
+          <button class="quick-btn" data-cmd="周囲のモンスターから身を守って" data-cmd-ja="周囲のモンスターから身を守って" data-cmd-en="Defend yourself from nearby monsters">⚔️ <span data-i18n="quickDefend">Defend against monsters</span></button>
+          <button class="quick-btn" data-cmd="手持ちの木材を私に渡して" data-cmd-ja="手持ちの木材を私に渡して" data-cmd-en="Give me the wood you are carrying">🎁 <span data-i18n="quickGive">Give me your wood</span></button>
+          <button class="quick-btn" data-cmd="ストップ" data-cmd-ja="ストップ" data-cmd-en="Stop">🛑 <span data-i18n="quickStop">Stop</span></button>
+        </div>
+        <form id="command-form" class="command-form">
+          <input type="text" id="command-input" data-i18n-placeholder="commandPlaceholder" placeholder="Enter an instruction..." autocomplete="off" required>
+          <button type="submit" id="btn-submit" class="btn-send" data-i18n="sendInstruction">Send instruction 🚀</button>
+        </form>
+      </div>
+    </section>
 
-    <!-- メインコンテンツ -->
-    <main class="dashboard-grid">
-      <!-- 左カラム: ステータス & インベントリ -->
-      <section class="panel status-panel">
-        <h2 data-i18n="botStatus">📊 Bot Status</h2>
+    <!-- サイド: ボット状態（折りたたみ） + AI思考ログ -->
+    <aside class="side-column">
+      <details class="panel status-panel" id="status-panel">
+        <summary class="status-panel-summary"><span data-i18n="botStatus">📊 Bot Status</span><span class="status-toggle-hint">▾</span></summary>
         
         <div class="stats-cards">
           <!-- HP & Food -->
@@ -108,9 +121,9 @@
         <div class="entities-list" id="entities-container">
           <div class="empty-hint" data-i18n="noEntities">No nearby entities</div>
         </div>
-      </section>
+      </details>
 
-      <!-- 右カラム: AI思考ログ & 指示コンソール -->
+      <!-- AI思考・行動ログ (ReAct Timeline) -->
       <section class="panel action-panel">
         <!-- 現在のタスク表示 -->
         <div class="current-task-box" id="task-box">
@@ -130,23 +143,8 @@
           </div>
         </div>
 
-        <!-- 指示送信フォーム -->
-        <div class="command-input-container">
-          <div class="quick-commands">
-            <button class="quick-btn" data-cmd="私についてきて" data-cmd-ja="私についてきて" data-cmd-en="Follow me">🚶 <span data-i18n="quickFollow">Follow me</span></button>
-            <button class="quick-btn" data-cmd="木を3つ切って集めて" data-cmd-ja="木を3つ切って集めて" data-cmd-en="Chop and collect 3 logs">🌲 <span data-i18n="quickChop">Collect 3 logs</span></button>
-            <button class="quick-btn" data-cmd="木のツルハシを1個作って" data-cmd-ja="木のツルハシを1個作って" data-cmd-en="Craft a wooden pickaxe">⛏️ <span data-i18n="quickPickaxe">Craft a wooden pickaxe</span></button>
-            <button class="quick-btn" data-cmd="周囲のモンスターから身を守って" data-cmd-ja="周囲のモンスターから身を守って" data-cmd-en="Defend yourself from nearby monsters">⚔️ <span data-i18n="quickDefend">Defend against monsters</span></button>
-            <button class="quick-btn" data-cmd="手持ちの木材を私に渡して" data-cmd-ja="手持ちの木材を私に渡して" data-cmd-en="Give me the wood you are carrying">🎁 <span data-i18n="quickGive">Give me your wood</span></button>
-            <button class="quick-btn" data-cmd="ストップ" data-cmd-ja="ストップ" data-cmd-en="Stop">🛑 <span data-i18n="quickStop">Stop</span></button>
-          </div>
-          <form id="command-form" class="command-form">
-            <input type="text" id="command-input" data-i18n-placeholder="commandPlaceholder" placeholder="Enter an instruction..." autocomplete="off" required>
-            <button type="submit" id="btn-submit" class="btn-send" data-i18n="sendInstruction">Send instruction 🚀</button>
-          </form>
-        </div>
       </section>
-    </main>
+    </aside>
     </div>
   </div>
 

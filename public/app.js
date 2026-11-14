@@ -157,6 +157,12 @@ socket.on('status', (status) => {
 
 socket.on('disconnect', () => {
   updateConnectionUI(false);
+  // アップデート中はサーバーが再起動されるため、オーバーレイの文言を更新する
+  const overlayText = document.getElementById('update-overlay-text');
+  if (overlayText && overlayText.dataset.phase === 'updating') {
+    overlayText.textContent = translate('serverRestarting');
+    overlayText.dataset.phase = 'restarting';
+  }
 });
 
 socket.on('taskStarted', (data) => {
@@ -649,6 +655,14 @@ async function ensureActiveRoom() {
 
 function appendRoomMessage(role, text) {
   if (!text) return;
+  // ユーザーの指示を「AIの思考・行動ログ」にも表示する
+  if (role === 'user' && typeof appendLog === 'function') {
+    appendLog({
+      status: 'system',
+      timestamp: new Date().toLocaleTimeString(),
+      thought: '👤 ' + translate('chatYou') + ': ' + String(text),
+    });
+  }
   (async () => {
     try {
       const roomId = await ensureActiveRoom();
@@ -1087,12 +1101,35 @@ on(document.getElementById('btn-check-updates'), 'click', async event => {
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.error || translate('updaterLaunchFailed'));
     showSettingsMessage(translate('updaterLaunched'), 'success');
+    showUpdateOverlay('updating');
   } catch (error) {
     showSettingsMessage(error.message || translate('updaterLaunchFailed'), 'error');
   } finally {
     button.disabled = false;
   }
 });
+
+// アップデート中の全画面オーバーレイ（サーバー停止中も「更新中」と表示し続ける）
+function showUpdateOverlay(phase) {
+  let overlay = document.getElementById('update-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'update-overlay';
+    overlay.className = 'update-overlay';
+    overlay.innerHTML =
+      '<div class="update-overlay-card">' +
+      '<div class="update-spinner"></div>' +
+      '<h2>' + escapeHtml(translate('updaterLaunched')) + '</h2>' +
+      '<p id="update-overlay-text"></p>' +
+      '</div>';
+    document.body.appendChild(overlay);
+  }
+  const text = document.getElementById('update-overlay-text');
+  if (text) {
+    text.dataset.phase = phase;
+    text.textContent = phase === 'updating' ? translate('updateInProgress') : translate('serverRestarting');
+  }
+}
 
 on(document.getElementById('btn-download-logs'), 'click', () => {
   const lines = Array.from(logsContainer.querySelectorAll('.log-entry')).map(entry => entry.innerText.trim());
