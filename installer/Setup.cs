@@ -368,9 +368,9 @@ namespace CraftMateSetup
         private ProgressBar _progressBar;
         private PictureBox _picAppIcon;
 
-        private const string CurrentVersion = "1.3.105";
+        private const string CurrentVersion = "1.3.108";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.105/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.108/app_payload.zip";
 
         public InstallerForm(string lang)
         {
@@ -501,6 +501,21 @@ namespace CraftMateSetup
             ThreadPool.QueueUserWorkItem(delegate { CheckForUpdates(); });
         }
 
+        // セマンティックバージョンの数値比較（1.3.10 > 1.3.9 を正しく判定）
+        private static int CompareVersions(string a, string b)
+        {
+            string[] pa = (a ?? "").Split('.');
+            string[] pb = (b ?? "").Split('.');
+            for (int i = 0; i < 3; i++)
+            {
+                int na = 0, nb = 0;
+                if (i < pa.Length) int.TryParse(pa[i], out na);
+                if (i < pb.Length) int.TryParse(pb[i], out nb);
+                if (na != nb) return na.CompareTo(nb);
+            }
+            return 0;
+        }
+
         // アップデート確認
         private void CheckForUpdates()
         {
@@ -518,8 +533,16 @@ namespace CraftMateSetup
                     {
                         int start = idx + 12;
                         int end = json.IndexOf("\"", start);
-                        string latestVersion = json.Substring(start, end - start).Replace("v", "");
-                        if (latestVersion != CurrentVersion && latestVersion != "")
+                        // "v1.3.108" などから数値バージョン部分だけを抽出
+                        string raw = json.Substring(start, end - start);
+                        var sb = new System.Text.StringBuilder();
+                        foreach (char c in raw)
+                        {
+                            if (char.IsDigit(c) || c == '.') sb.Append(c);
+                            else if (sb.Length > 0) break;
+                        }
+                        string latestVersion = sb.ToString().TrimEnd('.');
+                        if (latestVersion != "" && CompareVersions(latestVersion, CurrentVersion) > 0)
                         {
                             Invoke(new Action(delegate {
                                 _lblUpdate.Text = _lang == "ja" ? "新しいアップデートがあります: v" + latestVersion : "Update available: v" + latestVersion;

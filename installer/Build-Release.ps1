@@ -40,6 +40,14 @@ if ($LASTEXITCODE -ne 0) { throw 'ScreenViewer compilation failed.' }
 if (-not (Test-Path -LiteralPath $screenViewerPath -PathType Leaf)) { throw 'ScreenViewer compilation did not create CraftMate_ScreenViewer.exe.' }
 & $compiler /nologo /target:winexe "/out:$uninstallPath" "/win32icon:$iconPath" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll (Join-Path $PSScriptRoot 'Uninstall.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Uninstaller compilation failed.' }
+
+# Setup.cs のバージョン定数を今回のリリースバージョンに合わせる
+$setupSourcePath = Join-Path $PSScriptRoot 'Setup.cs'
+$setupContent = [System.IO.File]::ReadAllText($setupSourcePath)
+$setupContent = [regex]::Replace($setupContent, 'private const string CurrentVersion = "[^"]*";', "private const string CurrentVersion = `"$version`";")
+$setupContent = [regex]::Replace($setupContent, 'private const string DownloadUrl = "[^"]*";', "private const string DownloadUrl = `"https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v$version/app_payload.zip`";")
+[System.IO.File]::WriteAllText($setupSourcePath, $setupContent)
+
 & $compiler /nologo /target:winexe "/out:$setupPath" "/win32icon:$iconPath" "/win32manifest:$manifestPath" "/resource:$iconPath,CraftMate.app.ico" "/resource:$uninstallPath,CraftMate.Uninstall.exe" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll (Join-Path $PSScriptRoot 'Setup.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
 
