@@ -62,6 +62,7 @@ namespace CraftMateLauncher
             Log("Log file: " + LogPath);
 
             // サーバーが既に動いているか確認。動いていなければ起動する。
+            bool startedByUs = false;
             if (IsServerReady())
             {
                 Log("Server is already running on port " + ServerPort + ".");
@@ -70,40 +71,130 @@ namespace CraftMateLauncher
             {
                 Log("Server is not running. Starting node.exe dist\\index.js ...");
                 StartServer(installDirectory);
+                startedByUs = true;
             }
 
             if (!WaitForServer())
             {
-                Log("ERROR: Server did not become ready on port " + ServerPort + ".");
-                MessageBox.Show(
-                    "CraftMate server did not become ready on port " + ServerPort +
-                    ". Check the installation and try again." +
-                    Environment.NewLine + Environment.NewLine +
-                    "詳細ログ: " + LogPath,
-                    "CraftMate",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-                return;
+                // 自分で起動したサーバーが立ち上がらなかった場合は1回だけ再起動を試みる
+                if (startedByUs)
+                {
+                    Log("First server start attempt failed. Retrying once...");
+                    KillProcessOnPort(ServerPort);
+                    Thread.Sleep(2000);
+                    try { StartServer(installDirectory); } catch (Exception retryEx) { Log("Retry start failed: " + retryEx.Message); }
+                }
+                if (!WaitForServer())
+                {
+                    Log("ERROR: Server did not become ready on port " + ServerPort + ".");
+                    MessageBox.Show(
+                        "CraftMate server did not become ready on port " + ServerPort +
+                        ". Check the installation and try again." +
+                        Environment.NewLine + Environment.NewLine +
+                        "詳細ログ: " + LogPath,
+                        "CraftMate",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                    return;
+                }
             }
 
-            // TCPは開いているがHTTPが応答しない「 wedged 」状態のサーバーを検出する。
-            // この状態ではダッシュボードのボタンが全て反応しなくなるため、起動を中止して再起動を促す。
+            // TCPは開いているがHTTPが応答しない「wedged」状態のサーバーを検出する。
+            // この状態ではダッシュボードの全ボタンが無反応になるため、自動復旧を試みる。
             if (!VerifyDashboardHttp())
             {
-                Log("ERROR: Server accepts TCP connections but does not respond to HTTP.");
-                MessageBox.Show(
-                    "CraftMate server is not responding. Another instance may be stuck." +
-                    Environment.NewLine + "Please restart CraftMate (or reboot the PC) and try again." +
-                    Environment.NewLine + Environment.NewLine +
-                    "詳細ログ: " + LogPath,
-                    "CraftMate",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-                return;
+                Log("Server is wedged (TCP ok, HTTP unresponsive). Attempting auto-recovery...");
+                KillProcessOnPort(ServerPort);
+                Thread.Sleep(3000);
+                try
+                {
+                    StartServer(installDirectory);
+                }
+                catch (Exception restartEx)
+                {
+                    Log("Auto-recovery restart failed: " + restartEx.Message);
+                }
+                if (WaitForServer() && VerifyDashboardHttp())
+                {
+                    Log("Auto-recovery succeeded.");
+                }
+                else
+                {
+                    Log("ERROR: Auto-recovery failed; server still not responding.");
+                    MessageBox.Show(
+                        "サーバーの自動復旧に失敗しました。PCを再起動してください。" +
+                        Environment.NewLine + Environment.NewLine +
+                        "詳細ログ: " + LogPath,
+                        "CraftMate",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                    return;
+                }
             }
 
             Log("Server is ready. Launching browser...");
             LaunchBrowser();
+        }
+
+        /// <summary>
+        /// 指定ポートを LISTEN しているプロセスを特定して終了する。
+        /// netstat -ano の出力からPIDを取得し、node.exe の場合のみ kill する
+        /// （他アプリのnodeプロセスを誤って終了しないため）。
+        /// </summary>
+        private static void KillProcessOnPort(int port)
+        {
+            var pids = new System.Collections.Generic.HashSet<int>();
+            try
+            {
+                Process netstat = Process.Start(new ProcessStartInfo("netstat", "-ano")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                });
+                if (netstat == null) { Log("netstat could not be started."); return; }
+                string output = netstat.StandardOutput.ReadToEnd();
+                netstat.WaitForExit(10000);
+                foreach (string line in output.Split('\n'))
+                {
+                    // TCP  127.0.0.1:3000  0.0.0.0:0  LISTENING  1234
+                    string[] parts = line.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length < 5) continue;
+                    if (!parts[3].Equals("LISTENING", StringComparison.OrdinalIgnoreCase)) continue;
+                    string local = parts[1];
+                    if (!local.EndsWith(":" + port, StringComparison.Ordinal)) continue;
+                    int pid;
+                    if (int.TryParse(parts[4], out pid) && pid > 0) pids.Add(pid);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("netstat lookup failed: " + ex.Message);
+                return;
+            }
+
+            foreach (int pid in pids)
+            {
+                try
+                {
+                    using (Process proc = Process.GetProcessById(pid))
+                    {
+                        if (!string.Equals(proc.ProcessName, "node", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Log("Port " + port + " is held by non-node process PID " + pid + " (" + proc.ProcessName + "); skipping.");
+                            continue;
+                        }
+                        Log("Killing wedged node.exe PID " + pid + " holding port " + port + ".");
+                        proc.Kill();
+                        proc.WaitForExit(5000);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("Could not kill PID " + pid + ": " + ex.Message);
+                }
+            }
+            if (pids.Count == 0) Log("No LISTENING process found on port " + port + ".");
         }
 
         /// <summary>
