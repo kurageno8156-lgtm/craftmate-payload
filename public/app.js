@@ -1,5 +1,19 @@
 const socket = io();
 
+// ---- グローバルエラーハンドリング：クリック後のサイレントエラーを可視化 ----
+window.addEventListener('error', (event) => {
+  console.error('[UI] Uncaught error:', event.error || event.message);
+  if (typeof appendLog === 'function') {
+    appendLog({ status: 'error', timestamp: new Date().toLocaleTimeString(), thought: 'UIエラー: ' + (event.message || 'unknown') });
+  }
+});
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[UI] Unhandled promise rejection:', event.reason);
+});
+socket.on('connect_error', (err) => {
+  console.error('[UI] Socket.IO connection error:', err);
+});
+
 // 要素が存在しない場合でもスクリプト全体が落ちないようにするヘルパー
 function on(element, event, handler) {
   if (element && typeof element.addEventListener === 'function') {
@@ -474,14 +488,33 @@ function logsForRoom(id) {
   return roomLogs[id] || (roomLogs[id] = []);
 }
 
+function uiError(context, error) {
+  const message = error && error.message ? error.message : String(error);
+  console.error('[UI] ' + context + ' failed:', error);
+  if (typeof appendLog === 'function') {
+    appendLog({ status: 'error', timestamp: new Date().toLocaleTimeString(), thought: context + ': ' + message });
+  }
+}
+
 async function apiGet(p) {
-  const r = await fetch(p);
-  if (!r.ok) throw new Error('GET ' + p + ' -> ' + r.status);
-  return r.json();
+  try {
+    const r = await fetch(p, { cache: 'no-store', signal: AbortSignal.timeout(15000) });
+    if (!r.ok) throw new Error('GET ' + p + ' -> ' + r.status);
+    return await r.json();
+  } catch (e) { uiError('API GET ' + p, e); throw e; }
 }
 async function apiSend(method, p, body) {
-  const r = await fetch(p, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
-  return r.json();
+  try {
+    const r = await fetch(p, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}),
+      signal: AbortSignal.timeout(15000),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((data && data.error) || (method + ' ' + p + ' -> ' + r.status));
+    return data;
+  } catch (e) { uiError('API ' + method + ' ' + p, e); throw e; }
 }
 
 async function refreshRooms(selectId) {
@@ -611,7 +644,7 @@ function appendRoomMessage(role, text) {
       renderChatMessages();
       await apiSend('POST', '/api/chat-rooms/' + encodeURIComponent(roomId) + '/messages', { sender, content: String(text) });
       renderChatRooms(); // タイトルが更新された可能性があるため再描画
-    } catch (e) { console.warn('Failed to save chat message:', e); }
+    } catch (e) { uiError('チャットメッセージ保存', e); }
   })();
 }
 
@@ -651,14 +684,18 @@ refreshRooms();
 
 // フォーム送信
 on(commandForm, 'submit', (e) => {
-  e.preventDefault();
-  if (!commandInput) return;
-  const text = commandInput.value.trim();
-  if (!text) return;
+  try {
+    e.preventDefault();
+    if (!commandInput) return;
+    const text = commandInput.value.trim();
+    if (!text) return;
 
-  appendRoomMessage('user', text);
-  socket.emit('sendInstruction', { instruction: text, sender: 'WebDashboard' });
-  commandInput.value = '';
+    appendRoomMessage('user', text);
+    socket.emit('sendInstruction', { instruction: text, sender: 'WebDashboard' });
+    commandInput.value = '';
+  } catch (err) {
+    uiError('指示送信', err);
+  }
 });
 
 // タスク中断
@@ -667,16 +704,24 @@ on(btnCancel, 'click', () => {
 });
 
 // クイックコマンドボタン
+// data-cmd は現在の言語に応じて i18n.js の apply() が data-cmd-ja / data-cmd-en から再設定する。
+// 「ストップ」判定は表示言語に依存しないよう data-cmd-ja / data-cmd-en の両方で比較する。
 document.querySelectorAll('.quick-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    const cmd = btn.getAttribute('data-cmd');
-    if (cmd) {
-      if (cmd === 'ストップ' || cmd === translate('stopInMinecraft')) {
+    try {
+      const cmd = btn.getAttribute('data-cmd');
+      if (!cmd) return;
+      const isStop = ['ストップ', 'stop', '停止', '中止', 'ruko', 'rukou'].includes(cmd)
+        || btn.getAttribute('data-cmd-ja') === 'ストップ'
+        || btn.getAttribute('data-cmd-en') === 'Stop';
+      if (isStop) {
         socket.emit('cancelTask');
       } else {
         appendRoomMessage('user', cmd);
         socket.emit('sendInstruction', { instruction: cmd, sender: 'WebDashboard' });
       }
+    } catch (e) {
+      uiError('クイックコマンド', e);
     }
   });
 });
@@ -754,7 +799,7 @@ function setConnectionState(name, connected) {
 
 async function refreshHealth() {
   try {
-    const response = await fetch('/api/health', { cache: 'no-store' });
+    const response = await fetch('/api/health', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
     if (!response.ok) throw new Error(translate('healthCheckFailed'));
     const health = await response.json();
     setConnectionState('minecraft', health.minecraftConnected);
@@ -771,7 +816,7 @@ async function refreshHealth() {
 
 async function loadSettings() {
   try {
-    const response = await fetch('/api/settings', { cache: 'no-store' });
+    const response = await fetch('/api/settings', { cache: 'no-store', signal: AbortSignal.timeout(15000) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || translate('settingsLoadFailed'));
     document.getElementById('setting-mc-port').value = data.mcPort || 25565;
@@ -859,6 +904,7 @@ on(settingsForm, 'submit', async event => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(30000),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || translate('settingsSaveFailed'));
@@ -899,7 +945,7 @@ async function fetchWithLocalSettingsAuth(url, options = {}) {
     const token = await getLocalSettingsToken(attempt > 0);
     const headers = new Headers(options.headers || {});
     headers.set('Authorization', `Bearer ${token}`);
-    const response = await fetch(url, { ...options, headers, cache: options.cache || 'no-store' });
+    const response = await fetch(url, { ...options, headers, cache: options.cache || 'no-store', signal: AbortSignal.timeout(30000) });
     if (response.status !== 403 || attempt > 0) return response;
   }
   throw new Error(translate('updateAuthMissing'));
@@ -987,7 +1033,7 @@ on(document.getElementById('btn-reconnect'), 'click', async event => {
   const button = event.currentTarget;
   button.disabled = true;
   try {
-    const response = await fetch('/api/reconnect', { method: 'POST' });
+    const response = await fetch('/api/reconnect', { method: 'POST', signal: AbortSignal.timeout(15000) });
     if (!response.ok) throw new Error(translate('reconnectFailed'));
     showSettingsMessage(translate('reconnectStarted'), 'success');
   } catch (error) {
@@ -1002,7 +1048,7 @@ on(document.getElementById('btn-ai-restart'), 'click', async event => {
   const button = event.currentTarget;
   button.disabled = true;
   try {
-    const response = await fetch('/api/ai/restart', { method: 'POST' });
+    const response = await fetch('/api/ai/restart', { method: 'POST', signal: AbortSignal.timeout(15000) });
     if (!response.ok) throw new Error(translate('aiRestartFailed'));
     showSettingsMessage(translate('aiRestarted'), 'success');
     refreshHealth();
