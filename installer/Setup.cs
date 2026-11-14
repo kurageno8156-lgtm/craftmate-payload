@@ -368,9 +368,9 @@ namespace CraftMateSetup
         private ProgressBar _progressBar;
         private PictureBox _picAppIcon;
 
-        private const string CurrentVersion = "1.3.114";
+        private const string CurrentVersion = "1.3.115";
         private const string GitHubApiUrl = "https://api.github.com/repos/kurageno8156-lgtm/craftmate-payload/releases/latest";
-        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.114/app_payload.zip";
+        private const string DownloadUrl = "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.115/app_payload.zip";
 
         public InstallerForm(string lang)
         {
