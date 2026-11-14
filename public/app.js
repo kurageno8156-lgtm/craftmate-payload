@@ -668,10 +668,17 @@ function appendRoomMessage(role, text) {
       const roomId = await ensureActiveRoom();
       if (!roomId) return;
       const sender = ROLE_TO_SENDER[role] || 'user';
-      // 楽観的にキャッシュへ追加してからサーバーへ保存
+      // 楽観的にキャッシュへ追加してからサーバーへ保存（一時的なハングに備えリトライ）
       (roomMessagesCache[roomId] = roomMessagesCache[roomId] || []).push({ sender, content: String(text), created_at: Date.now() });
       renderChatMessages();
-      await apiSend('POST', '/api/chat-rooms/' + encodeURIComponent(roomId) + '/messages', { sender, content: String(text) });
+      const payload = { sender, content: String(text) };
+      const url = '/api/chat-rooms/' + encodeURIComponent(roomId) + '/messages';
+      try {
+        await apiSend('POST', url, payload);
+      } catch (firstError) {
+        await new Promise(r => setTimeout(r, 1200));
+        await apiSend('POST', url, payload);
+      }
       renderChatRooms(); // タイトルが更新された可能性があるため再描画
     } catch (e) { uiError('チャットメッセージ保存', e); }
   })();

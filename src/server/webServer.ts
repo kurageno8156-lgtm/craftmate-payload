@@ -2,6 +2,7 @@ import express from 'express';
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import { MinecraftBot } from '../bot/mcBot.js';
 import { AutonomousAgent } from '../ai/agent.js';
@@ -43,6 +44,9 @@ export class WebServer {
   private lastScreenFrameAt: number | null = null;
   private updateToken: Buffer = Buffer.alloc(32);
   private appVersion: string = '0.0.0';
+  private selfCheckTimer: NodeJS.Timeout | null = null;
+  private selfCheckFailures: number = 0;
+  private lastSelfRestartAt: number = 0;
 
 
   constructor(
@@ -547,6 +551,11 @@ export class WebServer {
       res.json({ rooms: listChatRooms() });
     });
 
+    this.app.post('/api/ping', (_req, res) => {
+      // JSONボディのパース経路を含む疎通確認用（自己診断ウォッチドッグが使用）
+      res.json({ pong: true });
+    });
+
     this.app.post('/api/chat-rooms', (req, res) => {
       const id = String(req.body?.id || `room-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
       const title = String(req.body?.title || '').slice(0, 100);
@@ -723,6 +732,8 @@ export class WebServer {
             if (!this.isScreenSharing || capturing) return;
             capturing = true;
             try {
+              // screenshot-desktop は1フレーム毎に cmd.exe+bat をspawnするため、
+              // 高頻度だとプロセス生成が激しくなりサーバーが不安定になる。300ms間隔に抑える。
               const img = await captureScreenRegion(0, 0, 1920, 1080);
               if (img) {
                 this.lastScreenFrameAt = Date.now();
@@ -733,7 +744,7 @@ export class WebServer {
             } finally {
               capturing = false;
             }
-          }, 100);
+          }, 300);
         }
       });
 
@@ -796,15 +807,91 @@ export class WebServer {
   }
 
   public start(): void {
-    this.server.listen(this.port, () => {
-      console.log('\n======================================================');
-      console.log(`🌐 Web Dashboard is running at: http://localhost:${this.port}`);
-      console.log('======================================================\n');
-    });
+    const tryListen = (attempt: number): void => {
+      const onError = (err: NodeJS.ErrnoException) => {
+        // 旧プロセスの自動再起動と競合した場合に備え、EADDRINUSE はリトライする
+        if (err.code === 'EADDRINUSE' && attempt < 45) {
+          setTimeout(() => tryListen(attempt + 1), 2000);
+          return;
+        }
+        console.error(`[Web] Could not listen on port ${this.port}:`, err);
+      };
+      this.server.once('error', onError);
+      this.server.listen(this.port, () => {
+        this.server.removeListener('error', onError);
+        console.log('\n======================================================');
+        console.log(`🌐 Web Dashboard is running at: http://localhost:${this.port}`);
+        console.log('======================================================\n');
+        this.startSelfCheck();
+      });
+    };
+    tryListen(0);
+  }
+
+  /**
+   * 自己診断ウォッチドッグ。
+   * JSONボディ付きPOSTのパースがハングする「wedged」状態を検出したら、
+   * 新しい node プロセスを起こして自分は終了する（Launcher終了後も自動復旧するため）。
+   */
+  private startSelfCheck(): void {
+    if (this.selfCheckTimer) return;
+    this.selfCheckTimer = setInterval(() => { void this.runSelfCheck(); }, 15000);
+    this.selfCheckTimer.unref?.();
+  }
+
+  private async runSelfCheck(): Promise<void> {
+    try {
+      const response = await fetch(`http://127.0.0.1:${this.port}/api/ping`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+        signal: AbortSignal.timeout(8000),
+      });
+      await response.arrayBuffer().catch(() => {});
+      this.selfCheckFailures = response.ok ? 0 : this.selfCheckFailures + 1;
+    } catch {
+      this.selfCheckFailures += 1;
+    }
+    // 2回連続失敗（約30秒）で wedged と判断
+    if (this.selfCheckFailures >= 2) {
+      console.error('[Web] Self-check failed: request body parsing appears wedged. Attempting automatic restart...');
+      this.attemptSelfRestart();
+    }
+  }
+
+  private attemptSelfRestart(): void {
+    const now = Date.now();
+    // 無限再起動ループ防止: 5分以内の再起動は1回まで
+    if (now - this.lastSelfRestartAt < 5 * 60 * 1000) return;
+    this.lastSelfRestartAt = now;
+    this.selfCheckFailures = 0;
+
+    // Launcher は相対パス "dist\index.js" で起動するため絶対パスに解決する
+    const entry = process.argv[1] ? path.resolve(process.argv[1]) : '';
+    if (!entry || !fs.existsSync(entry)) return;
+    try {
+      const logPath = path.join(os.tmpdir(), 'CraftMate_server.log');
+      const logFd = fs.openSync(logPath, 'a');
+      const child = spawn(process.execPath, [entry], {
+        cwd: process.cwd(),
+        env: process.env,
+        detached: true,
+        stdio: ['ignore', logFd, logFd],
+        windowsHide: true,
+      });
+      child.once('error', error => console.error('[Web] Self-restart spawn failed:', error));
+      child.unref();
+      fs.closeSync(logFd);
+      console.error(`[Web] Restarting dashboard server (new PID ${child.pid}). Log: ${logPath}`);
+      setTimeout(() => process.exit(0), 800);
+    } catch (error) {
+      console.error('[Web] Self-restart failed:', error);
+    }
   }
 
   public stop(): void {
     if (this.statusTimer) clearInterval(this.statusTimer);
+    if (this.selfCheckTimer) clearInterval(this.selfCheckTimer);
     this.io.close();
   }
 }
