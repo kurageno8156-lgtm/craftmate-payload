@@ -1,3 +1,4 @@
+console.log("START");
 // Global error handlers to keep web server alive
 process.on('uncaughtException', (err) => {
     console.warn('[System Notice] Suppressed unhandled exception:', err.message || err);
