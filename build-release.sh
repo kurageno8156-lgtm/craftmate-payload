@@ -51,16 +51,47 @@ for f in dist/index.js package.json public/index.html public/app.js; do
 done
 [ -d node_modules ] || { echo "ERROR: node_modules missing"; exit 1; }
 
-# 5) ポータブルステージング
+# 5) Node.js ランタイム同梱
+#    Electron を ELECTRON_RUN_AS_NODE で Node として使うと、ネイティブモジュール
+#    (better-sqlite3) が Electron の ABI と不一致で SIGSEGV するため、
+#    対象プラットフォーム用の公式 Node.js バイナリを同梱する。
+NODE_VERSION="v20.18.1"
+case "$OS" in
+  linux)  NODE_DIST="linux-${ARCH}" ;;
+  darwin) NODE_DIST="darwin-${ARCH}" ;;
+  *)      NODE_DIST="" ;;
+esac
+if [ -n "$NODE_DIST" ]; then
+  echo "==> Downloading Node.js ${NODE_VERSION} (${NODE_DIST})"
+  NODE_TAR="node-${NODE_VERSION}-${NODE_DIST}.tar.xz"
+  curl -fsSL "https://nodejs.org/dist/${NODE_VERSION}/${NODE_TAR}" -o "/tmp/${NODE_TAR}"
+  NODE_EXTRACT="$(mktemp -d)/node-${NODE_VERSION}-${NODE_DIST}"
+  mkdir -p "$NODE_EXTRACT"
+  tar -xJf "/tmp/${NODE_TAR}" -C "$NODE_EXTRACT" --strip-components=1
+  mkdir -p "$STAGE/runtime"
+  cp "$NODE_EXTRACT/bin/node" "$STAGE/craftmate-node"
+  chmod +x "$STAGE/craftmate-node"
+  rm -rf "$NODE_EXTRACT" "/tmp/${NODE_TAR}"
+  echo "==> Bundled Node.js runtime: $($STAGE/craftmate-node --version 2>/dev/null || echo OK)"
+fi
+
+# 6) ポータブルステージング
 mkdir -p "$STAGE"
 cp -r dist public node_modules package.json package-lock.json "$STAGE"/ 2>/dev/null || true
 cp .env.example "$STAGE"/ 2>/dev/null || true
 
 cat > "$STAGE/start.sh" <<'EOF'
 #!/usr/bin/env bash
-# CraftMate 起動スクリプト — Node.js が PATH にある環境で実行
+# CraftMate 起動スクリプト — 同梱の Node.js を優先、無ければ PATH の node を使用
 cd "$(dirname "$0")"
-exec node dist/index.js "$@"
+if [ -x ./craftmate-node ]; then
+  exec ./craftmate-node dist/index.js "$@"
+elif command -v node >/dev/null 2>&1; then
+  exec node dist/index.js "$@"
+else
+  echo "ERROR: Node.js が見つかりません。同梱ランタイムが破損している可能性があります。" >&2
+  exit 1
+fi
 EOF
 chmod +x "$STAGE/start.sh"
 

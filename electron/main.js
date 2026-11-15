@@ -6,12 +6,24 @@
 //   native window.
 // - Kills the server process when the app quits.
 
-const { app, BrowserWindow, dialog } = require('electron');
+const { app, BrowserWindow } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const http = require('http');
 const net = require('net');
 const fs = require('fs');
+
+// Linux/WSL 等で GPU/Vulkan 初期化が SIGSEGV を起こすケースがあるため、
+// Linux ではハードウェアアクセラレーションを完全に無効化する。
+// (app ready 前に呼ぶ必要がある)
+if (process.platform === 'linux') {
+  try {
+    app.commandLine.appendSwitch('disable-gpu');
+    app.commandLine.appendSwitch('disable-software-rasterizer');
+    app.commandLine.appendSwitch('disable-gpu-compositing');
+    app.disableHardwareAcceleration();
+  } catch (_) { /* ignore */ }
+}
 
 // 127.0.0.1 を明示使用: WSL等で localhost が ::1 (IPv6) に解決されて
 // IPv4 のみで listen しているサーバーに届かない問題を回避する。
@@ -44,13 +56,21 @@ function resolvePayloadDir() {
   return packaged;
 }
 
+let lastServerExit = null; // { code, signal }
+
 function startServer(payloadDir) {
   const entry = path.join(payloadDir, 'dist', 'index.js');
+  // 同梱の Node.js バイナリを優先使用する。
+  // ELECTRON_RUN_AS_NODE で Electron を Node として使うと、
+  // better-sqlite3 等のネイティブモジュールが ABI 不一致で SIGSEGV するため。
+  const bundledNode = path.join(payloadDir, 'craftmate-node');
+  const useBundled = fs.existsSync(bundledNode);
+  const execPath = useBundled ? bundledNode : process.execPath;
   const env = Object.assign({}, process.env, {
-    ELECTRON_RUN_AS_NODE: '1',
     CRAFTMATE_DESKTOP: '1',
   });
-  serverProc = spawn(process.execPath, [entry], {
+  if (!useBundled) env.ELECTRON_RUN_AS_NODE = '1';
+  serverProc = spawn(execPath, [entry], {
     cwd: payloadDir,
     env,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -61,6 +81,7 @@ function startServer(payloadDir) {
   serverProc.stdout.on('data', d => process.stdout.write('[server] ' + d));
   serverProc.stderr.on('data', d => process.stderr.write('[server] ' + d));
   serverProc.on('exit', (code, signal) => {
+    lastServerExit = { code, signal };
     if (!quitting) {
       console.error(`[CraftMate] server exited unexpectedly (code=${code}, signal=${signal})`);
     }
@@ -170,7 +191,16 @@ async function boot() {
     return;
   }
   if (!serverProc) {
-    showError('The server process exited before the dashboard became ready.');
+    const sig = lastServerExit && lastServerExit.signal;
+    if (sig === 'SIGSEGV' || sig === 'SIGABRT' || sig === 'SIGILL') {
+      showError('The server crashed during startup (signal=' + sig + ').\n\n' +
+        'This usually means a native module (e.g. better-sqlite3) failed to load.\n' +
+        'DBの初期化に失敗しました。最新版を再ダウンロードするか、\n' +
+        'ポータブル版 craftmate-linux-*.tar.gz をお試しください。');
+    } else {
+      showError('The server process exited before the dashboard became ready.\n' +
+        'code=' + (lastServerExit && lastServerExit.code) + ' signal=' + sig);
+    }
   } else {
     showTimeoutScreen();
   }
