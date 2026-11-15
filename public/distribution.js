@@ -128,14 +128,22 @@
           comment: text
         })
       }).then(function (res) {
-        if (!res.ok) throw new Error('post failed');
+        if (!res.ok) {
+          return res.text().then(function (bodyText) {
+            var detail = '';
+            try { detail = JSON.parse(bodyText).error || bodyText.slice(0, 200); } catch (e) { detail = bodyText.slice(0, 200); }
+            throw new Error('HTTP ' + res.status + (detail ? ' - ' + detail : ''));
+          });
+        }
+        return res.json();
+      }).then(function () {
         textInput.value = '';
         if (nameInput) nameInput.value = '';
         selectedRating = 0;
         updateStarButtons();
         loadReviews();
-      }).catch(function () {
-        alert('レビューの投稿に失敗しました。もう一度お試しください。');
+      }).catch(function (error) {
+        alert('レビューの投稿に失敗しました: ' + (error && error.message ? error.message : error));
       });
     });
   }

@@ -10,7 +10,7 @@ import { captureScreenRegion } from '../bot/vision.js';
 import { AgentStepLog, ChatMessage } from '../types.js';
 import * as fs from 'fs';
 import { randomBytes, timingSafeEqual } from 'crypto';
-import { spawn } from 'child_process';
+import { spawn, execFile } from 'child_process';
 import dotenv from 'dotenv';
 import {
   listChatRooms, createChatRoom, deleteChatRoom, listChatMessages, addChatMessage, setChatRoomTitleIfEmpty,
@@ -381,6 +381,13 @@ export class WebServer {
       if (!this.isLocalUpdateRequest(req, true)) {
         this.debugLog('POST /api/launch-updater rejected: not a local authenticated request');
         return res.status(403).json({ error: 'The updater can be launched only from the authenticated local dashboard.' });
+      }
+      // 起動前に、以前のバージョンで残った CraftMate 補助プロセスを掃除する。
+      // （Updater本体はこれから起動するので対象外。node.exe/Launcher.exe の掃除は Updater 側が行う）
+      for (const staleName of ['CraftMate_Updater', 'CraftMate_ScreenViewer']) {
+        try {
+          execFile('taskkill', ['/F', '/IM', `${staleName}.exe`], { timeout: 5000 }, () => { });
+        } catch { /* ベストエフォート */ }
       }
       const updaterPath = path.join(this.installationPath(), 'CraftMate_Updater.exe');
       if (!fs.existsSync(updaterPath)) {
@@ -873,11 +880,23 @@ export class WebServer {
     });
 
     this.app.post('/api/reviews', (req, res) => {
-      const rating = Math.max(1, Math.min(5, parseInt(String(req.body?.rating), 10) || 0));
-      const name = String(req.body?.name || '').slice(0, 30);
-      const comment = String(req.body?.comment || '').slice(0, 1000);
-      if (!comment.trim()) return res.status(400).json({ error: 'comment is required' });
-      res.json({ review: addReview(rating, name || '匿名', comment.trim()) });
+      try {
+        const rating = Math.max(1, Math.min(5, parseInt(String(req.body?.rating), 10) || 0));
+        const name = String(req.body?.name || '').slice(0, 30);
+        const comment = String(req.body?.comment || '').slice(0, 1000);
+        this.debugLog(`POST /api/reviews received: rating=${req.body?.rating} nameLen=${name.length} commentLen=${comment.trim().length}`);
+        if (!comment.trim()) {
+          this.debugLog('POST /api/reviews rejected: empty comment');
+          return res.status(400).json({ error: 'comment is required' });
+        }
+        const review = addReview(rating, name || '匿名', comment.trim());
+        this.debugLog(`POST /api/reviews saved id=${review.id}`);
+        res.json({ review });
+      } catch (error) {
+        const message = (error as Error)?.message || String(error);
+        this.debugLog(`POST /api/reviews FAILED: ${message}`);
+        res.status(500).json({ error: `レビューの保存に失敗しました: ${message}` });
+      }
     });
   }
 

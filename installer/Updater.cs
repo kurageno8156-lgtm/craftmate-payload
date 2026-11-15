@@ -325,8 +325,8 @@ namespace CraftMateUpdater
                 foreach (string required in new string[] { "CraftMate.exe", "CraftMate_Updater.exe", "node.exe", "dist\\index.js", "public\\app.ico" })
                     if (!File.Exists(Path.Combine(stageDirectory, required))) throw new FileNotFoundException("更新ファイルが不足しています: " + required);
 
-                StopInstalledNode(worker);
-                StopInstalledLauncher(worker);
+                StopAllRunningCraftMate(worker);
+                WaitForPortReleased(worker, 3000);
                 string[] updateItems = new string[] { "dist", "public", "node_modules", "CraftMate.exe", "CraftMate_Updater.exe", "CraftMate_ScreenViewer.exe", "node.exe", ".env.example", "package.json", "package-lock.json", "README.md", "Uninstall.exe" };
                 int total = updateItems.Length;
                 for (int i = 0; i < updateItems.Length; i++)
@@ -356,6 +356,7 @@ namespace CraftMateUpdater
                 string verifiedVersion = Convert.ToString(verifiedPackage["version"]);
                 if (CompareVersions(verifiedVersion, latestVersion) != 0) throw new InvalidDataException("更新後のバージョン確認に失敗しました。");
                 Report(worker, 99, "更新を確認しています... (v" + verifiedVersion + ")");
+                WaitForPortReleased(worker, 3000);
                 StartInstalledLauncher();
                 Report(worker, 100, "アップデートが完了しました (v" + verifiedVersion + ")。");
                 return UpdateOutcome.Updated;
@@ -547,6 +548,131 @@ namespace CraftMateUpdater
                 }
             }
             Report(worker, 62, "ZIP の解凍が完了しました。ファイルを置き換えています...");
+        }
+
+        /// <summary>
+        /// アップデート前の強化版クリーンアップ。
+        /// 1) インストール先ディレクトリ配下の実行ファイルを持つ全プロセスを Kill
+        ///    （node.exe / CraftMate.exe / CraftMate_Updater.exe / CraftMate_ScreenViewer.exe 等）
+        /// 2) ポート3000のリスナーをパス不問で Kill（開発フォルダ等の古い node.exe 対策）
+        /// 3) ポート解放を最大15秒待機
+        /// </summary>
+        private void StopAllRunningCraftMate(BackgroundWorker worker)
+        {
+            Report(worker, 64, "実行中の CraftMate 関連プロセスをすべて停止しています...");
+            string installRoot = Path.GetFullPath(_installDirectory).TrimEnd('\\') + "\\";
+            int selfPid = Process.GetCurrentProcess().Id;
+            int killed = 0;
+            foreach (Process process in Process.GetProcesses())
+            {
+                try
+                {
+                    if (process.Id == selfPid) continue;
+                    string executable;
+                    try { executable = process.MainModule.FileName; }
+                    catch { continue; } // アクセス不可・他ビットネス等はスキップ
+                    if (!executable.StartsWith(installRoot, StringComparison.OrdinalIgnoreCase)) continue;
+                    string name = process.ProcessName;
+                    try
+                    {
+                        process.Kill();
+                        if (!process.WaitForExit(10000))
+                        {
+                            try { process.Kill(); } catch { }
+                            process.WaitForExit(3000);
+                        }
+                        killed++;
+                        Report(worker, 64, "プロセスを停止しました: " + name + " (PID " + process.Id + ")");
+                    }
+                    catch { /* 権限不足等はポートキル側で拾う */ }
+                }
+                catch { }
+                finally { try { process.Dispose(); } catch { } }
+            }
+
+            // ポート3000を掴んでいるプロセスを実行パス不問で終了する
+            KillProcessOnPort(3000);
+
+            // ポート解放待ち（最大15秒）
+            for (int i = 0; i < 30; i++)
+            {
+                if (!IsPortListening(3000)) break;
+                Thread.Sleep(500);
+            }
+            Report(worker, 64, "クリーンアップ完了（" + killed + " プロセスを停止）。");
+        }
+
+        /// <summary>netstat で LISTENING 中の PID を取得して Kill する。</summary>
+        private void KillProcessOnPort(int port)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo("netstat", "-ano")
+                {
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+                using (Process netstat = Process.Start(psi))
+                {
+                    if (netstat == null) return;
+                    string output = netstat.StandardOutput.ReadToEnd();
+                    netstat.WaitForExit(10000);
+                    var pids = new HashSet<int>();
+                    foreach (string line in output.Split('\n'))
+                    {
+                        // TCP    0.0.0.0:3000  ...  LISTENING    1234
+                        var m = System.Text.RegularExpressions.Regex.Match(
+                            line, @"TCP\s+\S+:" + port + @"\s+\S+\s+LISTENING\s+(\d+)");
+                        int pid;
+                        if (m.Success && int.TryParse(m.Groups[1].Value, out pid)) pids.Add(pid);
+                    }
+                    int selfPid = Process.GetCurrentProcess().Id;
+                    foreach (int pid in pids)
+                    {
+                        if (pid == selfPid) continue;
+                        try
+                        {
+                            using (Process proc = Process.GetProcessById(pid))
+                            {
+                                proc.Kill();
+                                proc.WaitForExit(5000);
+                            }
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private static bool IsPortListening(int port)
+        {
+            try
+            {
+                using (var client = new System.Net.Sockets.TcpClient())
+                {
+                    var result = client.BeginConnect("127.0.0.1", port, null, null);
+                    bool connected = result.AsyncWaitHandle.WaitOne(800);
+                    if (connected && client.Connected)
+                    {
+                        try { client.EndConnect(result); } catch { }
+                        return true;
+                    }
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        private void WaitForPortReleased(BackgroundWorker worker, int port)
+        {
+            for (int i = 0; i < 30; i++)
+            {
+                if (!IsPortListening(port)) return;
+                Thread.Sleep(500);
+            }
+            Report(worker, 65, "警告: ポート " + port + " がまだ使用中です。起動時に競合する可能性があります。");
         }
 
         private void StopInstalledNode(BackgroundWorker worker)
