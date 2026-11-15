@@ -604,7 +604,11 @@ export async function executeBotTool(
         }
         const isValidBlueprint = (v: any) => v && typeof v === 'object' && (v.structure || v.blocks);
         if (!isValidBlueprint(bp)) bp = skills.pendingBlueprint;
-        if (!isValidBlueprint(bp)) return { success: false, message: '設計図がありません。先に generateArchitecturalBlueprint を実行してください。' };
+        // 設計図が無い場合も停止せず、標準的な小屋のフォールバック設計図で建築を継続する
+        if (!isValidBlueprint(bp)) {
+          bp = buildFallbackBlueprint();
+          console.warn('[Build] No blueprint available for command-block build; using fallback house blueprint.');
+        }
         skills.pendingBlueprint = bp;
         const pos = botWrapper.bot?.entity?.position?.floored?.();
         const ox = Number.isFinite(Number(args.originX)) ? Number(args.originX) : (pos?.x ?? 0);
@@ -622,6 +626,11 @@ export async function executeBotTool(
         }
         const isValidBp = (v: any) => v && typeof v === 'object' && (v.structure || v.blocks);
         if (isValidBp(bp)) skills.pendingBlueprint = bp;
+        // 設計図が1つも無い場合でも停止しないよう、標準的な小屋のフォールバック設計図で建築を継続する
+        if (!isValidBp(skills.pendingBlueprint)) {
+          skills.pendingBlueprint = buildFallbackBlueprint();
+          console.warn('[Build] No blueprint available; using fallback house blueprint.');
+        }
         return await skills.buildBlueprint();
       }
       case 'getCommandBlockHistory': {

@@ -40,6 +40,9 @@ export class MinecraftBot extends EventEmitter {
       username: this.config.mcUsername,
       auth: this.config.mcAuth,
       version: requestedVersion,
+      // 描画距離（チャンク）。デフォルトより広く取り、遠くのプレイヤーやMobも検知できるようにする。
+      // 実際に届くチャンク数はサーバー側の view-distance 設定が上限になる。
+      viewDistance: 16,
     };
 
     try {
@@ -159,8 +162,21 @@ export class MinecraftBot extends EventEmitter {
 
     // プレイヤーからのチャット受信
     const handledMessages = new Set<string>();
-    const emitChatMessage = (sender: string, text: string) => {
-      if (!text || sender === this.bot.username) return;
+    const emitChatMessage = (rawSender: string, text: string) => {
+      if (!text) return;
+      // 送信者名の正規化: カラーコード(§)・装飾・括弧・前後の空白を除去する。
+      // messagestr 由来の文字列には "[Server] Name" や "§rName" のような装飾が混ざることがある。
+      let sender = String(rawSender || '')
+        .replace(/§./g, '')
+        .replace(/[\[\](){}<>]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      // "[Server] PlayerName" のようなプレフィックスが残った場合は末尾の単語を名前とみなす
+      const parts = sender.split(' ').filter(Boolean);
+      if (parts.length > 1) sender = parts[parts.length - 1];
+      if (!sender || sender === this.bot.username) return;
+      // システムメッセージやボット自身の発言を誤って送信者にしない
+      if (/^(server|console|system|you|joined|left)$/i.test(sender)) return;
       const dedupeKey = `${sender}:${text}:${Math.floor(Date.now() / 1500)}`;
       if (handledMessages.has(dedupeKey)) return;
       handledMessages.add(dedupeKey);

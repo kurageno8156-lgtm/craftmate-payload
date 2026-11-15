@@ -829,6 +829,36 @@ function setMinecraftVersionSetting(version) {
 
 on(minecraftVersionSelect, 'change', updateCustomMinecraftVersionVisibility);
 
+// Minecraftバージョン選択肢を数値として正しい降順（新しい順）に並べ替える。
+// 辞書順では "1.21.9" > "1.21.11" のように誤判定されるため、数値セグメントで比較する。
+function sortMinecraftVersionOptions() {
+  if (!minecraftVersionSelect) return;
+  const parseVersion = (v) => {
+    const m = String(v).match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
+    return m ? [Number(m[1]), Number(m[2] || 0), Number(m[3] || 0)] : [0, 0, 0];
+  };
+  const options = Array.from(minecraftVersionSelect.options);
+  const pinned = options.filter(o => o.value === 'auto' || o.value === 'custom');
+  const versions = options
+    .filter(o => o.value !== 'auto' && o.value !== 'custom')
+    .sort((a, b) => {
+      const va = parseVersion(a.value);
+      const vb = parseVersion(b.value);
+      for (let i = 0; i < 3; i++) {
+        if (vb[i] !== va[i]) return vb[i] - va[i];
+      }
+      return 0;
+    });
+  const auto = options.find(o => o.value === 'auto');
+  const custom = options.find(o => o.value === 'custom');
+  minecraftVersionSelect.replaceChildren(
+    ...(auto ? [auto] : []),
+    ...versions,
+    ...(custom ? [custom] : []),
+  );
+}
+sortMinecraftVersionOptions();
+
 function setConnectionState(name, connected) {
   const dot = document.getElementById(`${name}-health-dot`);
   const label = document.getElementById(`${name}-health-label`);

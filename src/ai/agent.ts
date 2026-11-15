@@ -108,8 +108,13 @@ export class AutonomousAgent extends EventEmitter {
     const maxSteps = this.botWrapper.config.maxAgentSteps;
     const history: Array<{ role: 'user' | 'model' | 'assistant'; content: string }> = [];
 
+    // チャットで相手を呼ぶ名前。ダッシュボード経由の指示は「WebDashboard」等の
+    // 内部名なので、MC内では「プレイヤー」と呼ぶ。Minecraftチャット経由なら実際のユーザー名が来る。
+    const requesterName = /^(webdashboard|webuser|player|dashboard)$/i.test(requester) ? 'プレイヤー' : requester;
+
     const systemPrompt = `
 あなたはMinecraftの世界で活動する自律型AIアシスタント（プレイヤー名: ${this.botWrapper.config.mcUsername}）です。
+あなたが今チャットで話しかけている相手の名前は「${requesterName}」です。Minecraft内で相手を呼ぶ・言及する場合は必ずこの名前を使い、「ダッシュボード」など別の呼び名は絶対に使わないでください。
 指示された目標（例: 装備作り、建築、討伐準備、素材集め）を達成するために、自分の持ち物と周囲の環境を確認し、1ステップずつ着実にスキル（Tool）を実行してください。
  | あなたはMinecraftの世界で活動する自律型AIアシスタント（プレイヤー名: ${this.botWrapper.config.mcUsername}）です。
  | 回答は必ず簡潔に、1〜3文で答えてください。
@@ -148,7 +153,13 @@ export class AutonomousAgent extends EventEmitter {
 - 「昼にして」「夜にして」「テレポートして」「時間を止めて」などワールド操作の指示には 'executeCommand' ツールを使ってください（例: "time set day"、"time set night"、"tp @p x y z"）。
 - 「コマンドブロックを置いて」「座標にコマンドブロックを設置」などの指示には 'placeCommandBlock'（引数: x, y, z, command, commandType）を使い、発動が必要なら 'triggerCommandBlock' も使ってください。
 - コマンドブロックの実行結果を確認したい場合は 'getCommandBlockHistory' ツールを使ってください。同じコマンドを繰り返す前に、必ず前回の結果を確認してください。
-- 「家を建てて」「建物を作って」などの指示には、まず 'generateArchitecturalBlueprint' で設計図を生成し、次に 'buildWithCommandBlock' でコマンドブロックによる一括建築を試してください（/fill や /setblock コマンドを使用）。コマンドブロックが使えない場合や権限がない場合は 'buildBlueprint' で手作業で建ててください。建築中の進捗はダッシュボードのログに表示されます（チャットには送らないでください）。設計図を生成したら、'buildWithCommandBlock' または 'buildBlueprint' を引数を空にして呼び出してください（設計図は自動的に読み込まれます。blueprint 引数は絶対に渡さないでください）。
+- 「家を建てて」「建物を作って」などの建築指示は、必ず次の順序で行ってください：
+  ① まず 'generateArchitecturalBlueprint' を description（例: "小さな木造の家"）付きで呼び、設計図を生成する（このツールは内部でAIが設計図JSONを作るため数十秒かかることがあります。成功するまで繰り返し呼んでください）
+  ② 設計図生成が成功したら 'buildWithCommandBlock' を引数なし（{}）で呼び、コマンドブロック一括建築を試す
+  ③ コマンドブロック建築が失敗・利用不可の場合のみ 'buildBlueprint' を引数なし（{}）で呼び、手作業建築に切り替える
+  ※ 'buildWithCommandBlock' と 'buildBlueprint' は引数を絶対に自分で書かないでください（{} のまま呼ぶ）。設計図はサーバー側で自動的に読み込まれます。blueprint 引数を渡すと失敗します。
+  ※ 'buildBlueprint' や 'buildWithCommandBlock' を設計図生成より先に呼んではいけません。設計図がないと失敗します。
+  建築中の進捗はダッシュボードのログに表示されます（チャットには送らないでください）。建築は数百ブロックを一つずつ設置するため時間がかかります。途中で止まったように見えても待ってください。
 
 【狩りと食料確保】
 - プレイヤーが「狩りをして」「動物を狩って食料を集めて」などと指示したら、'huntMob' を使ってください。'targetType' は動物だけなら 'animals'、敵対Mobだけなら 'hostiles'、指定がなければ 'any' にします。
@@ -170,7 +181,7 @@ export class AutonomousAgent extends EventEmitter {
     // 初期メッセージ
     history.push({
       role: 'user',
-      content: `${memoryBlock}【プレイヤー (${requester}) からの指示】\n"${goal}"\n\n【初期環境状況】\n${this.botWrapper.perception.generateEnvironmentPrompt(goal)}\n\n目標達成のために最初のアクションを実行してください。`,
+      content: `${memoryBlock}【プレイヤー (${requesterName}) からの指示】\n"${goal}"\n\n【初期環境状況】\n${this.botWrapper.perception.generateEnvironmentPrompt(goal)}\n\n目標達成のために最初のアクションを実行してください。`,
     });
 
     let lastActionFailed = false;

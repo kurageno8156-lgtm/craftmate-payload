@@ -59,6 +59,8 @@ export class SkillManager {
   // ---- 建築設計図 ----
   public pendingBlueprint: any = null;
   public blueprintProgress: ((message: string) => void) | null = null;
+  // 建築中断フラグ（stopActions / タスクキャンセルで立てる）
+  public buildAbortRequested: boolean = false;
 
   /**
    * クリエイティブモードでなければ /gamemode creative を試行する。
@@ -81,18 +83,28 @@ export class SkillManager {
    */
   public async buildBlueprint(): Promise<ToolCallResult> {
     const bp = this.pendingBlueprint;
-    if (!bp || !bp.structure) {
+    if (!bp || (!bp.structure && !bp.blocks)) {
       return { success: false, message: '設計図がありません。先に generateArchitecturalBlueprint を実行してください。' };
     }
+    this.buildAbortRequested = false;
     const base = this.bot.entity.position.floored();
     const entries: Array<{ x: number; y: number; z: number; block: string; section: string }> = [];
-    for (const [section, list] of Object.entries(bp.structure as Record<string, any[]>)) {
-      if (!Array.isArray(list)) continue;
-      for (const e of list) {
-        if (e && typeof e.block === 'string' && Number.isFinite(e.x) && Number.isFinite(e.y) && Number.isFinite(e.z)) {
-          entries.push({ x: base.x + e.x, y: base.y + e.y, z: base.z + e.z, block: e.block, section });
-        }
+    const pushEntry = (e: any, section: string) => {
+      // block / name / id のいずれかにブロックIDが入る設計図フォーマットに対応
+      const block = e && typeof e === 'object' ? (e.block ?? e.name ?? e.id) : undefined;
+      if (typeof block === 'string' && Number.isFinite(e.x) && Number.isFinite(e.y) && Number.isFinite(e.z)) {
+        entries.push({ x: base.x + e.x, y: base.y + e.y, z: base.z + e.z, block, section });
       }
+    };
+    if (bp.structure && typeof bp.structure === 'object') {
+      for (const [section, list] of Object.entries(bp.structure as Record<string, any[]>)) {
+        if (!Array.isArray(list)) continue;
+        for (const e of list) pushEntry(e, section);
+      }
+    }
+    // "blocks" 形式（{x,y,z,block} のフラット配列）の設計図にも対応
+    if (Array.isArray(bp.blocks)) {
+      for (const e of bp.blocks) pushEntry(e, 'blocks');
     }
     if (entries.length === 0) {
       return { success: false, message: '設計図に設置可能なブロックがありません。' };
@@ -105,8 +117,15 @@ export class SkillManager {
     }
     let placed = 0;
     let failed = 0;
+    let processed = 0;
     const itemCache = new Map<string, any>();
     for (const entry of entries) {
+      if (this.buildAbortRequested) {
+        console.log(`[Build] Blueprint build aborted by user at ${processed}/${entries.length}.`);
+        try { this.blueprintProgress?.(`建築が中断されました（${placed} 個設置済み）。`); } catch { }
+        return { success: placed > 0, message: `建築を中断しました（${placed}/${entries.length} ブロック設置済み）。` };
+      }
+      processed++;
       try {
         const target = new Vec3(Math.floor(entry.x), Math.floor(entry.y), Math.floor(entry.z));
         const existing = this.bot.blockAt(target);
@@ -169,9 +188,12 @@ export class SkillManager {
           if (failed <= 10) console.warn(`[Build] Failed to place ${entry.block} at (${entry.x},${entry.y},${entry.z}): ${failReason}`);
         }
       } catch { failed++; }
-      if (placed % 50 === 0 && placed > 0) {
-        try { this.blueprintProgress?.(`建築中... ${placed}/${entries.length} ブロック設置済み`); } catch { /* ignore */ }
-        await new Promise(r => setTimeout(r, 100));
+      // 進捗は「処理済み件数」ベースで定期的に出す（失敗が多くても進行が見えるように）
+      if (processed % 20 === 0) {
+        try {
+          this.blueprintProgress?.(`建築中... ${processed}/${entries.length} ブロック処理済み（設置 ${placed} / 失敗 ${failed}）`);
+        } catch { /* ignore */ }
+        await new Promise(r => setTimeout(r, 60));
       }
     }
     const name = bp.name || '設計図';
@@ -433,20 +455,27 @@ export class SkillManager {
     blueprint: any,
     originX: number, originY: number, originZ: number
   ): Promise<ToolCallResult> {
-    if (!blueprint || !blueprint.structure) {
+    if (!blueprint || (!blueprint.structure && !blueprint.blocks)) {
       return { success: false, message: '設計図がありません。' };
     }
     if (!(await this.ensureCreativeMode())) {
       return { success: false, message: 'コマンドブロック建築にはクリエイティブモードが必要です。サーバーで /gamemode creative を実行する権限があるか確認してください。' };
     }
     const entries: Array<{ x: number; y: number; z: number; block: string }> = [];
-    for (const list of Object.values(blueprint.structure as Record<string, any[]>)) {
-      if (!Array.isArray(list)) continue;
-      for (const e of list) {
-        if (e && typeof e.block === 'string' && Number.isFinite(e.x) && Number.isFinite(e.y) && Number.isFinite(e.z)) {
-          entries.push({ x: Math.floor(originX) + e.x, y: Math.floor(originY) + e.y, z: Math.floor(originZ) + e.z, block: e.block });
-        }
+    const pushEntry = (e: any) => {
+      const block = e && typeof e === 'object' ? (e.block ?? e.name ?? e.id) : undefined;
+      if (typeof block === 'string' && Number.isFinite(e.x) && Number.isFinite(e.y) && Number.isFinite(e.z)) {
+        entries.push({ x: Math.floor(originX) + e.x, y: Math.floor(originY) + e.y, z: Math.floor(originZ) + e.z, block });
       }
+    };
+    if (blueprint.structure && typeof blueprint.structure === 'object') {
+      for (const list of Object.values(blueprint.structure as Record<string, any[]>)) {
+        if (!Array.isArray(list)) continue;
+        for (const e of list) pushEntry(e);
+      }
+    }
+    if (Array.isArray(blueprint.blocks)) {
+      for (const e of blueprint.blocks) pushEntry(e);
     }
     if (entries.length === 0) return { success: false, message: '設計図にブロックがありません。' };
 
@@ -592,6 +621,7 @@ export class SkillManager {
    * 移動や追従の停止
    */
   public async stopActions(): Promise<ToolCallResult> {
+    this.buildAbortRequested = true;
     this.stopFollowing();
     try {
       if ((this.bot as any).collectBlock && typeof (this.bot as any).collectBlock.cancelTask === 'function') {
