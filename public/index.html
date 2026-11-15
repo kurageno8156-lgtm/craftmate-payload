@@ -15,11 +15,20 @@
 </head>
 <body>
   <div class="app-container">
+    <!-- アップデート通知バー -->
+    <div id="update-banner" class="update-banner" hidden>
+      <span class="update-banner-text" id="update-banner-text"></span>
+      <span class="update-banner-actions">
+        <button id="update-banner-apply" class="btn-primary update-banner-btn" type="button"></button>
+        <button id="update-banner-later" class="btn-secondary update-banner-btn" type="button"></button>
+      </span>
+    </div>
     <!-- ヘッダー -->
     <header class="header">
       <div class="logo">
         <span class="mc-icon">⛏️</span>
         <h1>Minecraft AI Agent <span class="badge">Autonomous</span></h1>
+        <span id="app-version" class="app-version"></span>
       </div>
       <div class="header-actions">
         <a class="distribution-link" href="/distribution.html">CraftMate 配布ページ ↗</a>

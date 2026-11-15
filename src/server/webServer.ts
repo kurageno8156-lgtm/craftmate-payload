@@ -53,6 +53,7 @@ export class WebServer {
   private connectedSockets: number = 0;
   private lastSocketActivityAt: number = Date.now();
   private idleShutdownTimer: NodeJS.Timeout | null = null;
+  private updateCheckCache: { at: number; data: any } | null = null;
 
 
   constructor(
@@ -364,20 +365,91 @@ export class WebServer {
     return out;
   }
 
+  // "1.2.3" 形式のバージョン比較。a > b なら正、a < b なら負、同じなら0。
+  private compareVersions(a: string, b: string): number {
+    const pa = String(a || '0').split('.').map(n => parseInt(n, 10) || 0);
+    const pb = String(b || '0').split('.').map(n => parseInt(n, 10) || 0);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const d = (pa[i] || 0) - (pb[i] || 0);
+      if (d !== 0) return d;
+    }
+    return 0;
+  }
+
   private setupRoutes(): void {
     this.app.get('/api/version', (req, res) => {
       try {
         const packagePath = path.resolve(__dirname, '../../package.json');
         const packageInfo = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-        res.json({ version: String(packageInfo.version || '0.0.0') });
+        res.json({ version: String(packageInfo.version || '0.0.0'), platform: process.platform, arch: process.arch });
       } catch {
         res.status(500).json({ error: 'Could not read the application version.' });
+      }
+    });
+
+    // GitHub 最新リリースと現在バージョンを比較し、自OS用アセット名を返す。
+    // 結果は10分キャッシュ（GitHub API のレート制限対策）。
+    this.app.get('/api/version/check', async (req, res) => {
+      const repo = 'kurageno8156-lgtm/craftmate-payload';
+      const current = this.appVersion || '0.0.0';
+      const platform = process.platform;
+      const arch = process.arch === 'arm64' ? 'arm64' : 'x64';
+      try {
+        const now = Date.now();
+        if (!this.updateCheckCache || now - this.updateCheckCache.at > 10 * 60 * 1000) {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 8000);
+          const gh = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
+            headers: { 'User-Agent': 'CraftMate', Accept: 'application/vnd.github+json' },
+            signal: ctrl.signal,
+          });
+          clearTimeout(timer);
+          if (!gh.ok) throw new Error(`GitHub API ${gh.status}`);
+          const data = await gh.json() as { tag_name?: string; html_url?: string; assets?: Array<{ name: string; browser_download_url: string }> };
+          this.updateCheckCache = { at: now, data };
+        }
+        const rel = this.updateCheckCache.data;
+        const latest = String(rel.tag_name || '').replace(/^v/, '');
+        const updateAvailable = this.compareVersions(latest, current) > 0;
+        // 自OS用アセット名の決定（他OSのファイルは絶対に選ばない）
+        let assetName = '';
+        if (platform === 'win32') assetName = 'CraftMate_Setup.exe';
+        else if (platform === 'linux') assetName = `CraftMate-linux-${arch}.AppImage`;
+        else if (platform === 'darwin') assetName = '';
+        const asset = (rel.assets || []).find((a: { name: string }) => a.name === assetName);
+        res.json({
+          currentVersion: current,
+          latestVersion: latest || null,
+          updateAvailable,
+          platform,
+          arch,
+          assetName: asset ? assetName : null,
+          downloadUrl: asset ? asset.browser_download_url : null,
+          releaseUrl: rel.html_url || null,
+          canAutoUpdate: platform === 'win32',
+        });
+      } catch (error) {
+        this.debugLog(`GET /api/version/check failed: ${(error as Error).message}`);
+        res.json({
+          currentVersion: current, latestVersion: null, updateAvailable: false,
+          platform, arch, assetName: null, downloadUrl: null,
+          releaseUrl: `https://github.com/${repo}/releases/latest`,
+          canAutoUpdate: platform === 'win32',
+          checkError: 'Could not reach GitHub to check for updates.',
+        });
       }
     });
 
     this.app.post('/api/launch-updater', (req, res) => {
       const startedAt = Date.now();
       this.debugLog('POST /api/launch-updater start');
+      if (process.platform !== 'win32') {
+        this.debugLog(`POST /api/launch-updater rejected: auto-updater is Windows-only (platform=${process.platform})`);
+        return res.status(400).json({
+          error: 'The built-in updater is only available on Windows. Please download the latest release manually.',
+          manualUpdate: true,
+        });
+      }
       if (!this.isLocalUpdateRequest(req, true)) {
         this.debugLog('POST /api/launch-updater rejected: not a local authenticated request');
         return res.status(403).json({ error: 'The updater can be launched only from the authenticated local dashboard.' });

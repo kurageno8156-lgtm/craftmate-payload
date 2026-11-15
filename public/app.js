@@ -142,6 +142,97 @@ fetch('/api/status')
   })
   .catch(err => console.error('Initial fetch failed:', err));
 
+// ---- 現在バージョン表示 ----
+fetch('/api/version')
+  .then(res => res.json())
+  .then(data => {
+    const el = document.getElementById('app-version');
+    if (el && data && data.version) el.textContent = 'v' + data.version;
+  })
+  .catch(() => { });
+
+// ---- アップデート通知バー ----
+const updateBanner = document.getElementById('update-banner');
+const updateBannerText = document.getElementById('update-banner-text');
+const updateBannerApply = document.getElementById('update-banner-apply');
+const updateBannerLater = document.getElementById('update-banner-later');
+let updateCheckInfo = null;
+
+function dismissUpdateBanner(latestVersion) {
+  try { sessionStorage.setItem('cm-dismissed-update', String(latestVersion)); } catch (_) { }
+  if (updateBanner) updateBanner.hidden = true;
+}
+
+function showUpdateBanner(info) {
+  if (!updateBanner || !updateBannerText || !updateBannerApply || !updateBannerLater) return;
+  if (info.latestVersion) {
+    try {
+      if (sessionStorage.getItem('cm-dismissed-update') === String(info.latestVersion)) return;
+    } catch (_) { }
+  }
+  updateCheckInfo = info;
+  updateBannerText.textContent = translate('updateAvailable', {
+    latest: info.latestVersion || '?',
+    current: info.currentVersion || '?',
+  });
+  updateBannerApply.textContent = info.canAutoUpdate ? translate('updateNow') : translate('updateDownloadManual');
+  updateBannerLater.textContent = translate('later');
+  updateBanner.hidden = false;
+  // スライドダウンアニメーション用に次フレームで .show を付与
+  requestAnimationFrame(() => requestAnimationFrame(() => updateBanner.classList.add('show')));
+}
+
+async function applyUpdateFromBanner() {
+  const info = updateCheckInfo;
+  if (!info) return;
+  if (info.canAutoUpdate) {
+    // Windows: 既存のアップデーター起動フローを再利用
+    updateBannerApply.disabled = true;
+    try {
+      const response = await fetchWithLocalSettingsAuth('/api/launch-updater', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || translate('updaterLaunchFailed'));
+      updatePending = true;
+      dismissUpdateBanner(info.latestVersion);
+    } catch (error) {
+      updateBannerApply.disabled = false;
+      // 自動更新不可なら手動ダウンロードへフォールバック
+      if (info.downloadUrl || info.releaseUrl) {
+        window.open(info.downloadUrl || info.releaseUrl, '_blank');
+      } else {
+        showSettingsMessage(error.message || translate('updaterLaunchFailed'), 'error');
+      }
+    }
+  } else {
+    // Linux/macOS: 自OS用アセット（またはリリースページ）をブラウザで開く
+    window.open(info.downloadUrl || info.releaseUrl || 'https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest', '_blank');
+    dismissUpdateBanner(info.latestVersion);
+  }
+}
+
+async function checkForUpdates() {
+  try {
+    const res = await fetch('/api/version/check', { signal: AbortSignal.timeout(12000) });
+    if (!res.ok) return;
+    const info = await res.json();
+    if (info && info.updateAvailable) showUpdateBanner(info);
+  } catch (_) { /* GitHub未到達時は静かにスキップ */ }
+}
+
+on(updateBannerApply, 'click', applyUpdateFromBanner);
+on(updateBannerLater, 'click', () => {
+  if (updateCheckInfo) dismissUpdateBanner(updateCheckInfo.latestVersion);
+  else if (updateBanner) updateBanner.hidden = true;
+});
+
+// 起動時 + 1時間ごとに更新確認
+checkForUpdates();
+setInterval(checkForUpdates, 60 * 60 * 1000);
+
 // Socket.io イベント受信
 socket.on('connect', () => {
   console.log('Connected to Dashboard server');

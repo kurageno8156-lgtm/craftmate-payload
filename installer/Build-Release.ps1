@@ -100,4 +100,54 @@ try {
   $check.Dispose()
 }
 
+# --- Optional Authenticode signing (SmartScreen対策) ---
+# 環境変数 CRAFTMATE_PFX_PATH（.pfx証明書パス）と CRAFTMATE_PFX_PASSWORD を
+# 設定すると、生成した全 exe を signtool で署名する。未設定時はスキップ。
+$pfxPath = $env:CRAFTMATE_PFX_PATH
+$pfxPassword = $env:CRAFTMATE_PFX_PASSWORD
+# CI 用: base64 エンコードされた .pfx をデコードして一時ファイル化
+if (-not $pfxPath -and $env:CRAFTMATE_PFX_BASE64) {
+  $pfxPath = Join-Path $env:TEMP 'craftmate-signing-cert.pfx'
+  try {
+    [System.IO.File]::WriteAllBytes($pfxPath, [System.Convert]::FromBase64String($env:CRAFTMATE_PFX_BASE64))
+  } catch {
+    Write-Warning "Failed to decode CRAFTMATE_PFX_BASE64: $($_.Exception.Message)"
+    $pfxPath = $null
+  }
+}
+if ($pfxPath -and (Test-Path -LiteralPath $pfxPath)) {
+  $signtool = $null
+  $kitsBin = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin'
+  if (Test-Path -LiteralPath $kitsBin) {
+    $signtool = Get-ChildItem -LiteralPath $kitsBin -Recurse -Filter 'signtool.exe' -ErrorAction SilentlyContinue |
+      Where-Object { $_.FullName -match '\\x64\\signtool\.exe$' } |
+      Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+  }
+  if (-not $signtool) {
+    $signtool = (Get-Command signtool.exe -ErrorAction SilentlyContinue).Source
+  }
+  if ($signtool) {
+    $signTargets = @(
+      (Join-Path $projectRoot 'CraftMate.exe'),
+      (Join-Path $projectRoot 'Launcher.exe'),
+      $setupPath, $uninstallPath, $updaterPath, $screenViewerPath
+    ) | Where-Object { Test-Path -LiteralPath $_ }
+    foreach ($target in $signTargets) {
+      $signArgs = @('sign', '/fd', 'SHA256', '/f', $pfxPath)
+      if ($pfxPassword) { $signArgs += @('/p', $pfxPassword) }
+      $signArgs += @('/tr', 'http://timestamp.digicert.com', '/td', 'SHA256', $target)
+      & $signtool @signArgs | Out-Null
+      if ($LASTEXITCODE -eq 0) {
+        Write-Output "Signed: $(Split-Path $target -Leaf)"
+      } else {
+        Write-Warning "Signing failed for $(Split-Path $target -Leaf) (exit $LASTEXITCODE)"
+      }
+    }
+  } else {
+    Write-Warning 'CRAFTMATE_PFX_PATH is set but signtool.exe was not found (Windows SDK required). Skipping signing.'
+  }
+} else {
+  Write-Output 'Code signing skipped (CRAFTMATE_PFX_PATH not set).'
+}
+
 Write-Output "Built release $($version): $setupPath, $uninstallPath, and $payloadPath"

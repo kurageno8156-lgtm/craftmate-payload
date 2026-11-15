@@ -111,4 +111,5 @@
 .platform-links .platform-alt-link{margin-top:4px}
 .platform-alt-link:hover{text-decoration:underline}
 .platform-details code{background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px;font-size:10.5px}
+.smartscreen-note{margin-top:10px;padding:8px 10px;border-left:3px solid var(--accent-yellow,#f59e0b);background:rgba(245,158,11,.08);border-radius:0 6px 6px 0;font-size:11px;line-height:1.7;color:#d4d4d8}
 @media(max-width:640px){.platform-grid{grid-template-columns:1fr}}

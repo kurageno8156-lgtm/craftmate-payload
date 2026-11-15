@@ -37,6 +37,7 @@
           <details class="platform-details"><summary>システム要件・インストール方法</summary>
             <ul><li>OS: Windows 10 / 11（64bit。ARM64機は x64 エミュレーションまたは ARM64 ビルド）</li><li>Node.js: 不要（同梱）</li><li>Minecraft: Java Edition 1.20.5〜1.21.11 推奨</li></ul>
             <ol><li>CraftMate_Setup.exe をダウンロードして実行</li><li>デスクトップのショートカットから起動</li><li>設定画面で AI プロバイダーと API キーを設定</li></ol>
+            <p class="smartscreen-note">⚠️ 初回起動時に Windows SmartScreen の警告（「WindowsによってPCが保護されました」）が表示される場合があります。<strong>「詳細情報」→「実行」</strong>で起動できます。コード署名は今後のリリースで対応予定です。</p>
           </details>
         </article>
 
@@ -194,7 +195,8 @@
         <details class="faq-item"><summary>AI を使うのにお金はかかりますか？</summary><p>AI プロバイダーによります。Google Gemini には無料枠があり、Ollama を使えば完全に無料・オフラインで動作します。有料 API を使う場合は各プロバイダーの料金体系に従います。</p></details>
         <details class="faq-item"><summary>API キーは安全ですか？</summary><p>はい。API キーはあなたのパソコンにインストールされた CraftMate の中だけで使われ、外部に送信・公開されることはありません。</p></details>
         <details class="faq-item"><summary>サバイバルワールドでも使えますか？</summary><p>はい。ただし建築などの多くの操作はクリエイティブモードを前提としています。サバイバルでは、Bot が自分で素材を集めて道具を作る「生存プレイ」モードとして動作します。</p></details>
-        <details class="faq-item"><summary>対応 OS は？</summary><p>Windows 10 / 11 です。インストーラー（CraftMate_Setup.exe）から導入できます。</p></details>
+        <details class="faq-item"><summary>対応 OS は？</summary><p>Windows 10 / 11 に加え、Linux 版（AppImage / deb）も配布中です。プラットフォーム欄からお使いのOSを選んでください。</p></details>
+        <details class="faq-item"><summary>Windows の SmartScreen 警告が出ます</summary><p>初回起動時に「WindowsによってPCが保護されました」と表示される場合があります。コード署名証明書を取得次第、署名済みビルドで解消予定です。それまでは以下の手順で実行してください：<strong>「詳細情報」→「実行」</strong>をクリックすると起動できます。CraftMate はあなたのPC上でのみ動作し、外部にデータを送信しません。</p></details>
         <details class="faq-item"><summary>アンインストールはできますか？</summary><p>はい。Windows の「アプリと機能」から CraftMate を削除するか、インストール先の Uninstall.exe を実行してください。設定ファイル（.env）はバックアップとして残ります。</p></details>
       </div>
     </section>
