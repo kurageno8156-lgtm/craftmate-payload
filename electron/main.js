@@ -10,10 +10,15 @@ const { app, BrowserWindow, dialog } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const http = require('http');
+const net = require('net');
 const fs = require('fs');
 
-const DASHBOARD_URL = 'http://localhost:3000';
-const SERVER_READY_TIMEOUT_MS = 90000;
+// 127.0.0.1 を明示使用: WSL等で localhost が ::1 (IPv6) に解決されて
+// IPv4 のみで listen しているサーバーに届かない問題を回避する。
+const DASHBOARD_URL = 'http://127.0.0.1:3000';
+const DASHBOARD_HOST = '127.0.0.1';
+const DASHBOARD_PORT = 3000;
+const SERVER_READY_TIMEOUT_MS = 120000;
 
 let mainWindow = null;
 let serverProc = null;
@@ -49,6 +54,9 @@ function startServer(payloadDir) {
     cwd: payloadDir,
     env,
     stdio: ['ignore', 'pipe', 'pipe'],
+    // Linux/WSL では detached でプロセスグループを分離し、
+    // 終了時にグループ全体へシグナルを送れるようにする。
+    detached: process.platform !== 'win32',
   });
   serverProc.stdout.on('data', d => process.stdout.write('[server] ' + d));
   serverProc.stderr.on('data', d => process.stderr.write('[server] ' + d));
@@ -61,6 +69,17 @@ function startServer(payloadDir) {
   return serverProc;
 }
 
+function tcpProbe(timeoutMs) {
+  return new Promise((resolve) => {
+    const sock = net.connect({ host: DASHBOARD_HOST, port: DASHBOARD_PORT, timeout: timeoutMs }, () => {
+      sock.destroy();
+      resolve(true);
+    });
+    sock.on('error', () => resolve(false));
+    sock.on('timeout', () => { sock.destroy(); resolve(false); });
+  });
+}
+
 function probeDashboard(timeoutMs) {
   return new Promise((resolve) => {
     const deadline = Date.now() + timeoutMs;
@@ -69,7 +88,10 @@ function probeDashboard(timeoutMs) {
         res.resume();
         resolve(res.statusCode && res.statusCode < 500);
       });
-      req.on('error', () => {
+      req.on('error', async () => {
+        // HTTPが失敗してもTCPでポートが開いていればサーバーは生きている
+        // (WSL等でHTTP GETだけが詰まるケースへのフォールバック)
+        if (await tcpProbe(1500)) return resolve(true);
         if (Date.now() > deadline) return resolve(false);
         setTimeout(attempt, 700);
       });
@@ -97,6 +119,12 @@ function createWindow() {
   mainWindow.webContents.on('render-process-gone', () => app.quit());
   mainWindow.on('closed', () => { mainWindow = null; });
   return mainWindow;
+}
+
+function showTimeoutScreen() {
+  const win = createWindow();
+  const html = `<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="max-width:520px;text-align:center"><h2 style="color:#fbbf24">CraftMate</h2><p>サーバーは起動していますが、ダッシュボードへの応答が確認できませんでした。</p><p style="color:#a1a1aa;font-size:13px">ブラウザで <b>http://127.0.0.1:3000</b> を直接開くか、下のボタンで再読み込みしてください。</p><button onclick="location.reload()" style="margin-top:12px;padding:10px 24px;font-size:15px;border:none;border-radius:8px;background:#22c55e;color:#fff;cursor:pointer">再読み込み</button></div></body></html>`;
+  win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
 }
 
 function showError(message) {
@@ -133,16 +161,42 @@ async function boot() {
     if (!serverProc) break; // server died
     await new Promise(r => setTimeout(r, 500));
   }
-  showError('Timed out waiting for http://localhost:3000.\nThe server process may have crashed — see logs.');
+  // TCPプローブで最終確認: HTTPが詰まっていてもポートが開いていれば
+  // ダッシュボードURLをそのまま開く（ブラウザ側の再試行に任せる）
+  if (await tcpProbe(2000)) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.loadURL(DASHBOARD_URL);
+    }
+    return;
+  }
+  if (!serverProc) {
+    showError('The server process exited before the dashboard became ready.');
+  } else {
+    showTimeoutScreen();
+  }
 }
 
 function killServer() {
   if (!serverProc) return;
   const proc = serverProc;
   serverProc = null;
-  try { proc.kill('SIGTERM'); } catch (_) { /* ignore */ }
+  const isPosix = process.platform !== 'win32';
+  try {
+    if (isPosix && proc.pid) {
+      // detached spawn で作ったプロセスグループごと終了させる。
+      // WSL等で SIGTERM が子に届かないケースに備え、負のPIDでグループ送信。
+      process.kill(-proc.pid, 'SIGTERM');
+    } else {
+      proc.kill('SIGTERM');
+    }
+  } catch (_) {
+    try { proc.kill('SIGTERM'); } catch (_) { /* ignore */ }
+  }
   setTimeout(() => {
-    try { if (!proc.killed) proc.kill('SIGKILL'); } catch (_) { /* ignore */ }
+    try {
+      if (isPosix && proc.pid) process.kill(-proc.pid, 'SIGKILL');
+      else if (!proc.killed) proc.kill('SIGKILL');
+    } catch (_) { /* ignore */ }
   }, 3000).unref();
 }
 
