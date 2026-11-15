@@ -1,4 +1,6 @@
-const socket = io();
+// サーバー側が WebSocket 専用のため polling を無効化する。
+// polling の長時間接続がサーバーのHTTPパーサーを不安定にする問題の回避策。
+const socket = io({ transports: ['websocket'] });
 
 // ---- グローバルエラーハンドリング：クリック後のサイレントエラーを可視化 ----
 window.addEventListener('error', (event) => {

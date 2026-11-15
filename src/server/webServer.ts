@@ -75,8 +75,13 @@ export class WebServer {
 
     this.app = express();
     this.server = http.createServer(this.app);
+    // polling トランスポートは長時間保持される GET/POST で、HTTPパーサーの
+    // 状態を壊して「ボディ付きリクエストが全てハングする」wedged 状態を
+    // 引き起こす可能性があるため、WebSocket 専用にする。
+    // ローカルダッシュボード用途では polling の必要性がない。
     this.io = new SocketIOServer(this.server, {
       cors: { origin: '*' },
+      transports: ['websocket'],
     });
     this.installEarlyBodyCapture();
 
@@ -1131,22 +1136,60 @@ export class WebServer {
     this.selfCheckTimer.unref?.();
   }
 
-  private async runSelfCheck(): Promise<void> {
-    try {
-      const response = await fetch(`http://127.0.0.1:${this.port}/api/ping`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}',
-        signal: AbortSignal.timeout(8000),
+  /**
+   * 生TCPでHTTPリクエストを書き込む自己診断プローブ。
+   * fetch/undici はブラウザや curl と異なるヘッダー形状を送るため、
+   * 「ブラウザからはハングするが監視は成功する」見逃しが起きた。
+   * 最も忠実な再現のため、ソケットへ直接HTTPリクエスト文字列を書く。
+   */
+  private async probeHttpPost(): Promise<boolean> {
+    const net = await import('net');
+    return new Promise(resolve => {
+      const body = '{}';
+      const request =
+        `POST /api/ping HTTP/1.1\r\n` +
+        `Host: 127.0.0.1:${this.port}\r\n` +
+        `Content-Type: application/json\r\n` +
+        `Content-Length: ${Buffer.byteLength(body)}\r\n` +
+        `Connection: close\r\n\r\n` +
+        body;
+      const socket = net.connect(this.port, '127.0.0.1');
+      let settled = false;
+      const done = (ok: boolean) => {
+        if (settled) return;
+        settled = true;
+        try { socket.destroy(); } catch { }
+        resolve(ok);
+      };
+      socket.setTimeout(8000);
+      socket.once('connect', () => socket.write(request));
+      socket.once('data', (chunk: Buffer) => {
+        const head = chunk.toString('latin1');
+        done(/^HTTP\/1\.[01] 2\d\d/.test(head));
       });
-      await response.arrayBuffer().catch(() => {});
-      this.selfCheckFailures = response.ok ? 0 : this.selfCheckFailures + 1;
+      socket.once('timeout', () => done(false));
+      socket.once('error', () => done(false));
+      socket.once('close', () => done(false));
+    });
+  }
+
+  private async runSelfCheck(): Promise<void> {
+    let ok = false;
+    try {
+      ok = await this.probeHttpPost();
     } catch {
+      ok = false;
+    }
+    if (!ok) {
       this.selfCheckFailures += 1;
+      this.debugLog(`Self-check POST probe failed (streak=${this.selfCheckFailures})`);
+    } else {
+      if (this.selfCheckFailures > 0) this.debugLog('Self-check POST probe recovered.');
+      this.selfCheckFailures = 0;
     }
     // 2回連続失敗（約30秒）で wedged と判断
     if (this.selfCheckFailures >= 2) {
-      console.error('[Web] Self-check failed: request body parsing appears wedged. Attempting automatic restart...');
+      this.debugLog('Self-check failed: request body parsing appears wedged. Attempting automatic restart...');
       this.attemptSelfRestart();
     }
   }
@@ -1241,13 +1284,18 @@ export class WebServer {
         stdio: ['ignore', logFd, logFd],
         windowsHide: true,
       });
-      child.once('error', error => console.error('[Web] Self-restart spawn failed:', error));
+      child.once('error', error => {
+        console.error('[Web] Self-restart spawn failed:', error);
+        this.debugLog(`Self-restart spawn failed: ${error.message}`);
+      });
       child.unref();
       fs.closeSync(logFd);
+      this.debugLog(`Restarting dashboard server (new PID ${child.pid}). Log: ${logPath}`);
       console.error(`[Web] Restarting dashboard server (new PID ${child.pid}). Log: ${logPath}`);
       setTimeout(() => process.exit(0), 800);
     } catch (error) {
       console.error('[Web] Self-restart failed:', error);
+      this.debugLog(`Self-restart failed: ${(error as Error).message}`);
     }
   }
 
