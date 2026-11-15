@@ -46,6 +46,48 @@
 
 ---
 
+## 🖥️ 対応プラットフォーム
+
+| プラットフォーム | ステータス | 配布形式 | 備考 |
+|---|---|---|---|
+| **Windows** (x64 / x86 / ARM64) | ✅ **利用可能** | `CraftMate_Setup.exe` | Node.js同梱・完全ポータブル |
+| Linux (x64 / ARM64) | ✅ **利用可能** | `CraftMate-linux-{x64,arm64}.AppImage` / `.deb` / `.tar.gz` | Electronデスクトップアプリ＋ポータブルtarball |
+| macOS (Intel / Apple Silicon) | 🚧 開発中 | `.dmg` 予定 | 署名・公証対応予定 |
+| Android | 💭 検討中 | APK / Google Play 検討 | Minecraft PE 連携が前提 |
+| iOS | 💭 検討中 | App Store / TestFlight 検討 | 同上 |
+
+> **macOS / モバイルをお使いの方へ**: macOS 版は開発中です。リリースタグは `v1.4.0-macos` のような OS 識別子付き命名を予定しています。
+
+### Linux 版の起動方法
+
+**デスクトップアプリ（推奨）— AppImage / deb**
+
+```bash
+# AppImage: 実行権限を付けて起動（アプリメニュー登録は deb 版のみ）
+chmod +x CraftMate-linux-x64.AppImage
+./CraftMate-linux-x64.AppImage
+
+# または deb をインストール → アプリメニューの「CraftMate」から起動（x64のみ）
+sudo apt install ./CraftMate-linux-x64.deb
+```
+
+> ARM64 版は AppImage のみ提供（deb は x64 のみ）。
+
+Electron ラッパーがサーバー（`dist/index.js`）をバックグラウンドで起動し、`http://localhost:3000` をネイティブウィンドウに表示します。ウィンドウを閉じるとサーバープロセスも自動終了します。
+
+**ポータブル tarball（従来版）**
+
+```bash
+tar xzf craftmate-linux-x64.tar.gz
+cd craftmate-linux-x64
+chmod +x start.sh
+./start.sh   # ブラウザで http://localhost:3000 を開く
+```
+
+> Linux 版は C# 製ランチャー/アップデーターを使いません。in-app アップデーターは Windows 版のみ対応しています。
+
+---
+
 ## 📦 インストール方法
 
 1. **[CraftMate_Setup.exe](https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate_Setup.exe)** をダウンロードして実行
