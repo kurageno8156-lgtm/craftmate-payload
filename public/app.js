@@ -214,6 +214,17 @@ async function applyUpdateFromBanner() {
   }
 }
 
+// Windows以外でアップデーターが拒否された場合: 自OS用の最新版をブラウザで開く
+async function openManualUpdateDownload() {
+  try {
+    const res = await fetch('/api/version/check', { signal: AbortSignal.timeout(12000) });
+    const info = await res.json();
+    window.open(info.downloadUrl || info.releaseUrl || 'https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest', '_blank');
+  } catch (_) {
+    window.open('https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest', '_blank');
+  }
+}
+
 async function checkForUpdates() {
   try {
     const res = await fetch('/api/version/check', { signal: AbortSignal.timeout(12000) });
@@ -1256,6 +1267,11 @@ on(document.getElementById('btn-check-updates'), 'click', async event => {
       body: '{}',
     });
     const result = await response.json().catch(() => ({}));
+    if (result.manualUpdate) {
+      showSettingsMessage(translate('updaterWindowsOnly'), 'error');
+      await openManualUpdateDownload();
+      return;
+    }
     if (!response.ok) throw new Error(result.error || translate('updaterLaunchFailed'));
     showSettingsMessage(translate('updaterLaunched'), 'success');
     // オーバーレイはソケット切断（＝サーバー実停止）を検知してから表示する。

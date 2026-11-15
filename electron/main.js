@@ -190,20 +190,27 @@ function createWindow() {
   return mainWindow;
 }
 
+// スプラッシュ/情報/エラー画面は既存ウィンドウを再利用する。
+// 新規ウィンドウを作ると「Starting server...」が残ってしまうため。
+function reuseOrCreateWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) return mainWindow;
+  return createWindow();
+}
+
 function showInfoScreen(message) {
-  const win = createWindow();
+  const win = reuseOrCreateWindow();
   const html = `<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="max-width:520px;text-align:center"><h2 style="color:#fbbf24">CraftMate</h2><p>${message.replace(/</g, '&lt;')}</p></div></body></html>`;
   win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
 }
 
 function showTimeoutScreen() {
-  const win = createWindow();
+  const win = reuseOrCreateWindow();
   const html = `<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="max-width:520px;text-align:center"><h2 style="color:#fbbf24">CraftMate</h2><p>サーバーは起動していますが、ダッシュボードへの応答が確認できませんでした。</p><p style="color:#a1a1aa;font-size:13px">ブラウザで <b>http://127.0.0.1:3000</b> を直接開くか、下のボタンで再読み込みしてください。</p><button onclick="location.reload()" style="margin-top:12px;padding:10px 24px;font-size:15px;border:none;border-radius:8px;background:#22c55e;color:#fff;cursor:pointer">再読み込み</button></div></body></html>`;
   win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
 }
 
 function showError(message) {
-  const win = createWindow();
+  const win = reuseOrCreateWindow();
   const html = `<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="max-width:520px;text-align:center"><h2 style="color:#f87171">CraftMate server failed to start</h2><pre style="white-space:pre-wrap;color:#a1a1aa;font-size:12px">${message.replace(/</g, '&lt;')}</pre><p>サーバーログは stderr / CraftMate_server.log を確認してください。</p></div></body></html>`;
   win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
 }
