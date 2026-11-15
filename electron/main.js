@@ -57,6 +57,8 @@ function resolvePayloadDir() {
 }
 
 let lastServerExit = null; // { code, signal }
+let retryingWithSqlJs = false;
+let serverExtraEnv = {};   // 追加で子プロセスへ渡す環境変数
 
 function startServer(payloadDir) {
   const entry = path.join(payloadDir, 'dist', 'index.js');
@@ -80,6 +82,7 @@ function startServer(payloadDir) {
   delete env.ELECTRON_NO_ATTACH_CONSOLE;
   delete env.CHROME_DESKTOP;
   delete env.GIO_LAUNCHED_DESKTOP_FILE_PID;
+  Object.assign(env, serverExtraEnv);
   env.CRAFTMATE_DESKTOP = '1';
   if (!useBundled) env.ELECTRON_RUN_AS_NODE = '1';
 
@@ -108,10 +111,29 @@ function startServer(payloadDir) {
   serverProc.stderr.on('data', d => process.stderr.write('[server] ' + d));
   serverProc.on('exit', (code, signal) => {
     lastServerExit = { code, signal };
+    serverProc = null;
+    const crashSignal = signal === 'SIGSEGV' || signal === 'SIGABRT' || signal === 'SIGILL' || signal === 'SIGTRAP';
+    if (!quitting && crashSignal && !serverExtraEnv.CRAFTMATE_USE_SQLJS) {
+      // ネイティブモジュールのクラッシュ（WSL等）→ sql.js 互換モードで自動再起動
+      retryingWithSqlJs = true;
+      console.log(`[CraftMate] server crashed (${signal}); retrying with CRAFTMATE_USE_SQLJS=1 compatibility mode`);
+      try {
+        const logPath = path.join(require('os').tmpdir(), 'CraftMate_server.log');
+        fs.appendFileSync(logPath, `[${new Date().toISOString()}] native crash (${signal}) -> retry with sql.js mode\n`);
+      } catch (_) { /* ignore */ }
+      showInfoScreen('ネイティブモジュールがクラッシュしたため、互換モード（sql.js）で再起動しています…');
+      try {
+        serverExtraEnv.CRAFTMATE_USE_SQLJS = '1';
+        startServer(payloadDir);
+      } catch (e) {
+        console.error('[CraftMate] sql.js retry failed:', e);
+      }
+      return;
+    }
     if (!quitting) {
+      retryingWithSqlJs = false;
       console.error(`[CraftMate] server exited unexpectedly (code=${code}, signal=${signal})`);
     }
-    serverProc = null;
   });
   return serverProc;
 }
@@ -168,6 +190,12 @@ function createWindow() {
   return mainWindow;
 }
 
+function showInfoScreen(message) {
+  const win = createWindow();
+  const html = `<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="max-width:520px;text-align:center"><h2 style="color:#fbbf24">CraftMate</h2><p>${message.replace(/</g, '&lt;')}</p></div></body></html>`;
+  win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+}
+
 function showTimeoutScreen() {
   const win = createWindow();
   const html = `<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="max-width:520px;text-align:center"><h2 style="color:#fbbf24">CraftMate</h2><p>サーバーは起動していますが、ダッシュボードへの応答が確認できませんでした。</p><p style="color:#a1a1aa;font-size:13px">ブラウザで <b>http://127.0.0.1:3000</b> を直接開くか、下のボタンで再読み込みしてください。</p><button onclick="location.reload()" style="margin-top:12px;padding:10px 24px;font-size:15px;border:none;border-radius:8px;background:#22c55e;color:#fff;cursor:pointer">再読み込み</button></div></body></html>`;
@@ -205,7 +233,7 @@ async function boot() {
       }
       return;
     }
-    if (!serverProc) break; // server died
+    if (!serverProc && !retryingWithSqlJs) break; // server died
     await new Promise(r => setTimeout(r, 500));
   }
   // TCPプローブで最終確認: HTTPが詰まっていてもポートが開いていれば
