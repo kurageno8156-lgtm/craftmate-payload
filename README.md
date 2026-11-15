@@ -1,159 +1,117 @@
-# 🤖 Minecraft 自律型 AI Agent (頭脳: LLM × 作業: Mineflayer Bot)
+# CraftMate — Minecraftで自律的に動くAIボットを、あなたのPCで。
 
-Minecraft内でプレイヤーが自然言語（日本語）で指示を出すと、**AI（Gemini / OpenAI / Ollama）が自律的に状況を認識・計画立案**し、**Mineflayer Botが木を切ったり、アイテムをクラフトしたり、プレイヤーについてきたり、モンスターを迎撃する**システムです。
+[![Latest Release](https://img.shields.io/github/v/release/kurageno8156-lgtm/craftmate-payload?label=latest&color=10b981)](https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-blue)]()
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
----
+**CraftMate** は、Google Gemini / OpenAI / Groq / Ollama などのAIと連携し、**Minecraft Java Edition の世界で建築・採掘・探索・戦闘・会話を自律的に実行する Windows アプリ**です。
 
-## 🌟 特徴
+「家を建てて」「鉄のツルハシを作って」「このモンスターを倒して」と自然な言葉で指示するだけで、AIが状況を判断し、必要な素材集めから道具作り、設計図の生成と建築まで自分で進めます。進行状況はブラウザのダッシュボードでリアルタイムに確認できます。
 
-- **🧠 自律思考 ReAct ループ**: 
-  指示を受けると、「現在地・所持品・周囲ブロック・敵対Mob」を把握した上で、段階的な行動計画（Thought → Action → Observation）を立てて自律実行します。
-- **🪵 多彩なアクション（スキル群）**:
-  - **移動・追従**: `goToPlayer`（プレイヤーの元へ移動）, `followPlayer`（追従）, `goToCoordinates`（座標移動）
-  - **採掘・収集**: `mineAndCollect`（木・原木・丸石・鉄鉱石等の自動探索＆採掘・回収）
-  - **クラフト**: `craftItem`（木材、作業台、木のツルハシ等のレシピ自動解決クラフト）
-  - **建築・設置**: `placeBlock`（作業台やブロックの設置）
-  - **戦闘・護衛**: `attackTarget`（ゾンビ等の迎撃・防衛）
-  - **アイテム受け渡し**: `giveItemsToPlayer`（手持ち素材をプレイヤーへ届ける）
-- **🌐 リアルタイム Web ダッシュボード (http://localhost:3000)**:
-  - Botの体力・満腹度・座標・装備・インベントリ・周囲Mobをグラフィカルに表示
-  - AIの思考ログ（ReAct Timeline）をリアルタイム表示
-  - Web画面から直接指示の送信やタスク中断が可能
-  - 右上の「⚙️ Settings」からMinecraft/Webポート、Bot名、Gemini/Groq/Ollamaを変更できます。設定は `.env` に保存され、Minecraft接続とAIクライアントに反映されます。
-  - MinecraftとAIプロバイダーの接続状態を確認し、再接続、AIクライアント再読み込み、ログのダウンロードを行えます。
-- **⚡ マルチLLMプロバイダ対応**:
-  - **Google Gemini API** (無料＆超高速・推奨)
-  - **OpenAI API** (GPT-4o 等)
-  - **Groq** (GroqCloud API)
-  - **Ollama** (ローカルLLM完全オフライン動作)
+![CraftMate Dashboard](public/dashboard-preview.svg)
 
 ---
 
-## 🚀 クイックスタートガイド
+## ⬇️ ダウンロード
 
-### 1. 動作環境
-- **Node.js**: v18 以上 (推奨: v20 / v22 / v24)
-- **Minecraft**: Java Edition (1.8 ～ 1.20.x 等)
+**[最新版 v1.3.133 をダウンロード (CraftMate_Setup.exe)](https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate_Setup.exe)**
 
----
-
-### 2. 設定 (`.env` ファイルの編集)
-
-プロジェクトルートの `.env` ファイルを開き、必要な項目を設定します。
-
-```env
-# --- Minecraft サーバー接続設定 ---
-MC_HOST=localhost
-MC_PORT=25565
-MC_USERNAME=AI_Worker
-MC_AUTH=offline
-
-# --- AI 頭脳 (LLM) 設定 ---
-LLM_PROVIDER=gemini
-
-# Google Gemini API キー (https://aistudio.google.com/ で無料取得可能)
-GEMINI_API_KEY=ここにAPIキーを貼り付け
-GEMINI_MODEL=gemini-2.5-flash
-```
-
-> [!TIP]
-> **Gemini APIキーの取得方法（完全無料）**:
-> [Google AI Studio](https://aistudio.google.com/) にアクセスし、Googleアカウントでログイン後「Get API key」から発行できます。
+> 常に最新リリースがダウンロードされます。過去のバージョンは [Releases](https://github.com/kurageno8156-lgtm/craftmate-payload/releases) ページから取得できます。
 
 ---
 
-### 3. Minecraft 側の準備（シングルプレイの場合）
+## ✨ 主な機能
 
-1. Minecraft Java Edition を起動し、シングルプレイでワールドに入ります。
-2. `Esc` キーを押し、**「LANに公開 (Open to LAN)」** をクリックします。
-3. **「チート許可: オン」** にし、**「LANワールドを開始」** をクリックします。
-4. チャット欄に `ローカルゲームをポート ##### でホストしています` と表示されます。
-5. 表示された **5桁のポート番号** を `.env` の `MC_PORT` に設定します。
-   （例: `MC_PORT=51234`）
-
-*(※専用サーバー Paper/Spigot 等をローカルで動かしている場合はデフォルトポート `25565` のままでOKです)*
-
----
-
-### 4. 起動
-
-ターミナル（PowerShell等）で以下を実行します：
-
-```bash
-npm start
-```
-
-起動すると、自動的に：
-1. Minecraftワールドに `AI_Worker` がログインします。
-2. Webダッシュボードが `http://localhost:3000` で起動します。
+- **🧠 自律行動（ReActループ）** — 「目標 → 状況認識 → 計画 → 実行 → 観察」を繰り返し、失敗したら自分で方法を変えて再試行します
+- **🏗️ 建築** — AIが設計図を自動生成し、コマンドブロック一括建築または手作業で家や建物を建てます
+- **⛏️ 採掘・クラフト** — 木・石・鉄鉱石の採掘、作業台・ツルハシ・剣などのレシピ解決クラフトを自動化
+- **⚔️ 戦闘・生存** — モブ討伐、動物の狩り、食料確保、自動防御ガード、満腹度管理
+- **💬 自然な会話** — Minecraftチャットから直接話しかけ可能。雑談・質問にも応答し、過去のやり取りを記憶します
+- **🖥️ 見える化ダッシュボード** — 体力・満腹度・インベントリ・周囲エンティティ・AI思考ログをリアルタイム表示。クイックコマンド対応
+- **🗂️ チャットルーム** — 会話をルームごとに整理。履歴はローカルDBに永続化
+- **📺 画面共有** — ボットの一人称視点をブラウザで確認可能
+- **🔄 アプリ内アップデーター** — ワンクリックで最新版に更新。更新後は自動再起動
+- **🔌 AIモデル切替** — Gemini / OpenAI / Groq / Ollama（ローカル・無料）を設定画面から切替
 
 ---
 
-## 💬 指示・命令の出し方
+## 💻 システム要件
 
-以下の3つの方法のいずれからでも指示できます：
-
-1. **ゲーム内チャット**:
-   Tキーでチャットを開き、通常通り発言します。
-   - `木を3つ切って集めてきて`
-   - `私についてきて`
-   - `木のツルハシを1本作って`
-   - `手持ちの木材を私に渡して`
-   - `ストップ`
-2. **Web ダッシュボード (`http://localhost:3000`)**:
-   ブラウザからクイックコマンドボタンを押すか、自由な日本語指示を入力して「指示送信」をクリック。
-3. **ターミナル コンソール**:
-   サーバーのコマンドプロンプトに直接指示を入力。
+| 項目 | 要件 |
+|---|---|
+| OS | Windows 10 / 11（64bit） |
+| Node.js | **不要**（インストーラーに同梱） |
+| Minecraft | Java Edition **1.20.5 〜 1.21.11 推奨**（その他も自動検出・手動選択可） |
+| AI | Gemini / Groq / OpenAI の APIキー、またはローカル Ollama |
 
 ---
 
-## 🛠️ 指示の具体例
+## 📦 インストール方法
 
-| やりたいこと | 指示の言葉の例 | AIの自律動作 |
-|---|---|---|
-| **原木集め** | `木を5個切ってきて` | 周囲の木（オーク/シラカバ等）を探し、斧を装備して伐採し、ドロップ品を回収 |
-| **ツール作り** | `木のツルハシを作って` | 木を切る → 木材クラフト → 作業台クラフト＆設置 → 棒クラフト → ツルハシクラフト |
-| **プレイヤー追従** | `私についてきて` | プレイヤーの背後を一定距離で自動追従 |
-| **アイテム渡し** | `木材を私に渡して` | プレイヤーの元へ移動し、インベントリから木材をドロップして手渡す |
-| **防衛・戦闘** | `近くのゾンビを倒して` | 武器（剣など）を装備し、最寄りのゾンビに接近して攻撃 |
-| **行動停止** | `ストップ` / `止まって` | 現在実行中のタスク・移動を即座に中断 |
+1. **[CraftMate_Setup.exe](https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate_Setup.exe)** をダウンロードして実行
+2. デスクトップに作成されるショートカットから **CraftMate** を起動
+3. 設定画面（⚙️）で AI プロバイダーと API キーを設定 → Minecraftワールドにボットが参加
+
+セットアップは以上です。アンインストールは Windows の「アプリと機能」または `Uninstall.exe` から行えます。
+
+---
+
+## 🔒 セキュリティとプライバシー
+
+- **APIキーはローカルの `.env` にのみ保存**され、CraftMateのサーバーや外部に送信・公開されることはありません
+- チャット履歴・AIメモリ・レビューは `%LOCALAPPDATA%\CraftMate\craftmate.db`（SQLite）にローカル保存
+- ダッシュボードは `127.0.0.1:3000` のみで待ち受け、外部からのアクセスは遮断されます
+- アップデート等のローカル操作APIは認証ガードで保護されています
+
+---
+
+## ❓ トラブルシューティング（FAQ）
+
+**Q. 「サーバーが応答しません」と表示される**
+A. v1.3.131 以降、サーバーの自己診断ウォッチドッグが組み込まれており、HTTP応答が止まった場合は約45秒で自動再起動します。ログは `%TEMP%\CraftMate_server.log` に記録されます。
+
+**Q. Minecraftに接続できない**
+A. Minecraftのワールドが起動しているか確認してください。シングルプレイの場合は「LANに公開」を有効にして表示されたポートを設定に入力。サーバーの場合はポート25565とファイアウォールを確認してください。
+
+**Q. ブラウザを閉じたら裏でプロセスが残る**
+A. v1.3.131 以降、ブラウザ終了を検知して関連プロセスを自動終了します（ボットがMinecraft接続中を除く）。確実に終了するには設定画面の「⏻ アプリを完全に終了」ボタンを使ってください。
+
+**Q. アンインストール方法は？**
+A. まず「⏻ アプリを完全に終了」でプロセスを停止し、Windows の「アプリと機能」から CraftMate を削除するか、`Uninstall.exe` を実行してください。
+
+**Q. 建築が途中で止まる**
+A. v1.3.132 以降、設計図が無くてもフォールバック設計図で建築を継続し、コマンドブロック設置のタイムアウトにはリトライ＋`/setblock`フォールバックがあります。建築は1ブロックずつ設置するため時間がかかるのが正常です。
 
 ---
 
 ## 📁 ディレクトリ構成
 
 ```
-├── public/                 # Webダッシュボード（HTML/CSS/JS）
-│   ├── index.html
-│   ├── style.css
-│   └── app.js
+├── public/                 # Webダッシュボード & 配布ページ
+│   ├── index.html          # ダッシュボードUI
+│   ├── app.js / i18n.js    # フロントエンドロジック・多言語
+│   ├── distribution.html   # 配布サイト（ダッシュボードの /distribution.html）
+│   └── dashboard-preview.svg
 ├── src/
-│   ├── ai/                 # AI頭脳レイヤー
-│   │   ├── agent.ts        # 自律ReActエージェントループ
-│   │   ├── llmClient.ts    # Gemini / OpenAI / Ollama マルチクライアント
-│   │   └── tools.ts        # Function Calling ツール定義
-│   ├── bot/                # Mineflayer Botレイヤー
-│   │   ├── mcBot.ts        # ボット本体 & イベント管理
-│   │   ├── perception.ts   # 環境認識・知覚モジュール
-│   │   └── skills.ts       # 移動・採掘・クラフト・戦闘等スキル実装
-│   ├── server/
-│   │   └── webServer.ts    # Express + Socket.IO Webサーバー
-│   ├── config.ts           # 環境変数・設定ロード
-│   ├── types.ts            # 共通型定義
-│   └── index.ts            # メインエントリーポイント
-├── .env.example            # 設定テンプレート
-├── package.json
-└── tsconfig.json
+│   ├── ai/                 # AI頭脳（agent / llmClient / tools）
+│   ├── bot/                # Mineflayerボット（mcBot / perception / skills）
+│   ├── server/webServer.ts # Express + Socket.IO サーバー
+│   ├── db.ts               # SQLite 永続化
+│   └── index.ts            # エントリーポイント
+├── installer/              # Setup / Updater / Uninstall / ScreenViewer (C#)
+└── Launcher.cs             # 起動・監視・プロセス管理 (C#)
 ```
 
 ---
 
-## ❓ トラブルシューティング
+## 📜 ライセンスとクレジット
 
-- **Q. Botがサーバーに入ってこない**
-  - A. シングルプレイの「LANに公開」で表示された5桁のポート番号と `.env` の `MC_PORT` が一致しているか確認してください。
-  - A. オフラインサーバーやLAN公開の場合は `MC_AUTH=offline` に設定してください。
-- **Q. APIキーのエラーが出る**
-  - A. `.env` の `GEMINI_API_KEY` または `OPENAI_API_KEY` に正しいキーが入力されているか確認してください。
-- **Q. タスクが途中で止まってしまった**
-  - A. チャットまたはWeb画面から「`ストップ`」と送るか、WebUIの「タスク中断」ボタンを押せばリセットされます。
+CraftMate は [MIT License](LICENSE) で公開しています。
+
+使用している主なOSSライブラリ: [Mineflayer](https://github.com/PrismarineJS/mineflayer), [better-sqlite3](https://github.com/WiseLibs/better-sqlite3), [Socket.IO](https://socket.io/), [Express](https://expressjs.com/), [mineflayer-pathfinder](https://github.com/PrismarineJS/mineflayer-pathfinder), TypeScript / Node.js。
+
+---
+
+## 📝 変更履歴
+
+最新の変更は [Releases](https://github.com/kurageno8156-lgtm/craftmate-payload/releases) を参照してください。v1.3.126〜v1.3.133 で、長期間のデバッグで判明した起動失敗・UIフリーズ・POSTハング・建築停止などの重大な問題が解消されました。
