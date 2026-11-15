@@ -81,3 +81,11 @@ EOF
 # 6) tarball 作成
 tar -czf "${OUT_NAME}.tar.gz" -C "$(dirname "$STAGE")" "$(basename "$STAGE")"
 echo "==> Created ${OUT_NAME}.tar.gz ($(du -h "${OUT_NAME}.tar.gz" | cut -f1))"
+
+# 7) Electron ラッパー用に payload をリポジトリ直下へコピー
+#    (electron-builder の extraResources が ../craftmate-payload を参照する)
+if [ "${SKIP_PAYLOAD_COPY:-0}" != "1" ]; then
+  rm -rf craftmate-payload
+  cp -r "$STAGE" craftmate-payload
+  echo "==> Staged payload for Electron at ./craftmate-payload"
+fi

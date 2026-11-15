@@ -84,12 +84,26 @@ jobs:
           node-version: '20'
           cache: 'npm'
       # Linux 向け prebuilt の取得 + 必要時ソースビルド（build-essential/python3 は ubuntu-latest に同梱）
+      # craftmate-payload/ にステージングされる（Electron の extraResources が参照）
       - name: Build portable tarball (linux/x64)
         run: bash build-release.sh ${{ inputs.version || '1.4.0' }} linux x64
+
+      # Electron デスクトップラッパー（AppImage + deb）
+      # payload/dist/index.js を ELECTRON_RUN_AS_NODE で spawn し、
+      # localhost:3000 をネイティブウィンドウに表示する。
+      - name: Build Electron app (AppImage + deb, x64)
+        working-directory: electron
+        run: |
+          npm install --no-audit --no-fund
+          npx electron-builder --linux AppImage deb --x64
+
       - uses: actions/upload-artifact@v4
         with:
           name: craftmate-linux-x64
-          path: craftmate-linux-x64.tar.gz
+          path: |
+            craftmate-linux-x64.tar.gz
+            electron/dist-installer/*.AppImage
+            electron/dist-installer/*.deb
 
   # ARM64 Linux も同様に実行可能（self-hosted ARM runner が必要な場合あり）
   build-linux-arm64:
@@ -103,10 +117,20 @@ jobs:
           cache: 'npm'
       - name: Build portable tarball (linux/arm64)
         run: bash build-release.sh ${{ inputs.version || '1.4.0' }} linux arm64
+
+      - name: Build Electron app (AppImage + deb, arm64)
+        working-directory: electron
+        run: |
+          npm install --no-audit --no-fund
+          npx electron-builder --linux AppImage deb --arm64
+
       - uses: actions/upload-artifact@v4
         with:
           name: craftmate-linux-arm64
-          path: craftmate-linux-arm64.tar.gz
+          path: |
+            craftmate-linux-arm64.tar.gz
+            electron/dist-installer/*.AppImage
+            electron/dist-installer/*.deb
 
   # ============================================================
   # macOS ビルド（準備中プレースホルダー）

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=CraftMate
+Comment=Minecraft AI autonomous agent
+Exec=craftmate %U
+Icon=craftmate
+Terminal=false
+Categories=Utility;Game;
+StartupNotify=true

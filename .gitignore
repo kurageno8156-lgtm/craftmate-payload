@@ -11,3 +11,9 @@ brain/
 conversations/
 brain/
 conversations/
+
+# Electron / portable payload build outputs
+craftmate-payload/
+electron/node_modules/
+electron/dist-installer/
+electron/dist/
