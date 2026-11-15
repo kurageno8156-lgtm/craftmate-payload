@@ -161,17 +161,54 @@ namespace CraftMateLauncher
             if (browserProcess != null)
             {
                 Log("Supervisor mode: waiting for the browser window to close...");
-                WaitForBrowserExit(browserProcess);
-                CleanupOnExit();
-                Log("Shutdown complete. Exiting launcher.");
+                bool quickExit = WaitForBrowserExit(browserProcess);
+                if (quickExit)
+                {
+                    // ブラウザプロセスが起動直後に終了した場合、既存のChrome/Edge
+                    // インスタンスへウィンドウが引き継がれた可能性が高い。
+                    // この場合ダッシュボードはまだ開いているので、サーバーを
+                    // 殺してはいけない。サーバーが応答しなくなるまで監視を続ける。
+                    Log("Browser process exited quickly (handed off to existing browser?). Monitoring server instead of killing it.");
+                    MonitorServerUntilExit();
+                }
+                else
+                {
+                    CleanupOnExit();
+                    Log("Shutdown complete. Exiting launcher.");
+                }
             }
         }
 
         /// <summary>
-        /// ブラウザプロセスの終了を監視する。ブラウザが既に終了している場合は即座に戻る。
+        /// サーバー（ポート3000）が60秒間応答しなくなるまで待機する。
+        /// 既存ブラウザへ引き継がれた場合の監視モード用。
         /// </summary>
-        private static void WaitForBrowserExit(Process browserProcess)
+        private static void MonitorServerUntilExit()
         {
+            int unreachableCount = 0;
+            while (true)
+            {
+                Thread.Sleep(5000);
+                if (IsServerReady())
+                {
+                    unreachableCount = 0;
+                    continue;
+                }
+                unreachableCount++;
+                Log("Server not responding (" + unreachableCount + "/12 checks).");
+                if (unreachableCount >= 12) break; // 約60秒間応答なし
+            }
+            CleanupOnExit();
+            Log("Server went away. Shutdown complete. Exiting launcher.");
+        }
+
+        /// <summary>
+        /// ブラウザプロセスの終了を監視する。
+        /// 戻り値: 起動から20秒以内に終了した場合 true（既存ブラウザへの引き継ぎの可能性）。
+        /// </summary>
+        private static bool WaitForBrowserExit(Process browserProcess)
+        {
+            DateTime startTime = DateTime.Now;
             try
             {
                 // Chrome は最初のプロセスがブラウザプロセスとして残る。
@@ -180,7 +217,7 @@ namespace CraftMateLauncher
                 if (browserProcess.HasExited)
                 {
                     Log("Browser process already exited (code " + SafeExitCode(browserProcess) + ").");
-                    return;
+                    return true;
                 }
                 while (!browserProcess.HasExited)
                 {
@@ -189,10 +226,12 @@ namespace CraftMateLauncher
                     // （ユーザーが手動でサーバーを再起動する可能性があるため）。
                 }
                 Log("Browser closed (code " + SafeExitCode(browserProcess) + ").");
+                return (DateTime.Now - startTime).TotalSeconds < 20;
             }
             catch (Exception ex)
             {
                 Log("Browser wait failed: " + ex.Message);
+                return false;
             }
         }
 

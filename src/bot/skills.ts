@@ -402,7 +402,19 @@ export class SkillManager {
           } catch { /* ignore */ }
         }
         if (slot < 0) return failPlace('コマンドブロックのアイテムが見つかりません。');
-        await this.bot.equip(this.bot.inventory.items()[slot], 'hand');
+        const cmdBlockItem = this.bot.inventory.items()[slot];
+        // equip はインベントリ同期（updateSlot）のタイムアウトで失敗することがあるためリトライする
+        let equipped = false;
+        for (let attempt = 0; attempt < 2 && !equipped; attempt++) {
+          try {
+            await this.bot.equip(cmdBlockItem, 'hand');
+            equipped = true;
+          } catch (equipErr: any) {
+            console.warn(`[CommandBlock] equip attempt ${attempt + 1} failed: ${equipErr?.message || equipErr}`);
+            if (attempt === 0) await new Promise(r => setTimeout(r, 600));
+          }
+        }
+        if (!equipped) return failPlace('コマンドブロックを手に持てませんでした（インベントリ同期タイムアウト）。少し待ってから再試行してください。');
 
         const candidates: Array<{ ref: any; face: Vec3 }> = [
           { ref: this.bot.blockAt(pos.offset(0, -1, 0)), face: new Vec3(0, 1, 0) },
@@ -413,15 +425,36 @@ export class SkillManager {
           { ref: this.bot.blockAt(pos.offset(0, 1, 0)), face: new Vec3(0, -1, 0) },
         ];
         let placed = false;
-        for (const c of candidates) {
-          if (!c.ref || c.ref.name === 'air') continue;
-          try {
-            await this.bot.placeBlock(c.ref, c.face);
-            placed = true;
-            break;
-          } catch { /* 次の候補へ */ }
+        let lastPlaceErr = '';
+        // placeBlock も updateSlot/ブロック更新タイムアウトで失敗し得るため、候補を2周する
+        for (let round = 0; round < 2 && !placed; round++) {
+          for (const c of candidates) {
+            const ref = this.bot.blockAt(c.ref ? c.ref.position : pos) || c.ref;
+            if (!ref || ref.name === 'air' || ref.name === 'cave_air' || ref.name === 'void_air') continue;
+            try {
+              await this.bot.placeBlock(ref, c.face);
+              placed = true;
+              break;
+            } catch (e: any) {
+              lastPlaceErr = e?.message || 'placeBlock failed';
+            }
+          }
+          if (!placed && round === 0) await new Promise(r => setTimeout(r, 500));
         }
-        if (!placed) return failPlace('コマンドブロックを設置できませんでした（設置場所がありません）。');
+        // 手動設置がタイムアウトで失敗した場合は /setblock にフォールバック
+        // （コマンド実行権限があるサーバーではこれが最も確実）
+        if (!placed) {
+          try {
+            console.warn(`[CommandBlock] placeBlock failed (${lastPlaceErr}); falling back to /setblock.`);
+            this.bot.chat(`/setblock ${x} ${y} ${z} minecraft:command_block`);
+            await new Promise(r => setTimeout(r, 800));
+            const fallbackBlock = this.bot.blockAt(pos);
+            if (fallbackBlock && fallbackBlock.name.includes('command_block')) placed = true;
+          } catch (setblockErr: any) {
+            console.warn(`[CommandBlock] /setblock fallback failed: ${setblockErr?.message || setblockErr}`);
+          }
+        }
+        if (!placed) return failPlace(`コマンドブロックを設置できませんでした（${lastPlaceErr || '設置場所がありません'}）。`);
         await new Promise(r => setTimeout(r, 400));
       }
 
@@ -430,12 +463,25 @@ export class SkillManager {
         return failPlace('コマンドブロックの設置を確認できませんでした。');
       }
 
-      await (this.bot as any).setCommandBlock(pos, cmd, {
-        mode,
-        trackOutput: false,
-        conditional: false,
-        alwaysActive: false,
-      });
+      // setCommandBlock もブロックエンティティ更新のタイムアウトで失敗し得るため1回リトライ
+      let configured = false;
+      let lastConfigErr = '';
+      for (let attempt = 0; attempt < 2 && !configured; attempt++) {
+        try {
+          await (this.bot as any).setCommandBlock(pos, cmd, {
+            mode,
+            trackOutput: false,
+            conditional: false,
+            alwaysActive: false,
+          });
+          configured = true;
+        } catch (configErr: any) {
+          lastConfigErr = configErr?.message || 'setCommandBlock failed';
+          console.warn(`[CommandBlock] setCommandBlock attempt ${attempt + 1} failed: ${lastConfigErr}`);
+          if (attempt === 0) await new Promise(r => setTimeout(r, 600));
+        }
+      }
+      if (!configured) return failPlace(`コマンドブロックのコマンド設定に失敗しました（${lastConfigErr}）。ブロック自体は設置されています。`);
 
       const typeLabel = commandType === 'chain' ? 'チェーン' : commandType === 'repeat' ? 'リピート' : 'インパルス';
       const okMessage = `コマンドブロック(${typeLabel})を (${x},${y},${z}) に設置し、コマンドを設定しました: ${cmd}`;
