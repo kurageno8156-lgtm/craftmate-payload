@@ -593,6 +593,10 @@ namespace CraftMateUpdater
             // ポート3000を掴んでいるプロセスを実行パス不問で終了する
             KillProcessOnPort(3000);
 
+            // CraftMate のアプリモードブラウザ（Chrome/Edge, --user-data-dir=...\CraftMate\BrowserProfile）
+            // を強制終了する。更新後に古いダッシュボードが残る問題を防ぐ。
+            KillCraftMateBrowserProcesses(worker);
+
             // ポート解放待ち（最大15秒）
             for (int i = 0; i < 30; i++)
             {
@@ -644,6 +648,40 @@ namespace CraftMateUpdater
                 }
             }
             catch { }
+        }
+
+        /// <summary>
+        /// CraftMate 専用プロファイル（BrowserProfile）を使う Chrome/Edge の
+        /// アプリモードプロセスをコマンドラインから特定して強制終了する。
+        /// 通常のブラウジング用 Chrome/Edge（別プロファイル）は対象外。
+        /// </summary>
+        private void KillCraftMateBrowserProcesses(BackgroundWorker worker)
+        {
+            try
+            {
+                // Win32_Process の CommandLine に "CraftMate\BrowserProfile" を含む
+                // chrome.exe / msedge.exe のみを停止する（--app= の有無は問わない）。
+                string psCommand =
+                    "Get-CimInstance Win32_Process -Filter \"Name='chrome.exe' or Name='msedge.exe'\" | " +
+                    "Where-Object { $_.CommandLine -match 'CraftMate' -and $_.CommandLine -match 'BrowserProfile' } | " +
+                    "ForEach-Object { try { Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop } catch {} }";
+                var psi = new ProcessStartInfo("powershell.exe",
+                    "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"" + psCommand + "\"")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+                using (Process ps = Process.Start(psi))
+                {
+                    if (ps == null) return;
+                    ps.WaitForExit(20000);
+                }
+                Report(worker, 64, "古いダッシュボード（アプリモードブラウザ）を終了しました。");
+            }
+            catch (Exception ex)
+            {
+                Report(worker, 64, "ブラウザの終了処理をスキップしました: " + ex.Message);
+            }
         }
 
         private static bool IsPortListening(int port)

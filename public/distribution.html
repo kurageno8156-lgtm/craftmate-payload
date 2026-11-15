@@ -41,12 +41,14 @@
         </article>
 
         <article class="platform-card" data-os="linux">
-          <div class="platform-head"><span class="platform-icon" aria-hidden="true">🐧</span><div class="platform-title"><h3>Linux</h3><span class="badge badge-soon">近日公開</span></div></div>
-          <p class="platform-desc">deb / rpm / AppImage 形式での配布を準備中。better-sqlite3 等のネイティブモジュール対応が必要です。</p>
-          <span class="download-button platform-download disabled" aria-disabled="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3h14v-3"/></svg><span><strong>Coming Soon</strong><small>AppImage / deb / rpm — x64・ARM64</small></span><span class="button-arrow" aria-hidden="true">…</span></span>
-          <details class="platform-details"><summary>対応予定・システム要件</summary>
-            <ul><li>Ubuntu 22.04+ / Debian 12+ / Fedora 40+（x64・ARM64）</li><li>配布形式: AppImage（汎用）、deb、rpm</li><li>Minecraft: Java Edition（Windows版と同等）</li></ul>
-            <p>Launcher/Updater の C# 実装を Avalonia またはスクリプト化し、Node.js を同梱したポータブル構成で提供予定です。</p>
+          <div class="platform-head"><span class="platform-icon" aria-hidden="true">🐧</span><div class="platform-title"><h3>Linux</h3><span class="badge badge-available">利用可能（ベータ）</span></div></div>
+          <p class="platform-desc">ポータブルtarball版（x64 / ARM64）。Node.js・依存モジュール同梱で、展開して起動スクリプトを実行するだけです。</p>
+          <a class="download-button platform-download" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/craftmate-linux-x64.tar.gz"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3h14v-3"/></svg><span><strong>Download for Linux x64</strong><small>craftmate-linux-x64.tar.gz — 最新版</small></span><span class="button-arrow" aria-hidden="true">↗</span></a>
+          <a class="platform-alt-link" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/craftmate-linux-arm64.tar.gz">ARM64版はこちら →</a>
+          <details class="platform-details"><summary>システム要件・インストール方法</summary>
+            <ul><li>OS: Ubuntu 22.04+ / Debian 12+ / Fedora 40+（x64・ARM64）</li><li>Node.js: 不要（同梱）</li><li>Minecraft: Java Edition 1.20.5〜1.21.11 推奨</li></ul>
+            <ol><li>tarball をダウンロードして任意のディレクトリに展開（例: <code>tar xzf craftmate-linux-x64.tar.gz</code>）</li><li><code>cd craftmate-linux-x64</code> → <code>chmod +x start.sh</code> → <code>./start.sh</code></li><li>ブラウザで <code>http://localhost:3000</code> を開き、設定画面で AI プロバイダーと API キーを設定</li></ol>
+            <p>※ C#製ランチャー/アップデーターはWindows専用のため、Linux版は <code>node dist/index.js</code> 直接起動のベータ版です。deb/rpm/AppImage インストーラーは今後のリリースで提供予定です。</p>
           </details>
         </article>
 
