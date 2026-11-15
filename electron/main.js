@@ -66,10 +66,36 @@ function startServer(payloadDir) {
   const bundledNode = path.join(payloadDir, 'craftmate-node');
   const useBundled = fs.existsSync(bundledNode);
   const execPath = useBundled ? bundledNode : process.execPath;
-  const env = Object.assign({}, process.env, {
-    CRAFTMATE_DESKTOP: '1',
-  });
+
+  // Electron 固有の環境変数を除去してから spawn する。
+  // 特に LD_LIBRARY_PATH / LD_PRELOAD は Electron 同梱のライブラリを
+  // 指し、子プロセス（craftmate-node + better-sqlite3）のロードを壊して
+  // SIGSEGV を起こす原因になる（WSL 等で顕著）。
+  const env = Object.assign({}, process.env);
+  delete env.ELECTRON_RUN_AS_NODE;
+  delete env.LD_PRELOAD;
+  delete env.LD_LIBRARY_PATH;
+  delete env.LD_AUDIT;
+  // Electron が内部で使うパスも念のため除去（通常は未設定）
+  delete env.ELECTRON_NO_ATTACH_CONSOLE;
+  delete env.CHROME_DESKTOP;
+  delete env.GIO_LAUNCHED_DESKTOP_FILE_PID;
+  env.CRAFTMATE_DESKTOP = '1';
   if (!useBundled) env.ELECTRON_RUN_AS_NODE = '1';
+
+  // デバッグ: spawn 直前の環境を記録（原因切り分け用）
+  console.log('[CraftMate] spawn:', execPath);
+  console.log('[CraftMate] env: LD_LIBRARY_PATH=' + (env.LD_LIBRARY_PATH ?? '(unset)') +
+    ' LD_PRELOAD=' + (env.LD_PRELOAD ?? '(unset)') +
+    ' ELECTRON_RUN_AS_NODE=' + (env.ELECTRON_RUN_AS_NODE ?? '(unset)') +
+    ' bundledNode=' + useBundled);
+  try {
+    const logPath = path.join(require('os').tmpdir(), 'CraftMate_server.log');
+    fs.appendFileSync(logPath,
+      `[${new Date().toISOString()}] spawn ${execPath} bundled=${useBundled} ` +
+      `LD_LIBRARY_PATH=${env.LD_LIBRARY_PATH ?? 'unset'} LD_PRELOAD=${env.LD_PRELOAD ?? 'unset'}\n`);
+  } catch (_) { /* ignore */ }
+
   serverProc = spawn(execPath, [entry], {
     cwd: payloadDir,
     env,
