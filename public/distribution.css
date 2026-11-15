@@ -107,6 +107,8 @@
 .platform-details ul,.platform-details ol{margin:10px 0 0;padding-left:20px;color:#a1a1aa;font-size:11px;line-height:1.8}
 .platform-details p{margin:10px 0 0;color:#a1a1aa;font-size:11px;line-height:1.7}
 .platform-alt-link{display:inline-block;margin-top:8px;font-size:11.5px;color:var(--green);text-decoration:none;font-weight:600}
+.platform-links{display:flex;flex-direction:column;gap:2px}
+.platform-links .platform-alt-link{margin-top:4px}
 .platform-alt-link:hover{text-decoration:underline}
 .platform-details code{background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px;font-size:10.5px}
 @media(max-width:640px){.platform-grid{grid-template-columns:1fr}}

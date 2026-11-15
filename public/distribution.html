@@ -41,14 +41,18 @@
         </article>
 
         <article class="platform-card" data-os="linux">
-          <div class="platform-head"><span class="platform-icon" aria-hidden="true">🐧</span><div class="platform-title"><h3>Linux</h3><span class="badge badge-available">利用可能（ベータ）</span></div></div>
-          <p class="platform-desc">ポータブルtarball版（x64 / ARM64）。Node.js・依存モジュール同梱で、展開して起動スクリプトを実行するだけです。</p>
-          <a class="download-button platform-download" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/craftmate-linux-x64.tar.gz"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3h14v-3"/></svg><span><strong>Download for Linux x64</strong><small>craftmate-linux-x64.tar.gz — 最新版</small></span><span class="button-arrow" aria-hidden="true">↗</span></a>
-          <a class="platform-alt-link" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/craftmate-linux-arm64.tar.gz">ARM64版はこちら →</a>
+          <div class="platform-head"><span class="platform-icon" aria-hidden="true">🐧</span><div class="platform-title"><h3>Linux</h3><span class="badge badge-available">利用可能</span></div></div>
+          <p class="platform-desc">Electron製デスクトップアプリ（AppImage / deb）とポータブルtarballを提供。アプリはランチャー同様にウィンドウでダッシュボードを表示します。</p>
+          <a class="download-button platform-download" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate-linux-x64.AppImage"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3h14v-3"/></svg><span><strong>Download for Linux x64</strong><small>CraftMate-linux-x64.AppImage — 最新版</small></span><span class="button-arrow" aria-hidden="true">↗</span></a>
+          <div class="platform-links">
+            <a class="platform-alt-link" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate-linux-x64.deb">.deb（apt/dpkg）はこちら</a>
+            <a class="platform-alt-link" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/craftmate-linux-x64.tar.gz">ポータブルtarball（Node.js直起動）はこちら</a>
+            <a class="platform-alt-link" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate-linux-arm64.AppImage">ARM64版 AppImage はこちら</a>
+          </div>
           <details class="platform-details"><summary>システム要件・インストール方法</summary>
-            <ul><li>OS: Ubuntu 22.04+ / Debian 12+ / Fedora 40+（x64・ARM64）</li><li>Node.js: 不要（同梱）</li><li>Minecraft: Java Edition 1.20.5〜1.21.11 推奨</li></ul>
-            <ol><li>tarball をダウンロードして任意のディレクトリに展開（例: <code>tar xzf craftmate-linux-x64.tar.gz</code>）</li><li><code>cd craftmate-linux-x64</code> → <code>chmod +x start.sh</code> → <code>./start.sh</code></li><li>ブラウザで <code>http://localhost:3000</code> を開き、設定画面で AI プロバイダーと API キーを設定</li></ol>
-            <p>※ C#製ランチャー/アップデーターはWindows専用のため、Linux版は <code>node dist/index.js</code> 直接起動のベータ版です。deb/rpm/AppImage インストーラーは今後のリリースで提供予定です。</p>
+            <ul><li>OS: Ubuntu 22.04+ / Debian 12+ / Fedora 40+（x64・ARM64）</li><li>Node.js: 不要（Electron同梱）</li><li>Minecraft: Java Edition 1.20.5〜1.21.11 推奨</li></ul>
+            <ol><li><strong>AppImage</strong>: ダウンロード後 <code>chmod +x CraftMate-linux-x64.AppImage</code> → 実行（FUSEが無い環境は <code>--appimage-extract-and-run</code>）</li><li><strong>deb</strong>: <code>sudo apt install ./CraftMate-linux-x64.deb</code> → アプリメニューの「CraftMate」から起動</li><li><strong>tarball</strong>: 展開して <code>./start.sh</code>（従来のNode.js直起動版）</li></ol>
+            <p>Electron版はサーバー起動・ポート3000待機・ウィンドウ表示・終了時のプロセス停止を自動で行います。tarball版は引き続き利用可能です。</p>
           </details>
         </article>
 
