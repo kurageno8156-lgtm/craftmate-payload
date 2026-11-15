@@ -152,7 +152,107 @@ namespace CraftMateLauncher
             }
 
             Log("Server is ready. Launching browser...");
-            LaunchBrowser();
+            Process browserProcess = LaunchBrowser();
+
+            // Launcher を「アプリ全体の監視プロセス」として残す。
+            // ブラウザ（アプリモード）が閉じられたら、自分が起動した node.exe や
+            // CraftMate関連プロセスを終了してから Launcher 自身も終了する。
+            // これによりブラウザを閉じても node.exe がゾンビ化しない。
+            if (browserProcess != null)
+            {
+                Log("Supervisor mode: waiting for the browser window to close...");
+                WaitForBrowserExit(browserProcess);
+                CleanupOnExit();
+                Log("Shutdown complete. Exiting launcher.");
+            }
+        }
+
+        /// <summary>
+        /// ブラウザプロセスの終了を監視する。ブラウザが既に終了している場合は即座に戻る。
+        /// </summary>
+        private static void WaitForBrowserExit(Process browserProcess)
+        {
+            try
+            {
+                // Chrome は最初のプロセスがブラウザプロセスとして残る。
+                // 念のため3秒待って早期終了（起動失敗で即死）を検出する。
+                browserProcess.WaitForExit(3000);
+                if (browserProcess.HasExited)
+                {
+                    Log("Browser process already exited (code " + SafeExitCode(browserProcess) + ").");
+                    return;
+                }
+                while (!browserProcess.HasExited)
+                {
+                    Thread.Sleep(2000);
+                    // サーバーが既に死んでいてもブラウザが開いていれば監視を続ける
+                    // （ユーザーが手動でサーバーを再起動する可能性があるため）。
+                }
+                Log("Browser closed (code " + SafeExitCode(browserProcess) + ").");
+            }
+            catch (Exception ex)
+            {
+                Log("Browser wait failed: " + ex.Message);
+            }
+        }
+
+        private static string SafeExitCode(Process process)
+        {
+            try { return process.HasExited ? process.ExitCode.ToString() : "running"; }
+            catch { return "unknown"; }
+        }
+
+        /// <summary>
+        /// 終了時クリーンアップ: 自分が起動したサーバーと CraftMate 関連プロセスを終了する。
+        /// </summary>
+        private static void CleanupOnExit()
+        {
+            if (_serverProcess != null)
+            {
+                try
+                {
+                    if (!_serverProcess.HasExited)
+                    {
+                        Log("Stopping server process PID " + _serverProcess.Id + ".");
+                        _serverProcess.Kill();
+                        _serverProcess.WaitForExit(5000);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("Could not stop server process: " + ex.Message);
+                }
+                _serverProcess = null;
+            }
+
+            // CraftMate の補助プロセス（Updater / ScreenViewer）も終了する
+            KillProcessesByName("CraftMate_Updater");
+            KillProcessesByName("CraftMate_ScreenViewer");
+        }
+
+        private static void KillProcessesByName(string processName)
+        {
+            try
+            {
+                foreach (Process proc in Process.GetProcessesByName(processName))
+                {
+                    try
+                    {
+                        Log("Stopping " + processName + " PID " + proc.Id + ".");
+                        proc.Kill();
+                        proc.WaitForExit(3000);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("Could not stop " + processName + " PID " + proc.Id + ": " + ex.Message);
+                    }
+                    finally { proc.Dispose(); }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Process scan for " + processName + " failed: " + ex.Message);
+            }
         }
 
         /// <summary>
@@ -345,6 +445,10 @@ namespace CraftMateLauncher
             server.BeginOutputReadLine();
             server.BeginErrorReadLine();
 
+            // Launcher が終了（または強制終了）された際に node.exe が
+            // ゾンビ化しないよう、kill-on-close ジョブに割り当てる
+            AssignToKillOnCloseJob(server);
+
             Log("Server process started (PID " + server.Id + ").");
         }
 
@@ -488,7 +592,7 @@ namespace CraftMateLauncher
             }
         }
 
-        private static void LaunchBrowser()
+        private static Process LaunchBrowser()
         {
             string browser = FindBrowser();
             if (browser == null)
@@ -499,10 +603,11 @@ namespace CraftMateLauncher
                     "CraftMate",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
-                return;
+                return null;
             }
             Log("Browser: " + browser);
 
+            Process browserProcess = null;
             try
             {
                 string profileDirectory = Path.Combine(
@@ -517,14 +622,13 @@ namespace CraftMateLauncher
                     " --user-data-dir=\"" + profileDirectory + "\"" +
                     " --no-first-run --no-default-browser-check";
 
-                Process browserProcess = Process.Start(
+                browserProcess = Process.Start(
                     new ProcessStartInfo(browser, arguments) { UseShellExecute = false });
                 if (browserProcess == null)
                 {
                     throw new InvalidOperationException("ブラウザプロセスを起動できませんでした。");
                 }
                 Log("Browser launched (PID " + browserProcess.Id + ").");
-                browserProcess.Dispose();
             }
             catch (Exception browserError)
             {
@@ -534,6 +638,74 @@ namespace CraftMateLauncher
                     "CraftMate",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
+                return null;
+            }
+            return browserProcess;
+        }
+
+        // ---- Job Object (KILL_ON_JOB_CLOSE) ----
+        // Launcher が強制終了されても、配下の node.exe がゾンビ化しないようにする。
+        // ジョブに割り当てたプロセスは、その子プロ孫プロセスにも継承されるため、
+        // サーバーの自己再起動で spawn された新しい node.exe も連動して終了する。
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern IntPtr CreateJobObject(IntPtr lpJobAttributes, string lpName);
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetInformationJobObject(IntPtr hJob, int JobObjectInformationClass, IntPtr lpJobObjectInformation, uint cbJobObjectInformationLength);
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool AssignProcessToJobObject(IntPtr hJob, IntPtr hProcess);
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool CloseHandle(IntPtr hObject);
+
+        private static IntPtr _killOnCloseJob = IntPtr.Zero;
+        private const int JobObjectExtendedLimitInformation = 9;
+        private const uint JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000;
+
+        /// <summary>
+        /// 指定プロセスを「Launcher 終了時に一緒に kill される」Job Object に割り当てる。
+        /// 失敗しても起動自体は継続する（ベストエフォート）。
+        /// </summary>
+        private static void AssignToKillOnCloseJob(Process process)
+        {
+            try
+            {
+                if (_killOnCloseJob == IntPtr.Zero)
+                {
+                    _killOnCloseJob = CreateJobObject(IntPtr.Zero, null);
+                    if (_killOnCloseJob == IntPtr.Zero)
+                    {
+                        Log("CreateJobObject failed: " + System.Runtime.InteropServices.Marshal.GetLastWin32Error());
+                        return;
+                    }
+                    // JOBOBJECT_EXTENDED_LIMIT_INFORMATION (x64: 128 bytes)
+                    // LimitFlags は先頭から 16 バイト目 (BasicLimitInformation 内)
+                    IntPtr info = System.Runtime.InteropServices.Marshal.AllocHGlobal(128);
+                    try
+                    {
+                        for (int i = 0; i < 128; i++) System.Runtime.InteropServices.Marshal.WriteByte(info, i, 0);
+                        System.Runtime.InteropServices.Marshal.WriteInt32(info, 16, (int)JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE);
+                        if (!SetInformationJobObject(_killOnCloseJob, JobObjectExtendedLimitInformation, info, 128))
+                        {
+                            Log("SetInformationJobObject failed: " + System.Runtime.InteropServices.Marshal.GetLastWin32Error());
+                            CloseHandle(_killOnCloseJob);
+                            _killOnCloseJob = IntPtr.Zero;
+                            return;
+                        }
+                    }
+                    finally { System.Runtime.InteropServices.Marshal.FreeHGlobal(info); }
+                    Log("Kill-on-close Job Object created.");
+                }
+                if (AssignProcessToJobObject(_killOnCloseJob, process.Handle))
+                {
+                    Log("Server process PID " + process.Id + " assigned to kill-on-close job.");
+                }
+                else
+                {
+                    Log("AssignProcessToJobObject failed (PID " + process.Id + "): " + System.Runtime.InteropServices.Marshal.GetLastWin32Error() + " (continuing without job protection)");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Job Object setup failed: " + ex.Message);
             }
         }
 

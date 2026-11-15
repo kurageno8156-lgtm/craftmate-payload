@@ -1205,6 +1205,29 @@ function showUpdateOverlay(phase) {
   }, 90000);
 }
 
+on(document.getElementById('btn-quit-app'), 'click', async () => {
+  const button = document.getElementById('btn-quit-app');
+  button.disabled = true;
+  showSettingsMessage(translate('quitting'));
+  try {
+    await fetchWithLocalSettingsAuth('/api/shutdown', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+  } catch (error) {
+    uiError('アプリ終了', error);
+    showSettingsMessage(error.message || translate('quitFailed'), 'error');
+    button.disabled = false;
+    return;
+  }
+  // サーバー終了後はページが無反応になるため、ウィンドウを閉じる
+  setTimeout(() => {
+    try { window.close(); } catch { }
+    window.location.href = 'about:blank';
+  }, 900);
+});
+
 on(document.getElementById('btn-download-logs'), 'click', () => {
   const lines = Array.from(logsContainer.querySelectorAll('.log-entry')).map(entry => entry.innerText.trim());
   const blob = new Blob([lines.join('\n\n') + '\n'], { type: 'text/plain;charset=utf-8' });

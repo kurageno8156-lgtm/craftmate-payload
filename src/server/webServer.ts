@@ -50,6 +50,9 @@ export class WebServer {
   private tempCleanupTimer: NodeJS.Timeout | null = null;
   private loopLagTimer: NodeJS.Timeout | null = null;
   private loopLagCount: number = 0;
+  private connectedSockets: number = 0;
+  private lastSocketActivityAt: number = Date.now();
+  private idleShutdownTimer: NodeJS.Timeout | null = null;
 
 
   constructor(
@@ -826,6 +829,18 @@ export class WebServer {
       res.json({ pong: true });
     });
 
+    // ダッシュボードの「アプリを完全に終了」ボタン用。応答後にプロセスを終了する。
+    this.app.post('/api/shutdown', (req, res) => {
+      this.debugLog('POST /api/shutdown start');
+      if (!this.isLocalUpdateRequest(req, true)) {
+        this.debugLog('POST /api/shutdown rejected: not a local authenticated request');
+        return res.status(403).json({ error: 'Shutdown is available only to the authenticated local dashboard.' });
+      }
+      this.debugLog('POST /api/shutdown accepted; exiting in 600ms');
+      try { res.json({ success: true }); } catch { }
+      setTimeout(() => process.exit(0), 600);
+    });
+
     this.app.post('/api/chat-rooms', (req, res) => {
       const id = String(req.body?.id || `room-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
       const title = String(req.body?.title || '').slice(0, 100);
@@ -981,6 +996,9 @@ export class WebServer {
 
   private setupSocketEvents(): void {
     this.io.on('connection', socket => {
+      this.connectedSockets += 1;
+      this.lastSocketActivityAt = Date.now();
+      socket.onAny(() => { this.lastSocketActivityAt = Date.now(); });
       // Send current status immediately upon connection
       socket.emit('status', {
         connected: this.botWrapper.isConnected,
@@ -1033,6 +1051,8 @@ export class WebServer {
       });
 
       socket.on('disconnect', () => {
+        this.connectedSockets = Math.max(0, this.connectedSockets - 1);
+        this.lastSocketActivityAt = Date.now();
         if (this.isScreenSharing && this.screenShareSocket === socket) {
           this.isScreenSharing = false;
           this.screenShareSocket = null;
@@ -1203,6 +1223,25 @@ export class WebServer {
     this.tempCleanupTimer = setInterval(() => { void this.cleanupTempFiles(); }, 6 * 60 * 60 * 1000);
     this.tempCleanupTimer.unref?.();
 
+    // アイドル自動終了: ダッシュボード（ブラウザ）の接続が90秒間ゼロで、
+    // AIタスク実行中でもなくMinecraftボットも未接続なら、サーバー自身を終了する。
+    // これによりブラウザだけ閉じた場合に node.exe がゾンビ化するのを防ぐ。
+    // ボット接続中・タスク実行中は終了しない（自律動作を継続させるため）。
+    this.idleShutdownTimer = setInterval(() => {
+      try {
+        if (this.connectedSockets > 0) return;
+        const idleMs = Date.now() - this.lastSocketActivityAt;
+        if (idleMs < 90 * 1000) return;
+        if (this.agent.isBusy()) return;
+        if (this.botWrapper.isConnected) return;
+        this.debugLog(`Idle shutdown: no dashboard connections for ${Math.round(idleMs / 1000)}s, agent idle and bot offline. Exiting.`);
+        process.exit(0);
+      } catch (error) {
+        this.debugLog(`Idle shutdown check failed: ${(error as Error).message}`);
+      }
+    }, 30000);
+    this.idleShutdownTimer.unref?.();
+
     let lastTick = Date.now();
     this.loopLagTimer = setInterval(() => {
       const now = Date.now();
@@ -1304,6 +1343,7 @@ export class WebServer {
     if (this.selfCheckTimer) clearInterval(this.selfCheckTimer);
     if (this.tempCleanupTimer) clearInterval(this.tempCleanupTimer);
     if (this.loopLagTimer) clearInterval(this.loopLagTimer);
+    if (this.idleShutdownTimer) clearInterval(this.idleShutdownTimer);
     this.io.close();
   }
 }
