@@ -85,3 +85,25 @@
   .provider-grid{grid-template-columns:repeat(2,1fr)}
   nav .github-button{display:none}
 }
+
+/* プラットフォーム選択カード */
+.platform-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;max-width:1100px;margin:0 auto}
+.platform-card{display:flex;flex-direction:column;gap:12px;padding:22px;border:1px solid var(--border);border-radius:14px;background:rgba(42,42,51,.6);transition:border-color .2s,box-shadow .2s}
+.platform-card.recommended{border-color:rgba(16,185,129,.7);box-shadow:0 0 0 1px rgba(16,185,129,.35),0 8px 30px rgba(16,185,129,.12)}
+.platform-head{display:flex;align-items:center;gap:12px}
+.platform-icon{font-size:30px;line-height:1}
+.platform-title{display:flex;flex-direction:column;gap:5px}
+.platform-title h3{margin:0;font-size:15px}
+.badge{display:inline-block;width:fit-content;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.4px}
+.badge-available{background:rgba(16,185,129,.18);color:#34d399;border:1px solid rgba(16,185,129,.4)}
+.badge-soon{background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.35)}
+.platform-desc{margin:0;color:#a1a1aa;font-size:11.5px;line-height:1.75;flex:1}
+.platform-download{min-height:0;padding:10px 14px;font-size:12px}
+.platform-download.disabled{opacity:.55;cursor:not-allowed;pointer-events:none}
+.platform-details{border-top:1px solid var(--border);padding-top:10px}
+.platform-details summary{cursor:pointer;font-size:11.5px;font-weight:700;color:var(--green);list-style:none}
+.platform-details summary::before{content:'＋ ';font-weight:800}
+.platform-details[open] summary::before{content:'－ '}
+.platform-details ul,.platform-details ol{margin:10px 0 0;padding-left:20px;color:#a1a1aa;font-size:11px;line-height:1.8}
+.platform-details p{margin:10px 0 0;color:#a1a1aa;font-size:11px;line-height:1.7}
+@media(max-width:640px){.platform-grid{grid-template-columns:1fr}}

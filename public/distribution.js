@@ -1,6 +1,37 @@
-// CraftMate 配布ページ: ユーザーレビュー（サーバー SQLite 共有）
+// CraftMate 配布ページ: プラットフォーム自動判別 + ユーザーレビュー（サーバー SQLite 共有）
 (function () {
   'use strict';
+
+  // ---- OS 自動判別: ユーザーの環境に合ったカードをハイライト ----
+  (function detectPlatform() {
+    var ua = (navigator.userAgent || '').toLowerCase();
+    var platform = (navigator.platform || '').toLowerCase();
+    var detected = null;
+    if (/android/.test(ua)) detected = 'android';
+    else if (/iphone|ipad|ipod/.test(ua) || (/mac/.test(platform) && navigator.maxTouchPoints > 1)) detected = 'ios';
+    else if (/mac/.test(platform) || /mac os x|macintosh/.test(ua)) detected = 'macos';
+    else if (/linux/.test(platform) || (/linux/.test(ua) && !/android/.test(ua))) detected = 'linux';
+    else if (/win/.test(platform) || /windows/.test(ua)) detected = 'windows';
+
+    var cards = document.querySelectorAll('.platform-card');
+    cards.forEach(function (card) {
+      if (detected && card.getAttribute('data-os') === detected) {
+        card.classList.add('recommended');
+        var badge = card.querySelector('.badge');
+        if (badge && detected !== 'windows') {
+          badge.textContent = 'あなたのOS（近日公開）';
+        } else if (badge && detected === 'windows') {
+          badge.textContent = 'あなたのOS・利用可能';
+        }
+      }
+    });
+    var note = document.getElementById('platform-detect-note');
+    if (note && detected) {
+      var names = { windows: 'Windows', linux: 'Linux', macos: 'macOS', android: 'Android', ios: 'iOS' };
+      note.textContent = 'あなたのOSは ' + (names[detected] || detected) + ' と判定されました。' +
+        (detected === 'windows' ? '今すぐダウンロードできます。' : 'このOS版は近日公開予定です。Windows版は今すぐ利用できます。');
+    }
+  })();
 
   var form = document.getElementById('review-form');
   var listEl = document.getElementById('review-list');
