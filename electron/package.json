@@ -3,6 +3,7 @@
   "productName": "CraftMate",
   "version": "1.3.137",
   "description": "Minecraft AI autonomous agent — desktop wrapper",
+  "homepage": "https://github.com/kurageno8156-lgtm/craftmate-payload",
   "main": "main.js",
   "private": true,
   "scripts": {
