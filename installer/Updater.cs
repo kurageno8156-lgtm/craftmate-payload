@@ -352,6 +352,10 @@ namespace CraftMateUpdater
 
                 CleanStaleFiles(worker);
 
+                // ファイル置換中に旧プロセスが復活・残存していないか最終確認して再掃除
+                StopAllRunningCraftMate(worker);
+                WaitForPortReleased(worker, 3000);
+
                 Dictionary<string, object> verifiedPackage = DeserializeObject(File.ReadAllText(packagePath));
                 string verifiedVersion = Convert.ToString(verifiedPackage["version"]);
                 if (CompareVersions(verifiedVersion, latestVersion) != 0) throw new InvalidDataException("更新後のバージョン確認に失敗しました。");

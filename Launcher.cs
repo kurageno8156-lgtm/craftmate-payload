@@ -61,6 +61,11 @@ namespace CraftMateLauncher
             Log("Install directory: " + installDirectory);
             Log("Log file: " + LogPath);
 
+            // アップデート後などに残った「同じインストール先の別 Launcher/CraftMate」
+            // プロセスを先に終了する。複数起動するとポート競合や
+            // 古いコードのサーバー再利用を招くため。
+            KillDuplicateLauncherInstances(installDirectory);
+
             // ポート3000を占有しているプロセスが「このインストール先の node.exe」
             // でない場合（例: 開発フォルダの古いサーバー）、強制終了して
             // 必ず自分のインストール先のサーバーを起動する。
@@ -152,6 +157,9 @@ namespace CraftMateLauncher
             }
 
             Log("Server is ready. Launching browser...");
+            // 起動後の最終掃除: インストール先の node.exe のうち、ポート3000を
+            // 掴んでいない残存プロセス（旧バージョンのゾンビ等）を終了する。
+            KillStaleInstallDirNodeProcesses(installDirectory);
             Process browserProcess = LaunchBrowser();
 
             // Launcher を「アプリ全体の監視プロセス」として残す。
@@ -267,6 +275,83 @@ namespace CraftMateLauncher
             // CraftMate の補助プロセス（Updater / ScreenViewer）も終了する
             KillProcessesByName("CraftMate_Updater");
             KillProcessesByName("CraftMate_ScreenViewer");
+        }
+
+        /// <summary>
+        /// 同一インストール先の Launcher.exe / CraftMate.exe の重複起動を終了する。
+        /// 自分自身（selfPid）は対象外。別インストール先のプロセスは触らない。
+        /// </summary>
+        private static void KillDuplicateLauncherInstances(string installDirectory)
+        {
+            try
+            {
+                int selfPid = Process.GetCurrentProcess().Id;
+                string installRoot = Path.GetFullPath(installDirectory).TrimEnd('\\') + "\\";
+                foreach (Process proc in Process.GetProcesses())
+                {
+                    try
+                    {
+                        if (proc.Id == selfPid) continue;
+                        string name = proc.ProcessName;
+                        if (!string.Equals(name, "CraftMate", StringComparison.OrdinalIgnoreCase) &&
+                            !string.Equals(name, "Launcher", StringComparison.OrdinalIgnoreCase)) continue;
+                        string exe;
+                        try { exe = proc.MainModule == null ? null : proc.MainModule.FileName; }
+                        catch { continue; }
+                        if (string.IsNullOrEmpty(exe) ||
+                            !exe.StartsWith(installRoot, StringComparison.OrdinalIgnoreCase)) continue;
+                        Log("Killing duplicate launcher instance PID " + proc.Id + " (" + exe + ").");
+                        proc.Kill();
+                        proc.WaitForExit(5000);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("Could not kill duplicate launcher PID " + proc.Id + ": " + ex.Message);
+                    }
+                    finally { try { proc.Dispose(); } catch { } }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Duplicate launcher scan failed: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// インストール先の node.exe のうち、ポート3000のリスナーではないものを終了する。
+        /// アップデート後に旧サーバープロセスが残ってメモリを消費するのを防ぐ。
+        /// </summary>
+        private static void KillStaleInstallDirNodeProcesses(string installDirectory)
+        {
+            try
+            {
+                var listenerPids = GetPortListenerPids(ServerPort);
+                string expectedNode = Path.GetFullPath(Path.Combine(installDirectory, "node.exe"));
+                foreach (Process proc in Process.GetProcessesByName("node"))
+                {
+                    try
+                    {
+                        if (listenerPids.Contains(proc.Id)) continue; // 現役サーバーは残す
+                        string exe;
+                        try { exe = proc.MainModule == null ? null : proc.MainModule.FileName; }
+                        catch { continue; }
+                        if (string.IsNullOrEmpty(exe) ||
+                            !string.Equals(Path.GetFullPath(exe), expectedNode, StringComparison.OrdinalIgnoreCase)) continue;
+                        Log("Killing stale node.exe PID " + proc.Id + " (not listening on port " + ServerPort + ").");
+                        proc.Kill();
+                        proc.WaitForExit(5000);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("Could not kill stale node PID " + proc.Id + ": " + ex.Message);
+                    }
+                    finally { try { proc.Dispose(); } catch { } }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Stale node scan failed: " + ex.Message);
+            }
         }
 
         private static void KillProcessesByName(string processName)
