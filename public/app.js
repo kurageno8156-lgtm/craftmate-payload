@@ -159,8 +159,12 @@ const updateBannerLater = document.getElementById('update-banner-later');
 let updateCheckInfo = null;
 
 function dismissUpdateBanner(latestVersion) {
+  console.log('Update banner dismissed', latestVersion);
   try { sessionStorage.setItem('cm-dismissed-update', String(latestVersion)); } catch (_) { }
-  if (updateBanner) updateBanner.hidden = true;
+  if (updateBanner) {
+    updateBanner.classList.remove('show');
+    updateBanner.hidden = true;
+  }
 }
 
 function showUpdateBanner(info) {
@@ -171,7 +175,7 @@ function showUpdateBanner(info) {
     } catch (_) { }
   }
   updateCheckInfo = info;
-  updateBannerText.textContent = translate('updateAvailable', {
+  updateBannerText.textContent = translate('updateBannerAvailable', {
     latest: info.latestVersion || '?',
     current: info.currentVersion || '?',
   });
@@ -244,8 +248,12 @@ async function checkForUpdates() {
 
 on(updateBannerApply, 'click', applyUpdateFromBanner);
 on(updateBannerLater, 'click', () => {
+  console.log('Update banner "later" clicked');
   if (updateCheckInfo) dismissUpdateBanner(updateCheckInfo.latestVersion);
-  else if (updateBanner) updateBanner.hidden = true;
+  else if (updateBanner) {
+    updateBanner.classList.remove('show');
+    updateBanner.hidden = true;
+  }
 });
 
 // 起動時 + 1時間ごとに更新確認

@@ -108,6 +108,9 @@ body {
   transform: translateY(0);
   opacity: 1;
 }
+.update-banner[hidden] {
+  display: none;
+}
 .update-banner-actions {
   display: flex;
   gap: 8px;
