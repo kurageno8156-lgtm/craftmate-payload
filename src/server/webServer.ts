@@ -417,6 +417,8 @@ export class WebServer {
         else if (platform === 'linux') assetName = `CraftMate-linux-${arch}.AppImage`;
         else if (platform === 'darwin') assetName = '';
         const asset = (rel.assets || []).find((a: { name: string }) => a.name === assetName);
+        const canAutoUpdate = platform === 'win32';
+        this.debugLog(`GET /api/version/check -> platform=${platform} arch=${arch} current=${current} latest=${latest || 'none'} updateAvailable=${updateAvailable} asset=${asset ? assetName : 'none'} canAutoUpdate=${canAutoUpdate}`);
         res.json({
           currentVersion: current,
           latestVersion: latest || null,
@@ -426,7 +428,7 @@ export class WebServer {
           assetName: asset ? assetName : null,
           downloadUrl: asset ? asset.browser_download_url : null,
           releaseUrl: rel.html_url || null,
-          canAutoUpdate: platform === 'win32',
+          canAutoUpdate,
         });
       } catch (error) {
         this.debugLog(`GET /api/version/check failed: ${(error as Error).message}`);
@@ -448,6 +450,7 @@ export class WebServer {
         return res.status(400).json({
           error: 'The built-in updater is only available on Windows. Please download the latest release manually.',
           manualUpdate: true,
+          platform: process.platform,
         });
       }
       if (!this.isLocalUpdateRequest(req, true)) {

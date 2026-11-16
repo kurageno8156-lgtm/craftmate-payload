@@ -185,7 +185,8 @@ function showUpdateBanner(info) {
 async function applyUpdateFromBanner() {
   const info = updateCheckInfo;
   if (!info) return;
-  if (info.canAutoUpdate) {
+  const isWindows = info.platform === 'win32' || info.canAutoUpdate === true;
+  if (isWindows) {
     // Windows: 既存のアップデーター起動フローを再利用
     updateBannerApply.disabled = true;
     try {
@@ -200,14 +201,19 @@ async function applyUpdateFromBanner() {
       dismissUpdateBanner(info.latestVersion);
     } catch (error) {
       updateBannerApply.disabled = false;
-      // 自動更新不可なら手動ダウンロードへフォールバック
-      if (info.downloadUrl || info.releaseUrl) {
-        window.open(info.downloadUrl || info.releaseUrl, '_blank');
+      // 自動更新に失敗: Windows では exe ダウンロードを開かずエラー表示のみ
+      // （Linux/macOS のみ OS別アセットの手動ダウンロードを許可）
+      if (info.platform === 'linux' || info.platform === 'darwin') {
+        if (info.downloadUrl || info.releaseUrl) {
+          window.open(info.downloadUrl || info.releaseUrl, '_blank');
+        } else {
+          showSettingsMessage(error.message || translate('updaterLaunchFailed'), 'error');
+        }
       } else {
         showSettingsMessage(error.message || translate('updaterLaunchFailed'), 'error');
       }
     }
-  } else {
+  } else if (info.platform === 'linux' || info.platform === 'darwin') {
     // Linux/macOS: 自OS用アセット（またはリリースページ）をブラウザで開く
     window.open(info.downloadUrl || info.releaseUrl || 'https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest', '_blank');
     dismissUpdateBanner(info.latestVersion);
@@ -219,6 +225,8 @@ async function openManualUpdateDownload() {
   try {
     const res = await fetch('/api/version/check', { signal: AbortSignal.timeout(12000) });
     const info = await res.json();
+    // Windows では絶対に他OSアセットを開かない（多層防御）
+    if (info.platform === 'win32') return;
     window.open(info.downloadUrl || info.releaseUrl || 'https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest', '_blank');
   } catch (_) {
     window.open('https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest', '_blank');
@@ -1267,9 +1275,14 @@ on(document.getElementById('btn-check-updates'), 'click', async event => {
       body: '{}',
     });
     const result = await response.json().catch(() => ({}));
-    if (result.manualUpdate) {
+    if (result.manualUpdate && result.platform !== 'win32') {
       showSettingsMessage(translate('updaterWindowsOnly'), 'error');
       await openManualUpdateDownload();
+      return;
+    }
+    if (result.manualUpdate) {
+      // 念のための防御: Windows で manualUpdate が返った場合はダウンロードを開かない
+      showSettingsMessage(result.error || translate('updaterLaunchFailed'), 'error');
       return;
     }
     if (!response.ok) throw new Error(result.error || translate('updaterLaunchFailed'));
