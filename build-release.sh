@@ -79,11 +79,46 @@ fi
 mkdir -p "$STAGE"
 cp -r dist public node_modules package.json package-lock.json "$STAGE"/ 2>/dev/null || true
 cp .env.example "$STAGE"/ 2>/dev/null || true
+# デスクトップ登録用アイコン（electron/icon.png = app.ico 由来 256x256）
+cp electron/icon.png "$STAGE/craftmate.png" 2>/dev/null || true
 
 cat > "$STAGE/start.sh" <<'EOF'
 #!/usr/bin/env bash
 # CraftMate 起動スクリプト — 同梱の Node.js を優先、無ければ PATH の node を使用
 cd "$(dirname "$0")"
+
+# ./start.sh --install : アプリケーションメニューに登録して終了
+if [ "${1:-}" = "--install" ]; then
+  APPS_DIR="$HOME/.local/share/applications"
+  ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"
+  mkdir -p "$APPS_DIR" "$ICON_DIR"
+  START_PATH="$(pwd)/start.sh"
+  cat > "$APPS_DIR/craftmate.desktop" <<DESK
+[Desktop Entry]
+Type=Application
+Name=CraftMate
+Comment=Minecraft AI autonomous agent
+Exec="$START_PATH" %U
+Icon=craftmate
+Terminal=false
+Categories=Utility;Game;
+StartupNotify=true
+DESK
+  [ -f ./craftmate.png ] && cp ./craftmate.png "$ICON_DIR/craftmate.png"
+  update-desktop-database "$APPS_DIR" 2>/dev/null || true
+  gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+  echo "CraftMate をアプリケーションメニューに登録しました: $APPS_DIR/craftmate.desktop"
+  exit 0
+fi
+
+if [ "${1:-}" = "--uninstall" ]; then
+  rm -f "$HOME/.local/share/applications/craftmate.desktop" \
+        "$HOME/.local/share/icons/hicolor/256x256/apps/craftmate.png"
+  update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+  echo "CraftMate のデスクトップ登録を削除しました。"
+  exit 0
+fi
+
 if [ -x ./craftmate-node ]; then
   exec ./craftmate-node dist/index.js "$@"
 elif command -v node >/dev/null 2>&1; then
@@ -102,6 +137,10 @@ CraftMate ${VERSION} (${OS}/${ARCH}) — ポータブル版
   1. Node.js 18+ をインストール（https://nodejs.org）
   2. このフォルダで ./start.sh を実行
   3. ブラウザで http://localhost:3000 を開く
+
+【アプリケーションメニューへの登録（任意）】
+  ./start.sh --install    … メニューに登録
+  ./start.sh --uninstall  … 登録を解除
 
 【注意】
   - better-sqlite3 はこのプラットフォーム用にビルド済みです。

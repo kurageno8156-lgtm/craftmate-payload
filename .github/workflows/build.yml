@@ -42,6 +42,14 @@ jobs:
 
       - name: Build Windows installers (x64)
         shell: pwsh
+        env:
+          # コード署名（SmartScreen警告の緩和）。証明書を用意したら
+          # GitHub Secrets に以下を登録すると自動署名される:
+          #   CRAFTMATE_PFX_BASE64  … .pfx を base64 エンコードした文字列
+          #   CRAFTMATE_PFX_PASSWORD … 証明書パスワード
+          # 未設定の場合は署名なしでビルド（SmartScreen警告は出る）。
+          CRAFTMATE_PFX_BASE64: ${{ secrets.CRAFTMATE_PFX_BASE64 }}
+          CRAFTMATE_PFX_PASSWORD: ${{ secrets.CRAFTMATE_PFX_PASSWORD }}
         run: |
           # 既存のリリーススクリプトを呼び出す。
           # 注意: このスクリプトは GitHub Releases へのアップロードと

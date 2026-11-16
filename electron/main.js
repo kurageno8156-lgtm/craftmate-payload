@@ -6,12 +6,13 @@
 //   native window.
 // - Kills the server process when the app quits.
 
-const { app, BrowserWindow } = require('electron');
-const { spawn } = require('child_process');
+const { app, BrowserWindow, ipcMain } = require('electron');
+const { spawn, execFile } = require('child_process');
 const path = require('path');
 const http = require('http');
 const net = require('net');
 const fs = require('fs');
+const os = require('os');
 
 // Linux/WSL 等で GPU/Vulkan 初期化が SIGSEGV を起こすケースがあるため、
 // Linux ではハードウェアアクセラレーションを完全に無効化する。
@@ -35,6 +36,153 @@ const SERVER_READY_TIMEOUT_MS = 120000;
 let mainWindow = null;
 let serverProc = null;
 let quitting = false;
+let payloadDirGlobal = null;
+
+// ---------- Linux デスクトップ登録（.desktop + アイコン） ----------
+// AppImage はシステムに登録されないため、ユーザー領域
+// (~/.local/share/applications, ~/.local/share/icons) に登録する。
+// deb は electron-builder が /usr/share/applications に配置済みだが、
+// ユーザー側の登録で上書きしても害はない（Exec は実行中バイナリを指す）。
+function installDesktopEntry() {
+  if (process.platform !== 'linux') {
+    return { ok: false, error: 'not-linux' };
+  }
+  try {
+    const home = os.homedir();
+    const appsDir = path.join(home, '.local', 'share', 'applications');
+    const iconDir = path.join(home, '.local', 'share', 'icons', 'hicolor', '256x256', 'apps');
+    fs.mkdirSync(appsDir, { recursive: true });
+    fs.mkdirSync(iconDir, { recursive: true });
+
+    // AppImage 実行時は APPIMAGE 環境変数に実ファイルのパスが入る。
+    // deb/開発時は process.execPath（実バイナリ）を使う。
+    const execPath = process.env.APPIMAGE || process.execPath;
+    const desktopPath = path.join(appsDir, 'craftmate.desktop');
+    const desktop = [
+      '[Desktop Entry]',
+      'Type=Application',
+      'Name=CraftMate',
+      'Comment=Minecraft AI autonomous agent',
+      `Exec="${execPath}" %U`,
+      'Icon=craftmate',
+      'Terminal=false',
+      'Categories=Utility;Game;',
+      'StartupNotify=true',
+      '',
+    ].join('\n');
+    fs.writeFileSync(desktopPath, desktop);
+
+    // アイコンを hicolor テーマに配置（Electron の fs は asar 内も読める）
+    let iconInstalled = false;
+    try {
+      fs.copyFileSync(path.join(__dirname, 'icon.png'), path.join(iconDir, 'craftmate.png'));
+      iconInstalled = true;
+    } catch (_) { /* アイコン失敗は無視 */ }
+
+    // デスクトップデータベース / アイコンキャッシュの更新（ベストエフォート）
+    try { execFile('update-desktop-database', [appsDir], () => { }); } catch (_) { }
+    try {
+      execFile('gtk-update-icon-cache', ['-f', '-t', path.join(home, '.local', 'share', 'icons', 'hicolor')], () => { });
+    } catch (_) { }
+
+    return { ok: true, desktopPath, execPath, iconInstalled };
+  } catch (e) {
+    return { ok: false, error: String(e && e.message || e) };
+  }
+}
+
+function desktopEntryStatus() {
+  if (process.platform !== 'linux') return { installed: false, reason: 'not-linux' };
+  const desktopPath = path.join(os.homedir(), '.local', 'share', 'applications', 'craftmate.desktop');
+  let content = '';
+  try { content = fs.readFileSync(desktopPath, 'utf8'); } catch (_) { }
+  return {
+    installed: content.includes('CraftMate'),
+    desktopPath,
+    execLine: (content.match(/^Exec=(.*)$/m) || [])[1] || '',
+  };
+}
+
+// ---------- 旧プロセス掃除 ----------
+// ポート3000を掴んでいる「CraftMate 系」プロセスを特定して終了する。
+// ダッシュボードが応答しない（wedged）場合の起動前クリーンアップ用。
+function port3000ListenerPids() {
+  return new Promise((resolve) => {
+    execFile('ss', ['-ltnp'], { timeout: 5000 }, (err, stdout) => {
+      if (err || !stdout) return resolve([]);
+      const pids = new Set();
+      for (const line of String(stdout).split('\n')) {
+        if (!line.includes(':3000')) continue;
+        const matches = line.match(/pid=(\d+)/g) || [];
+        for (const m of matches) pids.add(parseInt(m.slice(4), 10));
+      }
+      resolve([...pids].filter(n => n > 0));
+    });
+  });
+}
+
+function procCmdline(pid) {
+  try {
+    return fs.readFileSync(`/proc/${pid}/cmdline`, 'utf8').replace(/\0/g, ' ');
+  } catch (_) { return ''; }
+}
+
+async function sweepPort3000() {
+  if (process.platform === 'win32') return;
+  try {
+    const pids = await port3000ListenerPids();
+    for (const pid of pids) {
+      const cmd = procCmdline(pid);
+      // CraftMate のサーバーらしきプロセスのみ対象（他アプリは殺さない）
+      const isOurs = cmd.includes('craftmate') || cmd.includes('dist/index.js') ||
+        (payloadDirGlobal && cmd.includes(payloadDirGlobal));
+      if (!isOurs) continue;
+      console.log(`[CraftMate] killing stale server on :3000 pid=${pid} cmd=${cmd.slice(0, 120)}`);
+      try { process.kill(pid, 'SIGTERM'); } catch (_) { }
+    }
+    // SIGTERM 後に残ったものを SIGKILL
+    await new Promise(r => setTimeout(r, 1200));
+    for (const pid of await port3000ListenerPids()) {
+      const cmd = procCmdline(pid);
+      const isOurs = cmd.includes('craftmate') || cmd.includes('dist/index.js') ||
+        (payloadDirGlobal && cmd.includes(payloadDirGlobal));
+      if (!isOurs) continue;
+      try { process.kill(pid, 'SIGKILL'); } catch (_) { }
+    }
+  } catch (e) {
+    console.warn('[CraftMate] sweepPort3000 failed:', e && e.message);
+  }
+}
+
+// payload ディレクトリを指す node/craftmate-node の残存プロセスを掃除
+function sweepPayloadProcesses() {
+  if (process.platform === 'win32' || !payloadDirGlobal) return;
+  execFile('pkill', ['-TERM', '-f', payloadDirGlobal], () => { });
+  setTimeout(() => {
+    execFile('pkill', ['-KILL', '-f', payloadDirGlobal], () => { });
+  }, 3000).unref();
+}
+
+// ---------- GUI インストーラー（--install / --uninstall） ----------
+function registerInstallerIpc() {
+  ipcMain.handle('craftmate:status', () => desktopEntryStatus());
+  ipcMain.handle('craftmate:install', () => installDesktopEntry());
+  ipcMain.handle('craftmate:launch', () => {
+    const result = installDesktopEntry();
+    if (result.ok) {
+      setTimeout(() => { app.relaunch(); app.exit(0); }, 300);
+    }
+    return result;
+  });
+}
+
+function showInstaller() {
+  registerInstallerIpc();
+  const win = createWindow();
+  win.setSize(560, 480);
+  win.setResizable(false);
+  win.loadFile(path.join(__dirname, 'installer.html'));
+}
 
 function resolvePayloadDir() {
   // Packaged: resources/payload (via electron-builder extraResources)
@@ -182,6 +330,7 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      preload: path.join(__dirname, 'preload.js'),
     },
   });
   mainWindow.removeMenu();
@@ -217,7 +366,14 @@ function showError(message) {
 
 async function boot() {
   const payloadDir = resolvePayloadDir();
+  payloadDirGlobal = payloadDir;
   console.log('[CraftMate] payload dir:', payloadDir);
+
+  // AppImage の場合はアプリケーションメニューへ自動登録（冪等・軽量）
+  if (process.platform === 'linux' && process.env.APPIMAGE && app.isPackaged) {
+    const reg = installDesktopEntry();
+    console.log('[CraftMate] desktop entry:', JSON.stringify(reg));
+  }
 
   // If something already serves the dashboard (e.g. previous instance), reuse it.
   if (await probeDashboard(1500)) {
@@ -225,6 +381,9 @@ async function boot() {
     createWindow().loadURL(DASHBOARD_URL);
     return;
   }
+
+  // ポート3000を掴む古い CraftMate サーバーが残っていれば掃除してから起動
+  await sweepPort3000();
 
   const win = createWindow();
   win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(
@@ -292,6 +451,7 @@ function killServer() {
 }
 
 const gotLock = app.requestSingleInstanceLock();
+const installerMode = process.argv.includes('--install') || process.argv.includes('--uninstall');
 if (!gotLock) {
   app.quit();
 } else {
@@ -302,18 +462,26 @@ if (!gotLock) {
     }
   });
 
-  app.whenReady().then(boot);
+  app.whenReady().then(() => {
+    if (installerMode) showInstaller();
+    else boot();
+  });
 
   app.on('window-all-closed', () => {
     quitting = true;
     killServer();
+    sweepPayloadProcesses();
     app.quit();
   });
 
   app.on('before-quit', () => {
     quitting = true;
     killServer();
+    sweepPayloadProcesses();
   });
 
-  app.on('will-quit', killServer);
+  app.on('will-quit', () => {
+    killServer();
+    sweepPayloadProcesses();
+  });
 }

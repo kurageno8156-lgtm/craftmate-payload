@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>CraftMate インストーラー</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px;
+    background: #0b0f14; color: #e4e4e7;
+    font-family: 'Segoe UI', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', system-ui, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .card { max-width: 480px; width: 100%; }
+  h1 { font-size: 22px; color: #fbbf24; margin: 0 0 4px; }
+  .sub { color: #a1a1aa; font-size: 13px; margin-bottom: 20px; }
+  .status {
+    background: #111827; border: 1px solid #1f2937; border-radius: 10px;
+    padding: 14px 16px; font-size: 13px; margin-bottom: 20px;
+    word-break: break-all;
+  }
+  .status .ok { color: #4ade80; }
+  .status .ng { color: #f87171; }
+  button {
+    display: block; width: 100%; margin: 10px 0; padding: 12px;
+    font-size: 14px; font-weight: 600; border: none; border-radius: 10px;
+    cursor: pointer; transition: opacity .15s;
+  }
+  button:disabled { opacity: .5; cursor: wait; }
+  .primary { background: #22c55e; color: #fff; }
+  .secondary { background: #1f2937; color: #e4e4e7; border: 1px solid #374151; }
+  .note { font-size: 12px; color: #71717a; margin-top: 18px; line-height: 1.6; }
+  code { background: #1f2937; padding: 1px 6px; border-radius: 4px; }
+  #result { font-size: 13px; margin-top: 8px; min-height: 20px; }
+  #result.ok { color: #4ade80; }
+  #result.err { color: #f87171; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>CraftMate インストーラー</h1>
+  <div class="sub">Minecraft AI 自律エージェント — Linux デスクトップ登録</div>
+
+  <div class="status" id="status">状態を確認中…</div>
+
+  <button class="primary" id="btn-install">アプリケーションメニューに登録</button>
+  <button class="secondary" id="btn-launch">登録して起動</button>
+
+  <div id="result"></div>
+
+  <div class="note">
+    ・登録先: <code>~/.local/share/applications/craftmate.desktop</code><br>
+    ・アイコン: <code>~/.local/share/icons/hicolor/256x256/apps/craftmate.png</code><br>
+    ・deb パッケージ版はインストール時に自動登録されます。<br>
+    ・AppImage を削除・移動した場合は再度このインストーラーを実行してください。
+  </div>
+</div>
+
+<script>
+const statusEl = document.getElementById('status');
+const resultEl = document.getElementById('result');
+const btnInstall = document.getElementById('btn-install');
+const btnLaunch = document.getElementById('btn-launch');
+const api = window.craftmateInstaller;
+
+function showResult(msg, ok) {
+  resultEl.textContent = msg;
+  resultEl.className = ok ? 'ok' : 'err';
+}
+
+async function refreshStatus() {
+  try {
+    const s = await api.status();
+    if (s.installed) {
+      statusEl.innerHTML = '<span class="ok">✓ 登録済み</span><br>' +
+        '<span style="color:#71717a">' + s.desktopPath + '</span><br>' +
+        '<span style="color:#71717a">Exec: ' + s.execLine + '</span>';
+    } else {
+      statusEl.innerHTML = '<span class="ng">未登録</span><br>' +
+        '<span style="color:#71717a">' + (s.desktopPath || '') + '</span>';
+    }
+  } catch (e) {
+    statusEl.innerHTML = '<span class="ng">状態取得失敗: ' + e + '</span>';
+  }
+}
+
+btnInstall.addEventListener('click', async () => {
+  btnInstall.disabled = true; btnLaunch.disabled = true;
+  try {
+    const r = await api.install();
+    if (r.ok) {
+      showResult('登録しました: ' + r.desktopPath, true);
+    } else {
+      showResult('登録に失敗しました: ' + (r.error || 'unknown'), false);
+    }
+  } catch (e) {
+    showResult('エラー: ' + e, false);
+  }
+  await refreshStatus();
+  btnInstall.disabled = false; btnLaunch.disabled = false;
+});
+
+btnLaunch.addEventListener('click', async () => {
+  btnInstall.disabled = true; btnLaunch.disabled = true;
+  try {
+    const r = await api.launch();
+    if (!r.ok) showResult('登録に失敗しました: ' + (r.error || 'unknown'), false);
+  } catch (e) {
+    showResult('エラー: ' + e, false);
+    btnInstall.disabled = false; btnLaunch.disabled = false;
+  }
+});
+
+refreshStatus();
+</script>
+</body>
+</html>
