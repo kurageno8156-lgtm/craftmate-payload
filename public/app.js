@@ -175,10 +175,18 @@ function showUpdateBanner(info) {
     } catch (_) { }
   }
   updateCheckInfo = info;
-  updateBannerText.textContent = translate('updateBannerAvailable', {
-    latest: info.latestVersion || '?',
-    current: info.currentVersion || '?',
-  });
+  const latest = info.latestVersion || '?';
+  const current = info.currentVersion || '?';
+  let bannerText = translate('updateBannerAvailable', { latest, current });
+  // 保険: 何らかの理由でプレースホルダーが残った場合は強制置換する
+  if (!bannerText || bannerText === 'updateBannerAvailable' || bannerText.includes('{')) {
+    bannerText = `A new version v${latest} is available (current: v${current}).`;
+  }
+  bannerText = bannerText
+    .replaceAll('{latest}', String(latest))
+    .replaceAll('{current}', String(current))
+    .replaceAll('{version}', String(latest));
+  updateBannerText.textContent = bannerText;
   updateBannerApply.textContent = info.canAutoUpdate ? translate('updateNow') : translate('updateDownloadManual');
   updateBannerLater.textContent = translate('later');
   updateBanner.hidden = false;
@@ -186,9 +194,25 @@ function showUpdateBanner(info) {
   requestAnimationFrame(() => requestAnimationFrame(() => updateBanner.classList.add('show')));
 }
 
+function showUpdateBannerError(message) {
+  // 設定パネル内のメッセージは非表示のため、バナー自体にエラーを表示する
+  console.error('[UpdateBanner] error:', message);
+  if (updateBannerText) updateBannerText.textContent = message;
+  if (updateBannerApply) {
+    updateBannerApply.disabled = false;
+    updateBannerApply.textContent = (updateCheckInfo && !updateCheckInfo.canAutoUpdate)
+      ? translate('updateDownloadManual')
+      : translate('updateNow');
+  }
+}
+
 async function applyUpdateFromBanner() {
   const info = updateCheckInfo;
-  if (!info) return;
+  if (!info) {
+    console.warn('[UpdateBanner] apply clicked but updateCheckInfo is null');
+    return;
+  }
+  console.log('[UpdateBanner] apply clicked', JSON.stringify({ platform: info.platform, canAutoUpdate: info.canAutoUpdate, latest: info.latestVersion }));
   const isWindows = info.platform === 'win32' || info.canAutoUpdate === true;
   if (isWindows) {
     // Windows: 既存のアップデーター起動フローを再利用
@@ -200,26 +224,40 @@ async function applyUpdateFromBanner() {
         body: '{}',
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || translate('updaterLaunchFailed'));
+      console.log('[UpdateBanner] launch-updater response', response.status, JSON.stringify(result));
+      if (result.manualUpdate === true) {
+        // サーバーが手動更新を要求: Windows では exe を開かずエラー表示のみ
+        updateBannerApply.disabled = false;
+        showUpdateBannerError(result.error || translate('updaterLaunchFailed'));
+        return;
+      }
+      if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
       updatePending = true;
       dismissUpdateBanner(info.latestVersion);
     } catch (error) {
       updateBannerApply.disabled = false;
+      const message = (error && error.message) || translate('updaterLaunchFailed');
       // 自動更新に失敗: Windows では exe ダウンロードを開かずエラー表示のみ
       // （Linux/macOS のみ OS別アセットの手動ダウンロードを許可）
       if (info.platform === 'linux' || info.platform === 'darwin') {
         if (info.downloadUrl || info.releaseUrl) {
           window.open(info.downloadUrl || info.releaseUrl, '_blank');
+          dismissUpdateBanner(info.latestVersion);
         } else {
-          showSettingsMessage(error.message || translate('updaterLaunchFailed'), 'error');
+          showUpdateBannerError(message);
         }
       } else {
-        showSettingsMessage(error.message || translate('updaterLaunchFailed'), 'error');
+        showUpdateBannerError(message);
       }
     }
   } else if (info.platform === 'linux' || info.platform === 'darwin') {
     // Linux/macOS: 自OS用アセット（またはリリースページ）をブラウザで開く
     window.open(info.downloadUrl || info.releaseUrl || 'https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest', '_blank');
+    dismissUpdateBanner(info.latestVersion);
+  } else {
+    // platform 不明: Windows 以外として扱い、リリースページを開く
+    console.warn('[UpdateBanner] unknown platform, opening releases page');
+    window.open(info.releaseUrl || 'https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest', '_blank');
     dismissUpdateBanner(info.latestVersion);
   }
 }
