@@ -610,9 +610,39 @@ namespace CraftMateUpdater
             Report(worker, 64, "クリーンアップ完了（" + killed + " プロセスを停止）。");
         }
 
-        /// <summary>netstat で LISTENING 中の PID を取得して Kill する。</summary>
+        /// <summary>
+        /// LISTENING 中の PID を取得して Kill する。
+        /// netstat -ano は IPv6 ワイルドカード ([::]:port) の LISTEN を環境によって
+        /// 出力しないため、Get-NetTCPConnection で補完してから Kill する。
+        /// </summary>
         private void KillProcessOnPort(int port)
         {
+            var pids = new HashSet<int>();
+            try
+            {
+                var psi = new ProcessStartInfo("powershell.exe",
+                    "-NoProfile -NonInteractive -Command \"Get-NetTCPConnection -LocalPort " + port +
+                    " -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess\"")
+                {
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+                using (Process ps = Process.Start(psi))
+                {
+                    if (ps != null)
+                    {
+                        string psOut = ps.StandardOutput.ReadToEnd();
+                        ps.WaitForExit(15000);
+                        foreach (string token in psOut.Split(new char[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            int pid;
+                            if (int.TryParse(token, out pid) && pid > 0) pids.Add(pid);
+                        }
+                    }
+                }
+            }
+            catch { }
             try
             {
                 var psi = new ProcessStartInfo("netstat", "-ano")
@@ -626,7 +656,6 @@ namespace CraftMateUpdater
                     if (netstat == null) return;
                     string output = netstat.StandardOutput.ReadToEnd();
                     netstat.WaitForExit(10000);
-                    var pids = new HashSet<int>();
                     foreach (string line in output.Split('\n'))
                     {
                         // TCP    0.0.0.0:3000  ...  LISTENING    1234
@@ -635,23 +664,23 @@ namespace CraftMateUpdater
                         int pid;
                         if (m.Success && int.TryParse(m.Groups[1].Value, out pid)) pids.Add(pid);
                     }
-                    int selfPid = Process.GetCurrentProcess().Id;
-                    foreach (int pid in pids)
-                    {
-                        if (pid == selfPid) continue;
-                        try
-                        {
-                            using (Process proc = Process.GetProcessById(pid))
-                            {
-                                proc.Kill();
-                                proc.WaitForExit(5000);
-                            }
-                        }
-                        catch { }
-                    }
                 }
             }
             catch { }
+            int selfPid = Process.GetCurrentProcess().Id;
+            foreach (int pid in pids)
+            {
+                if (pid == selfPid) continue;
+                try
+                {
+                    using (Process proc = Process.GetProcessById(pid))
+                    {
+                        proc.Kill();
+                        proc.WaitForExit(5000);
+                    }
+                }
+                catch { }
+            }
         }
 
         /// <summary>

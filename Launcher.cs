@@ -326,12 +326,21 @@ namespace CraftMateLauncher
             try
             {
                 var listenerPids = GetPortListenerPids(ServerPort);
+                int serverPid = (_serverProcess != null && !_serverProcess.HasExited) ? _serverProcess.Id : -1;
+                Log("Port " + ServerPort + " listeners: [" + string.Join(",", listenerPids) + "] serverPid=" + serverPid);
+                if (listenerPids.Count == 0)
+                {
+                    // リスナーを検出できない場合は誤って自サーバーを殺さないよう掃除をスキップ
+                    Log("No port listeners detected; skipping stale-node sweep for safety.");
+                    return;
+                }
                 string expectedNode = Path.GetFullPath(Path.Combine(installDirectory, "node.exe"));
                 foreach (Process proc in Process.GetProcessesByName("node"))
                 {
                     try
                     {
-                        if (listenerPids.Contains(proc.Id)) continue; // 現役サーバーは残す
+                        if (proc.Id == serverPid) continue;             // 自分が起動したサーバーは絶対に残す
+                        if (listenerPids.Contains(proc.Id)) continue;   // ポート占有中のサーバーも残す
                         string exe;
                         try { exe = proc.MainModule == null ? null : proc.MainModule.FileName; }
                         catch { continue; }
@@ -385,6 +394,33 @@ namespace CraftMateLauncher
         private static System.Collections.Generic.HashSet<int> GetPortListenerPids(int port)
         {
             var pids = new System.Collections.Generic.HashSet<int>();
+            // netstat -ano は IPv6 ワイルドカード ([::]:port) の LISTEN を
+            // 環境によって出力しないことがあるため、Get-NetTCPConnection でも補完する。
+            try
+            {
+                Process ps = Process.Start(new ProcessStartInfo("powershell.exe",
+                    "-NoProfile -NonInteractive -Command \"Get-NetTCPConnection -LocalPort " + port +
+                    " -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess\"")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                });
+                if (ps != null)
+                {
+                    string psOut = ps.StandardOutput.ReadToEnd();
+                    ps.WaitForExit(15000);
+                    foreach (string token in psOut.Split(new char[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        int pid;
+                        if (int.TryParse(token, out pid) && pid > 0) pids.Add(pid);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Get-NetTCPConnection lookup failed: " + ex.Message);
+            }
             try
             {
                 Process netstat = Process.Start(new ProcessStartInfo("netstat", "-ano")
