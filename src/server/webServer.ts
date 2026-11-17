@@ -15,7 +15,12 @@ import dotenv from 'dotenv';
 import {
   listChatRooms, createChatRoom, deleteChatRoom, listChatMessages, addChatMessage, setChatRoomTitleIfEmpty,
   listReviews, addReview,
+  listIntegrations, getIntegration, upsertIntegration, deleteIntegration,
 } from '../db.js';
+import {
+  INTEGRATION_PROVIDERS, getProvider, buildAuthorizeUrl, exchangeCode,
+  generatePkce, generateState, encryptJson, decryptJson, summarizeAccount,
+} from '../integrations.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,6 +59,8 @@ export class WebServer {
   private lastSocketActivityAt: number = Date.now();
   private idleShutdownTimer: NodeJS.Timeout | null = null;
   private updateCheckCache: { at: number; data: any } | null = null;
+  // 進行中の OAuth フロー: platform -> { state, codeVerifier, clientId, clientSecret, createdAt }
+  private pendingOAuth: Map<string, { state: string; codeVerifier?: string; clientId: string; clientSecret?: string; createdAt: number }> = new Map();
 
 
   constructor(
@@ -902,6 +909,122 @@ export class WebServer {
     });
 
     // ---- チャットルーム（SQLite 永続化）----
+    // ---------- 外部サービス連携 ----------
+    const integrationRedirectBase = () =>
+      (process.env.CRAFTMATE_PUBLIC_URL || `http://127.0.0.1:${this.port}`).replace(/\/+$/, '');
+
+    this.app.get('/api/integrations', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      const rows = new Map(listIntegrations().map(r => [r.platform, r]));
+      const platforms = INTEGRATION_PROVIDERS.map(p => {
+        const row = rows.get(p.id);
+        let account: { label?: string; detail?: string } | null = null;
+        if (row && row.status === 'connected') {
+          const data = decryptJson(row.payload);
+          if (data) account = summarizeAccount(p.id, data);
+        }
+        return {
+          id: p.id,
+          label: p.label,
+          description: p.description,
+          style: p.style,
+          tokenHint: p.tokenHint || null,
+          connected: !!(row && row.status === 'connected'),
+          account,
+          updatedAt: row ? row.updated_at : null,
+        };
+      });
+      res.json({ platforms });
+    });
+
+    this.app.post('/api/integrations/:platform/connect', async (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Forbidden' });
+      const provider = getProvider(String(req.params.platform));
+      if (!provider) return res.status(404).json({ error: 'Unknown platform.' });
+      const body = (req.body || {}) as { clientId?: string; clientSecret?: string; token?: string };
+
+      // トークン貼り付けモード（または token が直接指定された場合）
+      if (provider.style === 'token' || (typeof body.token === 'string' && body.token.trim())) {
+        const token = String(body.token || '').trim();
+        if (token.length < 8 || token.length > 4096) {
+          return res.status(400).json({ error: 'Invalid token.' });
+        }
+        upsertIntegration(provider.id, 'connected', encryptJson({ token, type: 'bearer', connectedAt: Date.now() }));
+        this.debugLog(`integration connect (token): ${provider.id}`);
+        return res.json({ success: true, connected: true });
+      }
+
+      if (provider.style !== 'oauth' || !provider.authorizeUrl) {
+        return res.status(400).json({ error: 'This platform does not support OAuth.' });
+      }
+
+      // clientId はリクエスト > .env の順で解決
+      const clientId = (body.clientId || '').trim() || (provider.clientIdEnv ? process.env[provider.clientIdEnv] : '') || '';
+      const clientSecret = (body.clientSecret || '').trim() || (provider.clientSecretEnv ? process.env[provider.clientSecretEnv] : '') || undefined;
+      if (!clientId) {
+        return res.status(400).json({ error: 'clientId is required (or set the corresponding env var).', code: 'CLIENT_ID_REQUIRED' });
+      }
+
+      const state = generateState();
+      const { verifier, challenge } = generatePkce();
+      const redirectUri = `${integrationRedirectBase()}/api/integrations/${provider.id}/oauth/callback`;
+      this.pendingOAuth.set(provider.id, { state, codeVerifier: verifier, clientId, clientSecret, createdAt: Date.now() });
+      // 10分で期限切れにするため古いエントリを掃除
+      const now = Date.now();
+      for (const [k, v] of this.pendingOAuth) {
+        if (now - v.createdAt > 10 * 60 * 1000) this.pendingOAuth.delete(k);
+      }
+      const authUrl = buildAuthorizeUrl(provider, { redirectUri, state, codeChallenge: challenge, clientId });
+      this.debugLog(`integration oauth start: ${provider.id} redirect=${redirectUri}`);
+      res.json({ success: true, authUrl, redirectUri });
+    });
+
+    this.app.get('/api/integrations/:platform/oauth/callback', async (req, res) => {
+      const platform = String(req.params.platform);
+      const provider = getProvider(platform);
+      const finish = (ok: boolean, message: string) => {
+        res.type('html').send(`<!doctype html><html><head><meta charset="utf-8"><title>CraftMate</title></head><body style="font-family:sans-serif;background:#0b0f14;color:#e4e4e7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center;max-width:480px"><h2 style="color:${ok ? '#4ade80' : '#f87171'}">${ok ? '連携が完了しました' : '連携に失敗しました'}</h2><p>${message}</p><p style="color:#71717a;font-size:13px">このウィンドウを閉じてダッシュボードに戻ってください。</p></div></body></html>`);
+      };
+      if (!provider) return finish(false, 'Unknown platform.');
+      const { code, state, error, error_description } = req.query as Record<string, string>;
+      if (error) return finish(false, `${error}: ${error_description || ''}`);
+      const pending = this.pendingOAuth.get(platform);
+      if (!pending || pending.state !== state || !code) {
+        return finish(false, '認証セッションが無効か期限切れです。もう一度お試しください。');
+      }
+      this.pendingOAuth.delete(platform);
+      try {
+        const redirectUri = `${integrationRedirectBase()}/api/integrations/${platform}/oauth/callback`;
+        const tokenData = await exchangeCode(provider, {
+          code, redirectUri,
+          clientId: pending.clientId,
+          clientSecret: pending.clientSecret,
+          codeVerifier: pending.codeVerifier,
+        });
+        const account = summarizeAccount(platform, tokenData);
+        upsertIntegration(platform, 'connected', encryptJson({
+          ...tokenData,
+          clientId: pending.clientId,
+          connectedAt: Date.now(),
+        }));
+        this.debugLog(`integration oauth success: ${platform} account=${account.label || '-'}`);
+        return finish(true, `${provider.label} との連携が完了しました${account.label ? `（${account.label}）` : ''}。`);
+      } catch (e) {
+        this.debugLog(`integration oauth failed: ${platform} ${(e as Error).message}`);
+        return finish(false, `トークン取得に失敗しました: ${(e as Error).message}`);
+      }
+    });
+
+    this.app.post('/api/integrations/:platform/disconnect', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Forbidden' });
+      const platform = String(req.params.platform);
+      if (!getProvider(platform)) return res.status(404).json({ error: 'Unknown platform.' });
+      deleteIntegration(platform);
+      this.pendingOAuth.delete(platform);
+      this.debugLog(`integration disconnect: ${platform}`);
+      res.json({ success: true });
+    });
+
     this.app.get('/api/chat-rooms', (_req, res) => {
       res.json({ rooms: listChatRooms() });
     });

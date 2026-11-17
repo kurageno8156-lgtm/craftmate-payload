@@ -1073,10 +1073,151 @@ async function loadSettings() {
   }
 }
 
+// ---- 外部アカウント連携 ----
+const integrationsList = document.getElementById('integrations-list');
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+async function loadIntegrations() {
+  if (!integrationsList) return;
+  integrationsList.textContent = '';
+  try {
+    const response = await fetch('/api/integrations', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'failed');
+    for (const p of data.platforms || []) {
+      integrationsList.appendChild(renderIntegrationRow(p));
+    }
+  } catch (error) {
+    integrationsList.appendChild(el('div', 'integrations-help', translate('integrationConnectFailed') + ': ' + (error.message || error)));
+  }
+}
+
+function renderIntegrationRow(p) {
+  const row = el('div', 'integration-row');
+  const info = el('div', 'integration-info');
+  info.appendChild(el('div', 'integration-name', p.label));
+  info.appendChild(el('div', 'integration-desc', p.description || ''));
+  if (p.account && p.account.label) {
+    info.appendChild(el('div', 'integration-account', p.account.label + (p.account.detail ? ' — ' + p.account.detail : '')));
+  }
+  row.appendChild(info);
+
+  const status = el('span', 'integration-status ' + (p.connected ? 'on' : 'off'),
+    p.connected ? translate('integrationConnected') : translate('integrationNotConnected'));
+  row.appendChild(status);
+
+  if (p.connected) {
+    const btn = el('button', 'btn-secondary', translate('integrationDisconnect'));
+    btn.type = 'button';
+    btn.addEventListener('click', async () => {
+      if (!confirm(translate('integrationDisconnectConfirm'))) return;
+      btn.disabled = true;
+      try {
+        await fetchWithLocalSettingsAuth(`/api/integrations/${p.id}/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+        showSettingsMessage(translate('integrationDisconnected'), 'success');
+        await loadIntegrations();
+      } catch (e) {
+        showSettingsMessage(e.message || translate('integrationConnectFailed'), 'error');
+        btn.disabled = false;
+      }
+    });
+    row.appendChild(btn);
+  } else {
+    const btn = el('button', 'btn-secondary', translate('integrationConnect'));
+    btn.type = 'button';
+    btn.addEventListener('click', () => showIntegrationForm(row, p));
+    row.appendChild(btn);
+  }
+  return row;
+}
+
+function showIntegrationForm(row, p) {
+  // 既にフォームがあれば除去
+  const existing = row.querySelector('.integration-form');
+  if (existing) { existing.remove(); return; }
+
+  const form = el('div', 'integration-form');
+  form.style.flexBasis = '100%';
+  form.style.marginLeft = '0';
+
+  if (p.style === 'token') {
+    const input = document.createElement('input');
+    input.type = 'password';
+    input.placeholder = p.tokenHint || translate('integrationToken');
+    input.autocomplete = 'off';
+    form.appendChild(input);
+    form.appendChild(buildIntegrationSubmit(p, { getToken: () => input.value.trim() }));
+  } else {
+    const idInput = document.createElement('input');
+    idInput.placeholder = translate('integrationClientId');
+    idInput.autocomplete = 'off';
+    const secretInput = document.createElement('input');
+    secretInput.type = 'password';
+    secretInput.placeholder = translate('integrationClientSecret') + ' (optional if set in .env)';
+    secretInput.autocomplete = 'off';
+    form.appendChild(idInput);
+    form.appendChild(secretInput);
+    const note = el('div', 'integrations-help', translate('integrationOAuthNote'));
+    form.appendChild(note);
+    form.appendChild(buildIntegrationSubmit(p, {
+      getBody: () => ({
+        clientId: idInput.value.trim(),
+        clientSecret: secretInput.value.trim() || undefined,
+      }),
+    }));
+  }
+  row.appendChild(form);
+}
+
+function buildIntegrationSubmit(p, opts) {
+  const wrap = el('div', 'integration-actions');
+  const submit = el('button', 'btn-primary', translate('integrationConnect'));
+  submit.type = 'button';
+  const cancel = el('button', 'btn-secondary', translate('close'));
+  cancel.type = 'button';
+  cancel.addEventListener('click', () => { const f = submit.closest('.integration-form'); if (f) f.remove(); });
+  submit.addEventListener('click', async () => {
+    submit.disabled = true;
+    try {
+      const body = opts.getBody ? opts.getBody() : { token: opts.getToken() };
+      const response = await fetchWithLocalSettingsAuth(`/api/integrations/${p.id}/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || translate('integrationConnectFailed'));
+      if (result.authUrl) {
+        showSettingsMessage(translate('integrationConnecting'), 'success');
+        window.open(result.authUrl, '_blank');
+        // OAuth はブラウザ側で完了するため、フォームは閉じておく
+        const f = submit.closest('.integration-form');
+        if (f) f.remove();
+      } else {
+        showSettingsMessage(translate('integrationConnected'), 'success');
+        await loadIntegrations();
+      }
+    } catch (e) {
+      showSettingsMessage(e.message || translate('integrationConnectFailed'), 'error');
+      submit.disabled = false;
+    }
+  });
+  wrap.appendChild(submit);
+  wrap.appendChild(cancel);
+  return wrap;
+}
+
 on(document.getElementById('btn-settings'), 'click', () => {
   if (settingsModal) settingsModal.hidden = false;
   document.getElementById('setting-mc-port')?.focus();
   loadSettings();
+  loadIntegrations();
 });
 on(document.getElementById('btn-close-settings'), 'click', () => { if (settingsModal) settingsModal.hidden = true; });
 if (settingsModal) {

@@ -4,6 +4,9 @@
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#10b981">
   <link rel="icon" type="image/x-icon" href="/app.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="shortcut icon" type="image/x-icon" href="/app.ico">
   <link rel="apple-touch-icon" href="/icon-192.png">
 
@@ -201,6 +204,12 @@
         <button id="btn-create-backup" class="btn-secondary" type="button" data-i18n="createBackup">Create backup</button>
         <button id="btn-restore-backup" class="btn-secondary" type="button" data-i18n="restoreBackup">Restore from backup</button>
         <input id="settings-backup-file" type="file" accept=".json,application/json" hidden>
+      </div>
+      <div class="settings-divider"></div>
+      <div class="integrations-section">
+        <h3 data-i18n="integrationsTitle">外部アカウント連携</h3>
+        <p class="integrations-help" data-i18n="integrationsHelp">Google / Microsoft / GitHub / Apple / X / Facebook / LINE との連携。OAuth 対応サービスはクライアントID・シークレット（または .env）で認証します。トークンは暗号化してローカルDBに保存されます。</p>
+        <div id="integrations-list" class="integrations-list"></div>
       </div>
       <div class="settings-divider"></div>
       <div class="connection-heading"><h3 data-i18n="connections">Connections</h3><span id="health-checked" data-i18n="checking">Checking…</span></div>

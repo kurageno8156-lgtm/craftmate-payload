@@ -41,6 +41,13 @@ CREATE TABLE IF NOT EXISTS reviews (
   comment TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS integrations (
+  platform TEXT PRIMARY KEY,
+  status TEXT NOT NULL DEFAULT 'connected',
+  payload TEXT NOT NULL DEFAULT '{}',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
 `;
 
 // ---- DB 初期化（モード分岐）----
@@ -191,4 +198,34 @@ export function addReview(rating: number, name: string, comment: string): Review
 
 export function isSqlJsMode(): boolean {
   return useSqlJs;
+}
+
+// ---- 外部サービス連携 ----
+export interface IntegrationRow {
+  platform: string;
+  status: string;
+  payload: string; // 暗号化済みJSON文字列
+  created_at: number;
+  updated_at: number;
+}
+
+export function listIntegrations(): IntegrationRow[] {
+  return prepare('SELECT platform, status, payload, created_at, updated_at FROM integrations ORDER BY platform').all() as IntegrationRow[];
+}
+
+export function getIntegration(platform: string): IntegrationRow | undefined {
+  const rows = prepare('SELECT platform, status, payload, created_at, updated_at FROM integrations WHERE platform = ?').all(platform) as IntegrationRow[];
+  return rows[0];
+}
+
+export function upsertIntegration(platform: string, status: string, payload: string): void {
+  const now = Date.now();
+  prepare(`INSERT INTO integrations (platform, status, payload, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT(platform) DO UPDATE SET status = excluded.status, payload = excluded.payload, updated_at = excluded.updated_at`)
+    .run(platform, status, payload, now, now);
+}
+
+export function deleteIntegration(platform: string): void {
+  prepare('DELETE FROM integrations WHERE platform = ?').run(platform);
 }
