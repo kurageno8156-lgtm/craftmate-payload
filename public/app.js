@@ -213,6 +213,36 @@ async function applyUpdateFromBanner() {
     return;
   }
   console.log('[UpdateBanner] apply clicked', JSON.stringify({ platform: info.platform, canAutoUpdate: info.canAutoUpdate, latest: info.latestVersion }));
+  // Electron デスクトップ版（Linux AppImage 等）: IPC 経由でアプリ内更新。
+  // 新しい AppImage をダウンロード→SHA256検証→置き換え→自動再起動まで行う。
+  if (window.craftmateUpdate && typeof window.craftmateUpdate.apply === 'function' && info.downloadUrl) {
+    updateBannerApply.disabled = true;
+    try {
+      if (window.craftmateUpdate.onProgress) {
+        window.craftmateUpdate.onProgress((d) => {
+          if (!updateBannerText) return;
+          if (d.phase === 'verify' || d.phase === 'replace') {
+            updateBannerText.textContent = translate('updateApplying');
+          } else {
+            updateBannerText.textContent = translate('updateDownloading') + ' ' + (d.percent || 0) + '%';
+          }
+        });
+      }
+      const result = await window.craftmateUpdate.apply({
+        downloadUrl: info.downloadUrl,
+        latestVersion: info.latestVersion,
+      });
+      if (!result || result.ok !== true) {
+        throw new Error((result && result.error) || translate('updateFailed'));
+      }
+      updatePending = true;
+      dismissUpdateBanner(info.latestVersion);
+    } catch (error) {
+      updateBannerApply.disabled = false;
+      showUpdateBannerError((error && error.message) || translate('updateFailed'));
+    }
+    return;
+  }
   const isWindows = info.platform === 'win32' || info.canAutoUpdate === true;
   if (isWindows) {
     // Windows: 既存のアップデーター起動フローを再利用
@@ -1195,10 +1225,14 @@ function buildIntegrationSubmit(p, opts) {
       if (!response.ok) throw new Error(result.error || translate('integrationConnectFailed'));
       if (result.authUrl) {
         showSettingsMessage(translate('integrationConnecting'), 'success');
+        // 必ず別タブ/外部ブラウザで開く（Electron では setWindowOpenHandler が
+        // システムブラウザへ転送する）。同じタブで開くとダッシュボードを見失う。
         window.open(result.authUrl, '_blank');
         // OAuth はブラウザ側で完了するため、フォームは閉じておく
         const f = submit.closest('.integration-form');
         if (f) f.remove();
+        // 認証完了をポーリングで検知し、連携状態を自動更新する
+        startIntegrationPoll(p.id);
       } else {
         showSettingsMessage(translate('integrationConnected'), 'success');
         await loadIntegrations();
@@ -1211,6 +1245,25 @@ function buildIntegrationSubmit(p, opts) {
   wrap.appendChild(submit);
   wrap.appendChild(cancel);
   return wrap;
+}
+
+// OAuth 認証は別タブ/外部ブラウザで行われるため、コールバック完了を
+// ポーリングで検知して連携状態を自動更新する（最大約3分）。
+async function startIntegrationPoll(platformId) {
+  for (let i = 0; i < 45; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 4000));
+    try {
+      const response = await fetch('/api/integrations', { cache: 'no-store', signal: AbortSignal.timeout(8000) });
+      const data = await response.json();
+      if (!response.ok) continue;
+      const found = (data.platforms || []).find((p) => p.id === platformId || p.platform === platformId);
+      if (found && found.connected) {
+        await loadIntegrations();
+        showSettingsMessage(translate('integrationConnected'), 'success');
+        return;
+      }
+    } catch { /* サーバー一時停止などは無視して継続 */ }
+  }
 }
 
 on(document.getElementById('btn-settings'), 'click', () => {

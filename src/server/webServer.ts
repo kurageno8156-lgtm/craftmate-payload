@@ -424,7 +424,11 @@ export class WebServer {
         else if (platform === 'linux') assetName = `CraftMate-linux-${arch}.AppImage`;
         else if (platform === 'darwin') assetName = '';
         const asset = (rel.assets || []).find((a: { name: string }) => a.name === assetName);
-        const canAutoUpdate = platform === 'win32';
+        // Electron デスクトップ版（AppImage/deb）は CRAFTMATE_DESKTOP=1 が
+        // 設定されるため、Linux でもアプリ内アップデートを有効化する。
+        // ポータブル tarball（ブラウザ利用）は従来通り手動ダウンロード。
+        const canAutoUpdate = platform === 'win32' ||
+          (platform === 'linux' && process.env.CRAFTMATE_DESKTOP === '1');
         this.debugLog(`GET /api/version/check -> platform=${platform} arch=${arch} current=${current} latest=${latest || 'none'} updateAvailable=${updateAvailable} asset=${asset ? assetName : 'none'} canAutoUpdate=${canAutoUpdate}`);
         res.json({
           currentVersion: current,
@@ -443,7 +447,8 @@ export class WebServer {
           currentVersion: current, latestVersion: null, updateAvailable: false,
           platform, arch, assetName: null, downloadUrl: null,
           releaseUrl: `https://github.com/${repo}/releases/latest`,
-          canAutoUpdate: platform === 'win32',
+          canAutoUpdate: platform === 'win32' ||
+            (platform === 'linux' && process.env.CRAFTMATE_DESKTOP === '1'),
           checkError: 'Could not reach GitHub to check for updates.',
         });
       }
@@ -983,7 +988,9 @@ export class WebServer {
       const platform = String(req.params.platform);
       const provider = getProvider(platform);
       const finish = (ok: boolean, message: string) => {
-        res.type('html').send(`<!doctype html><html><head><meta charset="utf-8"><title>CraftMate</title></head><body style="font-family:sans-serif;background:#0b0f14;color:#e4e4e7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center;max-width:480px"><h2 style="color:${ok ? '#4ade80' : '#f87171'}">${ok ? '連携が完了しました' : '連携に失敗しました'}</h2><p>${message}</p><p style="color:#71717a;font-size:13px">このウィンドウを閉じてダッシュボードに戻ってください。</p></div></body></html>`);
+        // window.open で開かれたウィンドウは script から閉じられる。
+        // ダッシュボードへの復帰リンクも併記する。
+        res.type('html').send(`<!doctype html><html><head><meta charset="utf-8"><title>CraftMate</title></head><body style="font-family:sans-serif;background:#0b0f14;color:#e4e4e7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center;max-width:480px"><h2 style="color:${ok ? '#4ade80' : '#f87171'}">${ok ? '連携が完了しました' : '連携に失敗しました'}</h2><p>${message}</p><p style="color:#71717a;font-size:13px">このウィンドウは自動で閉じます。閉じない場合は <a href="http://127.0.0.1:3000" style="color:#60a5fa">ダッシュボードに戻る</a> をクリックしてください。</p></div><script>setTimeout(function(){try{window.close()}catch(e){}},1200)</script></body></html>`);
       };
       if (!provider) return finish(false, 'Unknown platform.');
       const { code, state, error, error_description } = req.query as Record<string, string>;
