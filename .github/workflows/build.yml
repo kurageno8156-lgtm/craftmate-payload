@@ -210,15 +210,31 @@ jobs:
   #   - 全OS同時: v1.4.0 に全アセット同梱も可
   # ============================================================
   release:
-    needs: [build-windows] # build-linux / build-macos 有効化後に追加
+    # Linux/macOS のビルド成果物を GitHub Release に添付する。
+    # Windows アセットはローカルの Auto-Release.ps1 が作成済みのため、
+    # ここでは workflow_dispatch（version 入力あり）時のみ実行する。
+    # macOS ジョブが失敗/キャンセルでも Linux アセットは添付する。
+    needs: [build-linux, build-linux-arm64, build-macos]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Create GitHub Release
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: craftmate-*
+          merge-multiple: false
+
+      - name: Upload assets to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # ビルド成果物を Release アセットとしてアップロードする処理をここに実装。
-          # 例: gh release create ${{ github.ref_name }} CraftMate_Setup.exe --title "CraftMate ${{ github.ref_name }}"
-          echo "Release assets upload TODO"
+          VERSION="${{ inputs.version }}"
+          TAG="v${VERSION}"
+          # Auto-Release.ps1 が先にリリースを作成する想定。無ければ保険として作成。
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "CraftMate $TAG" --notes "CraftMate $TAG"
+          fi
+          find artifacts -type f | sort | while read -r f; do
+            echo "Uploading $f"
+            gh release upload "$TAG" "$f" --clobber
+          done

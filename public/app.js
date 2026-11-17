@@ -1518,17 +1518,57 @@ on(document.getElementById('btn-check-updates'), 'click', async event => {
   button.disabled = true;
   showSettingsMessage(translate('launchingUpdater'));
   try {
-    // Electron デスクトップ版（Linux AppImage 等）: /api/launch-updater は
-    // Windows 専用のため、先にバージョンチェックを行い、アプリ内更新
-    // （craftmateUpdate IPC）が使える場合はそちらで適用する。
+    // まずバージョンチェックを行い、プラットフォーム別に処理を分岐する。
+    // - Windows: /api/launch-updater で CraftMate_Updater.exe を起動（従来通り）
+    // - Linux/macOS で craftmateUpdate IPC がある場合: アプリ内更新
+    // - それ以外: 従来の launch-updater → 拒否時は手動ダウンロード
     let checkInfo = null;
     try {
       const checkRes = await fetch('/api/version/check', { signal: AbortSignal.timeout(12000) });
       if (checkRes.ok) checkInfo = await checkRes.json();
-    } catch (_) { /* チェック失敗時は従来の launch-updater フローへ */ }
+    } catch (_) { /* チェック失敗時は launch-updater にフォールバック */ }
+    console.log('[CheckUpdates] click', JSON.stringify({
+      platform: checkInfo && checkInfo.platform,
+      updateAvailable: checkInfo && checkInfo.updateAvailable,
+      canAutoUpdate: checkInfo && checkInfo.canAutoUpdate,
+      latest: checkInfo && checkInfo.latestVersion,
+      hasIpc: !!(window.craftmateUpdate && typeof window.craftmateUpdate.apply === 'function'),
+    }));
+
+    // Windows: applyUpdateViaIpc は Electron(Linux/macOS)専用のため呼ばず、
+    // 必ず launch-updater で CraftMate_Updater.exe を起動する。
+    if (checkInfo && checkInfo.platform === 'win32') {
+      if (!checkInfo.updateAvailable) {
+        showSettingsMessage(translate('currentVersion', { version: checkInfo.currentVersion || '' }), 'success');
+        return;
+      }
+      const winResponse = await fetchWithLocalSettingsAuth('/api/launch-updater', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      const winResult = await winResponse.json().catch(() => ({}));
+      if (winResult.manualUpdate) {
+        showSettingsMessage(winResult.error || translate('updaterLaunchFailed'), 'error');
+        return;
+      }
+      if (!winResponse.ok) throw new Error(winResult.error || translate('updaterLaunchFailed'));
+      showSettingsMessage(translate('updaterLaunched'), 'success');
+      updatePending = true;
+      setTimeout(() => {
+        if (updatePending && !document.getElementById('update-overlay')) {
+          updatePending = false;
+          showSettingsMessage(translate('currentVersion', { version: '' }).replace(' ()', ''), 'success');
+        }
+      }, 10 * 60 * 1000);
+      return;
+    }
+
+    // Linux/macOS: craftmateUpdate IPC が使える場合のみアプリ内更新
+    // （AppImage のみ。deb/tarball/ブラウザ利用時は IPC が無い）
     if (checkInfo && checkInfo.updateAvailable && checkInfo.canAutoUpdate &&
         window.craftmateUpdate && typeof window.craftmateUpdate.apply === 'function' &&
-        checkInfo.downloadUrl && checkInfo.platform !== 'win32') {
+        checkInfo.downloadUrl) {
       showSettingsMessage(translate('updateDownloading') + '…');
       await applyUpdateViaIpc(checkInfo, () => { });
       updatePending = true;
@@ -1541,6 +1581,9 @@ on(document.getElementById('btn-check-updates'), 'click', async event => {
       }, 10 * 60 * 1000);
       return;
     }
+
+    // フォールバック: チェック失敗・更新なし・自動更新不可の場合は
+    // 従来通り launch-updater を試し、拒否されたら手動ダウンロードへ。
     const response = await fetchWithLocalSettingsAuth('/api/launch-updater', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

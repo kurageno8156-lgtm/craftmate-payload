@@ -41,6 +41,20 @@ namespace CraftMateUpdater
             return "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
         }
 
+        /// <summary>%TEMP%\CraftMate_updater.log に診断ログを追記する。</summary>
+        internal static readonly string LogPath =
+            Path.Combine(Path.GetTempPath(), "CraftMate_updater.log");
+
+        internal static void Log(string message)
+        {
+            try
+            {
+                File.AppendAllText(LogPath,
+                    "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + "] " + message + Environment.NewLine);
+            }
+            catch { }
+        }
+
         [STAThread]
         private static void Main(string[] args)
         {
@@ -48,6 +62,9 @@ namespace CraftMateUpdater
             Application.SetCompatibleTextRenderingDefault(false);
             string installDirectory = GetInstallDirectory(args);
             bool isWorker = args.Length > 0 && args[0] == "--worker";
+            Log("Main start: args=[" + String.Join(" ", args) + "] installDir=" + installDirectory +
+                " isWorker=" + isWorker + " pid=" + Process.GetCurrentProcess().Id +
+                " admin=" + IsAdministrator());
 
             if (!isWorker)
             {
@@ -63,23 +80,29 @@ namespace CraftMateUpdater
                     startInfo.WorkingDirectory = workerDirectory;
                     startInfo.UseShellExecute = true;
                     if (!IsAdministrator()) startInfo.Verb = "runas";
-                    Process.Start(startInfo);
+                    Process worker = Process.Start(startInfo);
+                    Log("Worker launched: pid=" + (worker != null ? worker.Id.ToString() : "null") +
+                        " verb=" + (startInfo.Verb ?? "(none)"));
                 }
                 catch (Win32Exception error)
                 {
+                    Log("Worker launch Win32Exception: native=" + error.NativeErrorCode + " " + error.Message);
                     MessageBox.Show(
                         error.NativeErrorCode == 1223 ? "管理者権限が許可されなかったため、更新を開始しませんでした。" : "アップデーターを起動できませんでした: " + error.Message,
                         "CraftMate Updater", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 catch (Exception error)
                 {
+                    Log("Worker launch exception: " + error);
                     MessageBox.Show("アップデーターを起動できませんでした: " + error.Message,
                         "CraftMate Updater", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 return;
             }
 
+            Log("Worker starting UpdaterForm.");
             Application.Run(new UpdaterForm(installDirectory));
+            Log("Worker exiting.");
         }
     }
 
@@ -171,7 +194,17 @@ namespace CraftMateUpdater
         private void UpdateWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = (BackgroundWorker)sender;
-            e.Result = ApplyLatestUpdate(worker);
+            Program.Log("DoWork start, installDir=" + _installDirectory);
+            try
+            {
+                e.Result = ApplyLatestUpdate(worker);
+                Program.Log("DoWork finished: " + e.Result);
+            }
+            catch (Exception ex)
+            {
+                Program.Log("DoWork exception: " + ex);
+                throw;
+            }
         }
 
         private void UpdateWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -259,6 +292,7 @@ namespace CraftMateUpdater
 
         private void Report(BackgroundWorker worker, int percent, string message)
         {
+            Program.Log("progress " + percent + "%: " + message);
             worker.ReportProgress(Math.Max(0, Math.Min(100, percent)), message);
         }
 
@@ -698,9 +732,12 @@ namespace CraftMateUpdater
                 // あるため、UTF-16LE Base64 の -EncodedCommand で渡す。
                 string psScript =
                     "$procs = Get-CimInstance Win32_Process -Filter \"Name='chrome.exe' or Name='msedge.exe'\" | " +
-                    "Where-Object { $_.CommandLine -match 'BrowserProfile' -and ($_.CommandLine -match 'CraftMate' -or $_.CommandLine -match '127\\.0\\.0\\.1:3000') }; " +
+                    "Where-Object { " +
+                    "($_.CommandLine -match 'BrowserProfile' -and ($_.CommandLine -match 'CraftMate' -or $_.CommandLine -match '127\\.0\\.0\\.1:3000')) -or " +
+                    "($_.CommandLine -match '--app=' -and $_.CommandLine -match '127\\.0\\.0\\.1:3000' -and $_.CommandLine -match 'user-data-dir') " +
+                    "}; " +
                     "$killed = 0; " +
-                    "foreach ($p in $procs) { try { Stop-Process -Id $p.ProcessId -Force -ErrorAction Stop; $killed++ } catch {} }; " +
+                    "foreach ($p in $procs) { try { Stop-Process -Id $p.ProcessId -Force -ErrorAction Stop; $killed++; Write-Output ('killed pid=' + $p.ProcessId + ' name=' + $p.Name) } catch {} }; " +
                     "Write-Output ('killed=' + $killed)";
                 byte[] utf16 = System.Text.Encoding.Unicode.GetBytes(psScript);
                 string encoded = Convert.ToBase64String(utf16);
