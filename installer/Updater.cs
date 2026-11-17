@@ -361,7 +361,7 @@ namespace CraftMateUpdater
                 if (CompareVersions(verifiedVersion, latestVersion) != 0) throw new InvalidDataException("更新後のバージョン確認に失敗しました。");
                 Report(worker, 99, "更新を確認しています... (v" + verifiedVersion + ")");
                 WaitForPortReleased(worker, 3000);
-                StartInstalledLauncher();
+                StartInstalledLauncherWithVerification(worker);
                 Report(worker, 100, "アップデートが完了しました (v" + verifiedVersion + ")。");
                 return UpdateOutcome.Updated;
             }
@@ -772,6 +772,58 @@ namespace CraftMateUpdater
             startInfo.WorkingDirectory = _installDirectory;
             startInfo.UseShellExecute = true;
             Process.Start(startInfo);
+        }
+
+        /// <summary>
+        /// 新バージョンの Launcher を起動し、ダッシュボード (/api/version) が
+        /// 実際にHTTP応答するまで検証する。応答が無い場合はポートを解放して
+        /// 1回だけ再起動を試みる（ERR_CONNECTION_REFUSED 対策）。
+        /// </summary>
+        private void StartInstalledLauncherWithVerification(BackgroundWorker worker)
+        {
+            StartInstalledLauncher();
+            Report(worker, 99, "新しいバージョンの起動を確認しています...");
+            if (WaitForDashboardHttp(90)) return;
+
+            // サーバーが立ち上がらなかった: 残存プロセスを掃除して1回だけ再試行
+            Report(worker, 99, "サーバーの応答がありません。プロセスを掃除して再起動します...");
+            try { StopAllRunningCraftMate(worker); } catch { }
+            WaitForPortReleased(worker, 3000);
+            try
+            {
+                StartInstalledLauncher();
+            }
+            catch (Exception ex)
+            {
+                Report(worker, 99, "再起動に失敗しました: " + ex.Message);
+                return;
+            }
+            if (!WaitForDashboardHttp(90))
+            {
+                Report(worker, 99, "警告: ダッシュボードがまだ応答しません。手動で CraftMate.exe を起動してください。");
+            }
+        }
+
+        /// <summary>http://127.0.0.1:3000/api/version が応答するまで待機（最大秒）。</summary>
+        private bool WaitForDashboardHttp(int maxSeconds)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(maxSeconds);
+            while (DateTime.UtcNow < deadline)
+            {
+                try
+                {
+                    var request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create("http://127.0.0.1:3000/api/version");
+                    request.Timeout = 3000;
+                    request.Method = "GET";
+                    using (var response = (System.Net.HttpWebResponse)request.GetResponse())
+                    {
+                        if ((int)response.StatusCode >= 200 && (int)response.StatusCode < 500) return true;
+                    }
+                }
+                catch { /* 未起動・接続拒否などはリトライ */ }
+                Thread.Sleep(1000);
+            }
+            return false;
         }
 
         private static void RollBack(List<FileChange> changes)
