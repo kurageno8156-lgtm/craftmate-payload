@@ -115,6 +115,11 @@ export class SkillManager {
     if (!(await this.ensureCreativeMode())) {
       return { success: false, message: '手作業での建築にはクリエイティブモードが必要です（アイテムが無いため設置できません）。コマンドブロック建築もクリエイティブモードが必要です。サーバーで /gamemode creative を実行する権限があるか確認してください。' };
     }
+    // /setblock・/fill コマンドによる直接建築を優先する。
+    // クリエイティブ化できた = コマンド実行権限があるため、インベントリ同期
+    // （updateSlot/equip/placeBlock）を一切使わず確実に設置できる。
+    const directResult = await this.tryBuildViaCommands(entries, bp.name || '設計図');
+    if (directResult) return directResult;
     let placed = 0;
     let failed = 0;
     let processed = 0;
@@ -200,6 +205,117 @@ export class SkillManager {
     return {
       success: failed === 0 || placed > 0,
       message: `${name} の建築が完了しました（設置 ${placed} 個 / 失敗 ${failed} 個 / 合計 ${entries.length} 個）。`,
+    };
+  }
+
+  /**
+   * ブロック名を /setblock・/fill 用の完全IDに正規化する。
+   * 例: 'oak_planks' → 'minecraft:oak_planks'、'minecraft:stone[variant=x]' はそのまま。
+   */
+  private normalizeBlockId(name: string): string {
+    let n = String(name || '').trim().toLowerCase().replace(/\s+/g, '_');
+    const propIdx = n.indexOf('[');
+    const props = propIdx >= 0 ? n.slice(propIdx) : '';
+    if (propIdx >= 0) n = n.slice(0, propIdx);
+    if (!/^[a-z0-9_.-]+$/.test(n)) return 'minecraft:air';
+    if (!n.includes(':')) n = 'minecraft:' + n;
+    return n + props;
+  }
+
+  /** 検証用: ブロック名の基底部分（名前空間・プロパティを除く）を小文字で返す。 */
+  private blockBaseName(name: string): string {
+    let n = String(name || '').trim().toLowerCase();
+    const propIdx = n.indexOf('[');
+    if (propIdx >= 0) n = n.slice(0, propIdx);
+    const colon = n.lastIndexOf(':');
+    if (colon >= 0) n = n.slice(colon + 1);
+    return n;
+  }
+
+  private isValidBlockName(name: string): boolean {
+    const base = this.blockBaseName(name);
+    return /^[a-z0-9_./-]+$/.test(base) && base.length > 0 && base !== 'air';
+  }
+
+  /**
+   * 設計図エントリを /fill・/setblock コマンド列に変換する。
+   * 同一 (y,z,block) で x が連続する区間は /fill にまとめる。
+   */
+  private entriesToCommands(entries: Array<{ x: number; y: number; z: number; block: string }>): string[] {
+    const sorted = [...entries].sort((a, b) => a.y - b.y || a.z - b.z || a.x - b.x || a.block.localeCompare(b.block));
+    const commands: string[] = [];
+    let i = 0;
+    while (i < sorted.length) {
+      const cur = sorted[i];
+      let j = i;
+      while (j + 1 < sorted.length) {
+        const n = sorted[j + 1];
+        if (n.y === cur.y && n.z === cur.z && n.x === sorted[j].x + 1 && n.block === cur.block) j++;
+        else break;
+      }
+      const runLen = j - i + 1;
+      if (runLen >= 3) {
+        commands.push(`fill ${cur.x} ${cur.y} ${cur.z} ${sorted[j].x} ${cur.y} ${cur.z} ${this.normalizeBlockId(cur.block)}`);
+      } else {
+        for (let k = i; k <= j; k++) {
+          commands.push(`setblock ${sorted[k].x} ${sorted[k].y} ${sorted[k].z} ${this.normalizeBlockId(sorted[k].block)}`);
+        }
+      }
+      i = j + 1;
+    }
+    return commands;
+  }
+
+  /**
+   * /fill・/setblock コマンドを直接送信して建築する。
+   * インベントリ同期（updateSlot/equip/placeBlock）を使わないため、
+   * クリエイティブモード（=コマンド権限あり）の環境では最も確実。
+   * 送信後に blockAt で実際の設置を検証する。
+   * 戻り値 null = コマンドが効かなかった（呼び出し側で別方式にフォールバック）。
+   */
+  private async tryBuildViaCommands(
+    entries: Array<{ x: number; y: number; z: number; block: string }>,
+    blueprintName: string
+  ): Promise<ToolCallResult | null> {
+    const valid = entries.filter(e => this.isValidBlockName(e.block));
+    if (valid.length === 0) return null;
+    const commands = this.entriesToCommands(valid);
+    if (commands.length === 0 || commands.length > 800) return null;
+
+    let sent = 0;
+    for (const cmd of commands) {
+      if (this.buildAbortRequested) {
+        return { success: false, message: '建築を中断しました。' };
+      }
+      try {
+        this.bot.chat('/' + cmd);
+      } catch {
+        return null;
+      }
+      sent++;
+      await new Promise(r => setTimeout(r, sent % 10 === 0 ? 160 : 70));
+      if (sent % 50 === 0) {
+        try { this.blueprintProgress?.(`建築中... ${sent}/${commands.length} コマンド送信済み`); } catch { /* ignore */ }
+      }
+    }
+    await new Promise(r => setTimeout(r, 1500));
+
+    // blockAt のワールドキャッシュはサーバーのブロック更新で追従する。
+    // 全エントリを検証し、実際に目的ブロックになった数を数える。
+    let placed = 0;
+    for (const e of valid) {
+      const b = this.bot.blockAt(new Vec3(Math.floor(e.x), Math.floor(e.y), Math.floor(e.z)));
+      if (b && b.name.toLowerCase() === this.blockBaseName(e.block)) placed++;
+    }
+    const failed = valid.length - placed;
+    const skipped = entries.length - valid.length;
+    if (placed === 0) {
+      console.warn(`[Build] Direct command build placed 0/${valid.length}; falling back.`);
+      return null;
+    }
+    return {
+      success: true,
+      message: `${blueprintName} をコマンドで一括建築しました（設置確認 ${placed} 個 / 未確認 ${failed + skipped} 個 / コマンド ${commands.length} 個）。`,
     };
   }
 
@@ -385,6 +501,12 @@ export class SkillManager {
       return failPlace('コマンドブロックの設定にはクリエイティブモードが必要です。サーバーで /gamemode creative を実行する権限があるか確認してください。');
     }
 
+    // /setblock + /data merge による設置を優先する。
+    // インベントリ同期（updateSlot/equip/placeBlock/setCommandBlock）の
+    // タイムアウトに一切依存しないため最も確実。
+    const chatResult = await this.tryPlaceCommandBlockViaChat(x, y, z, cmd, commandType);
+    if (chatResult) return chatResult;
+
     try {
       if (!isCmdBlock) {
         let slot = this.bot.inventory.items().findIndex(i => i.name === 'command_block');
@@ -493,6 +615,76 @@ export class SkillManager {
   }
 
   /**
+   * /setblock でコマンドブロックを設置し、/data merge block で Command を設定する。
+   * インベントリを一切使わないため updateSlot タイムアウトが発生しない。
+   * /data get による読み戻し検証まで成功した場合のみ成功を返す。
+   * 失敗時は null（呼び出し側で従来のインベントリ方式にフォールバック）。
+   */
+  private async tryPlaceCommandBlockViaChat(
+    x: number, y: number, z: number,
+    cmd: string, commandType: 'impulse' | 'chain' | 'repeat'
+  ): Promise<ToolCallResult | null> {
+    const pos = new Vec3(Math.floor(x), Math.floor(y), Math.floor(z));
+    const blockId = commandType === 'repeat' ? 'repeating_command_block'
+      : commandType === 'chain' ? 'chain_command_block' : 'command_block';
+    // NBT文字列内のエスケープ（バックスラッシュ→円記号二重化、引用符→\"）
+    const escaped = cmd.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    try {
+      this.bot.chat(`/setblock ${pos.x} ${pos.y} ${pos.z} minecraft:${blockId}`);
+      await new Promise(r => setTimeout(r, 600));
+      const placed = this.bot.blockAt(pos);
+      if (!placed || placed.name !== blockId) return null;
+
+      this.bot.chat(`/data merge block ${pos.x} ${pos.y} ${pos.z} {Command:"${escaped}"}`);
+      await new Promise(r => setTimeout(r, 400));
+      const verified = await this.verifyBlockEntityCommand(pos, cmd);
+      if (!verified) {
+        console.warn('[CommandBlock] /data merge verification failed; falling back to inventory method.');
+        return null;
+      }
+
+      const typeLabel = commandType === 'chain' ? 'チェーン' : commandType === 'repeat' ? 'リピート' : 'インパルス';
+      const okMessage = `コマンドブロック(${typeLabel})を (${x},${y},${z}) に設置し、コマンドを設定しました: ${cmd}`;
+      this.recordCommandBlock(x, y, z, cmd, true, okMessage);
+      return { success: true, message: okMessage };
+    } catch (e: any) {
+      console.warn(`[CommandBlock] chat-based placement failed: ${e?.message || e}`);
+      return null;
+    }
+  }
+
+  /**
+   * /data get block <pos> Command の応答にコマンド文字列が含まれるか確認する。
+   * サーバーのチャット応答を一時的にリッスンして判定する。
+   */
+  private verifyBlockEntityCommand(pos: Vec3, command: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      const fragment = command.replace(/["\\]/g, '').trim().slice(0, 24);
+      let finished = false;
+      const timer = setTimeout(() => finish(false), 3500);
+      const onMsg = (jsonMsg: any) => {
+        try {
+          const text = JSON.stringify(jsonMsg);
+          if (fragment && text.includes(fragment)) finish(true);
+        } catch { /* ignore */ }
+      };
+      const finish = (ok: boolean) => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timer);
+        try { this.bot.removeListener('message', onMsg); } catch { }
+        resolve(ok);
+      };
+      this.bot.on('message', onMsg);
+      try {
+        this.bot.chat(`/data get block ${pos.x} ${pos.y} ${pos.z} Command`);
+      } catch {
+        finish(false);
+      }
+    });
+  }
+
+  /**
    * コマンドブロックで設計図を一括建築する（クリエイティブモード必須）。
    * 同一ブロックの連続区間を /fill、単発を /setblock コマンドに変換し、
    * 1つのコマンドブロックに順番に設定→レッドストーンパルスで発動させる。
@@ -524,6 +716,11 @@ export class SkillManager {
       for (const e of blueprint.blocks) pushEntry(e);
     }
     if (entries.length === 0) return { success: false, message: '設計図にブロックがありません。' };
+
+    // /fill・/setblock の直接実行を優先（コマンドブロック設置・レッドストーン
+    // 発動・updateSlot 同期を使わないため最も確実）。
+    const directResult = await this.tryBuildViaCommands(entries, blueprint.name || '設計図');
+    if (directResult) return directResult;
 
     // 同一 (y,z,block) で x が連続する区間を /fill にまとめる
     const sorted = [...entries].sort((a, b) => a.y - b.y || a.z - b.z || a.x - b.x || a.block.localeCompare(b.block));
