@@ -206,6 +206,26 @@ function showUpdateBannerError(message) {
   }
 }
 
+// Electron デスクトップ版（Linux AppImage 等）: IPC 経由でアプリ内更新。
+// 新しい AppImage をダウンロード→SHA256検証→置き換え→自動再起動まで行う。
+// バナーと設定画面の両方から使う共通処理。
+async function applyUpdateViaIpc(info, onProgress) {
+  if (!(window.craftmateUpdate && typeof window.craftmateUpdate.apply === 'function')) {
+    throw new Error('desktop-update-unavailable');
+  }
+  if (!info.downloadUrl) throw new Error('no-download-url');
+  if (window.craftmateUpdate.onProgress) {
+    window.craftmateUpdate.onProgress((d) => { try { if (onProgress) onProgress(d); } catch (_) { } });
+  }
+  const result = await window.craftmateUpdate.apply({
+    downloadUrl: info.downloadUrl,
+    latestVersion: info.latestVersion,
+  });
+  if (!result || result.ok !== true) {
+    throw new Error((result && result.error) || translate('updateFailed'));
+  }
+}
+
 async function applyUpdateFromBanner() {
   const info = updateCheckInfo;
   if (!info) {
@@ -213,28 +233,17 @@ async function applyUpdateFromBanner() {
     return;
   }
   console.log('[UpdateBanner] apply clicked', JSON.stringify({ platform: info.platform, canAutoUpdate: info.canAutoUpdate, latest: info.latestVersion }));
-  // Electron デスクトップ版（Linux AppImage 等）: IPC 経由でアプリ内更新。
-  // 新しい AppImage をダウンロード→SHA256検証→置き換え→自動再起動まで行う。
   if (window.craftmateUpdate && typeof window.craftmateUpdate.apply === 'function' && info.downloadUrl) {
     updateBannerApply.disabled = true;
     try {
-      if (window.craftmateUpdate.onProgress) {
-        window.craftmateUpdate.onProgress((d) => {
-          if (!updateBannerText) return;
-          if (d.phase === 'verify' || d.phase === 'replace') {
-            updateBannerText.textContent = translate('updateApplying');
-          } else {
-            updateBannerText.textContent = translate('updateDownloading') + ' ' + (d.percent || 0) + '%';
-          }
-        });
-      }
-      const result = await window.craftmateUpdate.apply({
-        downloadUrl: info.downloadUrl,
-        latestVersion: info.latestVersion,
+      await applyUpdateViaIpc(info, (d) => {
+        if (!updateBannerText) return;
+        if (d.phase === 'verify' || d.phase === 'replace') {
+          updateBannerText.textContent = translate('updateApplying');
+        } else {
+          updateBannerText.textContent = translate('updateDownloading') + ' ' + (d.percent || 0) + '%';
+        }
       });
-      if (!result || result.ok !== true) {
-        throw new Error((result && result.error) || translate('updateFailed'));
-      }
       updatePending = true;
       dismissUpdateBanner(info.latestVersion);
     } catch (error) {
@@ -243,7 +252,7 @@ async function applyUpdateFromBanner() {
     }
     return;
   }
-  const isWindows = info.platform === 'win32' || info.canAutoUpdate === true;
+  const isWindows = info.platform === 'win32';
   if (isWindows) {
     // Windows: 既存のアップデーター起動フローを再利用
     updateBannerApply.disabled = true;
@@ -1509,6 +1518,29 @@ on(document.getElementById('btn-check-updates'), 'click', async event => {
   button.disabled = true;
   showSettingsMessage(translate('launchingUpdater'));
   try {
+    // Electron デスクトップ版（Linux AppImage 等）: /api/launch-updater は
+    // Windows 専用のため、先にバージョンチェックを行い、アプリ内更新
+    // （craftmateUpdate IPC）が使える場合はそちらで適用する。
+    let checkInfo = null;
+    try {
+      const checkRes = await fetch('/api/version/check', { signal: AbortSignal.timeout(12000) });
+      if (checkRes.ok) checkInfo = await checkRes.json();
+    } catch (_) { /* チェック失敗時は従来の launch-updater フローへ */ }
+    if (checkInfo && checkInfo.updateAvailable && checkInfo.canAutoUpdate &&
+        window.craftmateUpdate && typeof window.craftmateUpdate.apply === 'function' &&
+        checkInfo.downloadUrl && checkInfo.platform !== 'win32') {
+      showSettingsMessage(translate('updateDownloading') + '…');
+      await applyUpdateViaIpc(checkInfo, () => { });
+      updatePending = true;
+      showSettingsMessage(translate('updaterLaunched'), 'success');
+      setTimeout(() => {
+        if (updatePending && !document.getElementById('update-overlay')) {
+          updatePending = false;
+          showSettingsMessage(translate('currentVersion', { version: '' }).replace(' ()', ''), 'success');
+        }
+      }, 10 * 60 * 1000);
+      return;
+    }
     const response = await fetchWithLocalSettingsAuth('/api/launch-updater', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

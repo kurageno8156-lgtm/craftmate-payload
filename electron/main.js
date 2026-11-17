@@ -212,11 +212,14 @@ async function downloadToFile(url, destPath, onProgress) {
 }
 
 async function applyAppImageUpdate(opts) {
-  if (process.platform !== 'linux') return { ok: false, error: 'linux-only' };
+  if (process.platform !== 'linux') return { ok: false, error: 'このプラットフォームではアプリ内更新を利用できません。' };
+  // AppImage 実行時は APPIMAGE 環境変数に実ファイルのパスが入る。
+  // フォールバックとして APPDIR（実行中のマウントポイント）からは
+  // 本体パスを復元できないため、APPIMAGE 必須とする。
   const appImage = process.env.APPIMAGE;
-  if (!appImage) return { ok: false, error: 'not-an-appimage' };
+  if (!appImage) return { ok: false, error: 'AppImage 形式でのみ自動更新できます。deb / tarball 版は最新の AppImage を手動でダウンロードしてください。' };
   const downloadUrl = opts && opts.downloadUrl;
-  if (!downloadUrl) return { ok: false, error: 'no-download-url' };
+  if (!downloadUrl) return { ok: false, error: 'ダウンロードURLが取得できませんでした。' };
 
   const target = appImage;
   const staging = target + '.new';
@@ -240,7 +243,7 @@ async function applyAppImageUpdate(opts) {
           const actual = await sha256File(staging);
           if (actual !== expected) {
             try { fs.unlinkSync(staging); } catch (_) { }
-            return { ok: false, error: 'sha256-mismatch' };
+            return { ok: false, error: 'ダウンロードしたファイルのハッシュ検証に失敗しました（破損または改ざんの可能性）。更新を中止しました。' };
           }
         }
       }

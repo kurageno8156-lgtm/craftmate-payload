@@ -694,22 +694,43 @@ namespace CraftMateUpdater
             {
                 // Win32_Process の CommandLine に "CraftMate\BrowserProfile" を含む
                 // chrome.exe / msedge.exe のみを停止する（--app= の有無は問わない）。
-                string psCommand =
-                    "Get-CimInstance Win32_Process -Filter \"Name='chrome.exe' or Name='msedge.exe'\" | " +
-                    "Where-Object { $_.CommandLine -match 'CraftMate' -and $_.CommandLine -match 'BrowserProfile' } | " +
-                    "ForEach-Object { try { Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop } catch {} }";
+                // -Command の入れ子引用符は powershell.exe の引数解析で壊れることが
+                // あるため、UTF-16LE Base64 の -EncodedCommand で渡す。
+                string psScript =
+                    "$procs = Get-CimInstance Win32_Process -Filter \"Name='chrome.exe' or Name='msedge.exe'\" | " +
+                    "Where-Object { $_.CommandLine -match 'BrowserProfile' -and ($_.CommandLine -match 'CraftMate' -or $_.CommandLine -match '127\\.0\\.0\\.1:3000') }; " +
+                    "$killed = 0; " +
+                    "foreach ($p in $procs) { try { Stop-Process -Id $p.ProcessId -Force -ErrorAction Stop; $killed++ } catch {} }; " +
+                    "Write-Output ('killed=' + $killed)";
+                byte[] utf16 = System.Text.Encoding.Unicode.GetBytes(psScript);
+                string encoded = Convert.ToBase64String(utf16);
                 var psi = new ProcessStartInfo("powershell.exe",
-                    "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"" + psCommand + "\"")
+                    "-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand " + encoded)
                 {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true,
                 };
                 using (Process ps = Process.Start(psi))
                 {
-                    if (ps == null) return;
-                    ps.WaitForExit(20000);
+                    if (ps == null) { Report(worker, 64, "ブラウザ終了処理: powershell を起動できませんでした。"); return; }
+                    // stderr を先に非同期読みしてデッドロックを防ぐ
+                    var stderrTask = ps.StandardError.ReadToEndAsync();
+                    string stdout = ps.StandardOutput.ReadToEnd();
+                    string stderr = stderrTask.Result;
+                    if (!ps.WaitForExit(30000))
+                    {
+                        try { ps.Kill(); } catch { }
+                        Report(worker, 64, "ブラウザ終了処理がタイムアウトしました。");
+                        return;
+                    }
+                    string summary = (stdout ?? "").Trim();
+                    if (ps.ExitCode != 0 || !String.IsNullOrEmpty(stderr))
+                        Report(worker, 64, "ブラウザ終了処理の警告: " + (stderr ?? "").Trim() + " " + summary);
+                    else
+                        Report(worker, 64, "古いダッシュボード（アプリモードブラウザ）を終了しました。" + (String.IsNullOrEmpty(summary) ? "" : " (" + summary + ")"));
                 }
-                Report(worker, 64, "古いダッシュボード（アプリモードブラウザ）を終了しました。");
             }
             catch (Exception ex)
             {
@@ -810,6 +831,9 @@ namespace CraftMateUpdater
         /// </summary>
         private void StartInstalledLauncherWithVerification(BackgroundWorker worker)
         {
+            // 更新中に復活・残存した古いダッシュボードブラウザを、新しい
+            // ランチャーがブラウザを開く直前にもう一度掃除する。
+            try { KillCraftMateBrowserProcesses(worker); } catch { }
             StartInstalledLauncher();
             Report(worker, 99, "新しいバージョンの起動を確認しています...");
             if (WaitForDashboardHttp(90)) return;

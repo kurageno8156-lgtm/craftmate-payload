@@ -125,10 +125,42 @@ A. まず「⏻ アプリを完全に終了」でプロセスを停止し、Wind
 A. v1.3.132 以降、設計図が無くてもフォールバック設計図で建築を継続し、コマンドブロック設置のタイムアウトにはリトライ＋`/setblock`フォールバックがあります。建築は1ブロックずつ設置するため時間がかかるのが正常です。
 
 **Q. 「WindowsによってPCが保護されました」（SmartScreen警告）が出る**
-A. 現在配布している `CraftMate_Setup.exe` はコード署名を行っていないため、初回起動時にSmartScreenの警告が表示されます。**「詳細情報」→「実行」**をクリックすると問題なく起動します。CraftMateはあなたのPC上でのみ動作し、APIキー等の情報を外部に送信しません。コード署名証明書の取得後、署名済みビルドでこの警告は解消される予定です。
+A. `CraftMate_Setup.exe` はコード署名を行っていないため、初回起動時にSmartScreenの警告が表示されます。対処法:
+
+1. 「**詳細情報**」をクリック
+2. 「**実行**」をクリック
+3. UAC（ユーザーアカウント制御）で「**はい**」
+
+CraftMateはあなたのPC上でのみ動作し、APIキー等の情報を外部に送信しません。コード署名証明書を導入すればこの警告は解消されます（後述「コード署名」を参照）。
 
 **Q. アップデートはどうやって適用されますか？**
-A. ダッシュボード上部に新バージョンの通知バーが表示されたら「今すぐ更新」を押してください。Windows版はアプリ内アップデーターが自動でダウンロード・適用します。Linux/macOS版は現在手動更新（リリースページから最新版をダウンロード）となります。
+A. ダッシュボード上部に新バージョンの通知バーが表示されたら「今すぐ更新」を押してください。Windows版はアプリ内アップデーターが自動でダウンロード・適用します。Linux版 **AppImage** もアプリ内からダウンロード→SHA256検証→自動置換→再起動まで行えます（deb / tarball 版は手動更新）。設定画面の「↻ アップデートを確認」からも同じ手順で更新できます。
+
+---
+
+## 🔏 コード署名（SmartScreen警告の解消）
+
+SmartScreen警告を根本的に解消するには、信頼されたCA発行のコード署名証明書が必要です。
+
+### 証明書の取得
+
+- **OV証明書**（例: SSL.com, Sectigo, DigiCert）: 年間数万円程度。署名後、SmartScreenの評判が貯まるにつれ警告が出にくくなります。
+- **EV証明書**: 即座にSmartScreen警告が出なくなりますが高価です。
+
+### 署名付きビルド方法
+
+1. 証明書を `.pfx` 形式でエクスポート
+2. ビルド環境に以下を設定:
+
+```powershell
+$env:CRAFTMATE_PFX_PATH = "C:\path\to\cert.pfx"
+$env:CRAFTMATE_PFX_PASSWORD = "your-password"   # パスワードなしなら省略可
+# または $env:CRAFTMATE_PFX_BASE64 = "<base64エンコードしたpfx>"  # CI用
+```
+
+3. `installer/Build-Release.ps1` が自動的に `signtool.exe`（Windows SDK同梱）で `CraftMate.exe` / `Launcher.exe` / `CraftMate_Updater.exe` / `Uninstall.exe` / `CraftMate_Setup.exe` を署名します。GitHub Actions のシークレット `CRAFTMATE_PFX_BASE64` / `CRAFTMATE_PFX_PASSWORD` に設定すればCIでも署名されます。
+
+> ⚠️ 自己署名証明書ではSmartScreen警告は解消されません（警告が「発行元不明」から変わるだけです）。必ず公的CA発行の証明書を使用してください。
 
 ---
 
