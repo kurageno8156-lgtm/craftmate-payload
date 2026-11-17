@@ -112,7 +112,8 @@ jobs:
         working-directory: electron/dist-installer
         run: |
           for f in *.AppImage *.deb; do
-            [ -f "$f" ] && sha256sum "$f" > "$f.sha256"
+            [ -f "$f" ] || continue
+            sha256sum "$f" > "$f.sha256"
           done
 
       - uses: actions/upload-artifact@v4
@@ -151,7 +152,8 @@ jobs:
         working-directory: electron/dist-installer
         run: |
           for f in *.AppImage *.deb; do
-            [ -f "$f" ] && sha256sum "$f" > "$f.sha256"
+            [ -f "$f" ] || continue
+            sha256sum "$f" > "$f.sha256"
           done
 
       - uses: actions/upload-artifact@v4
