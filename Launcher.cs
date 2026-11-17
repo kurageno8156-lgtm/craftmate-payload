@@ -15,6 +15,8 @@ namespace CraftMateLauncher
         private static readonly string LogPath =
             Path.Combine(Path.GetTempPath(), "CraftMate_launcher.log");
         private static Process _serverProcess;
+        private static string _installDir;
+        private static bool _serverRestarted;
 
         private static void Log(string message)
         {
@@ -58,6 +60,7 @@ namespace CraftMateLauncher
         private static void Run()
         {
             string installDirectory = ResolveInstallDirectory();
+            _installDir = installDirectory;
             Log("Install directory: " + installDirectory);
             Log("Log file: " + LogPath);
 
@@ -227,11 +230,51 @@ namespace CraftMateLauncher
                     Log("Browser process already exited (code " + SafeExitCode(browserProcess) + ").");
                     return true;
                 }
+                int heartbeat = 0;
                 while (!browserProcess.HasExited)
                 {
                     Thread.Sleep(2000);
-                    // サーバーが既に死んでいてもブラウザが開いていれば監視を続ける
-                    // （ユーザーが手動でサーバーを再起動する可能性があるため）。
+
+                    // ハートビート: Launcher が生きていて監視中であることをログに残す。
+                    // これがないと「Launcherが静かに死んだ」のか「監視中」のか区別できない。
+                    if (++heartbeat % 15 == 0)
+                    {
+                        Log("Heartbeat: still monitoring (browser alive, server " +
+                            (IsServerReady() ? "ready" : "DOWN") + ").");
+                    }
+
+                    // ブラウザは開いたまま node.exe だけが死ぬと、ユーザーには
+                    // ERR_CONNECTION_REFUSED しか見えず復旧手段がない。
+                    // サーバー終了を検知したら1回だけ自動再起動を試みる。
+                    if (_serverProcess != null)
+                    {
+                        bool serverGone;
+                        try { serverGone = _serverProcess.HasExited; }
+                        catch { serverGone = true; }
+                        if (serverGone && !_serverRestarted && !String.IsNullOrEmpty(_installDir))
+                        {
+                            _serverRestarted = true;
+                            Log("Server process exited while browser is open. Attempting auto-restart...");
+                            try
+                            {
+                                KillProcessOnPort(ServerPort);
+                                Thread.Sleep(1500);
+                                StartServer(_installDir);
+                                if (WaitForServer())
+                                {
+                                    Log("Auto-restart succeeded; dashboard should recover.");
+                                }
+                                else
+                                {
+                                    Log("Auto-restart failed: server did not become ready.");
+                                }
+                            }
+                            catch (Exception restartEx)
+                            {
+                                Log("Auto-restart failed: " + restartEx.Message);
+                            }
+                        }
+                    }
                 }
                 Log("Browser closed (code " + SafeExitCode(browserProcess) + ").");
                 return (DateTime.Now - startTime).TotalSeconds < 20;
@@ -592,6 +635,18 @@ namespace CraftMateLauncher
                 throw new InvalidOperationException("node.exe プロセスを起動できませんでした。");
             }
             _serverProcess = server;
+            // node.exe が終了した理由（クラッシュ/kill/idle shutdown）を必ずログに残す。
+            // これがないと「サーバーが突然死んだ」ケースを追跡できない。
+            server.EnableRaisingEvents = true;
+            server.Exited += delegate(object s, EventArgs e)
+            {
+                try
+                {
+                    int code = server.HasExited ? server.ExitCode : -1;
+                    Log("[server] node.exe exited (code " + code + ").");
+                }
+                catch { Log("[server] node.exe exited."); }
+            };
 
             // サーバーの標準出力/エラーをログに転記し、起動失敗の原因を追跡できるようにする
             server.OutputDataReceived += delegate(object s, DataReceivedEventArgs e)

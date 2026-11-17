@@ -1578,3 +1578,28 @@ on(document.getElementById('btn-download-logs'), 'click', () => {
 
 refreshHealth();
 setInterval(refreshHealth, 10000);
+
+// サーバー自動復旧ウォッチャー:
+// アップデート/クラッシュ後に node.exe が再起動されると、開きっぱなしの
+// ページは ERR_CONNECTION_REFUSED のまま復帰しない。サーバーが応答を
+// 取り戻したら一度だけ自動リロードしてダッシュボードを復帰させる。
+(function startServerRecoveryWatcher() {
+  let downTicks = 0;
+  let reloadAttempted = false;
+  setInterval(async () => {
+    if (reloadAttempted) return;
+    try {
+      const res = await fetch('/api/version', { cache: 'no-store' });
+      if (res.ok) {
+        if (downTicks >= 3) {
+          reloadAttempted = true;
+          console.log('[Recovery] Server is back; reloading dashboard.');
+          window.location.reload();
+        }
+        downTicks = 0;
+        return;
+      }
+    } catch { /* unreachable */ }
+    downTicks++;
+  }, 10000);
+})();
