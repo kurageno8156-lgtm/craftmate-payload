@@ -6,13 +6,14 @@
 //   native window.
 // - Kills the server process when the app quits.
 
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, net: electronNet } = require('electron');
 const { spawn, execFile } = require('child_process');
 const path = require('path');
 const http = require('http');
 const net = require('net');
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
 
 // Linux/WSL 等で GPU/Vulkan 初期化が SIGSEGV を起こすケースがあるため、
 // Linux ではハードウェアアクセラレーションを完全に無効化する。
@@ -161,6 +162,127 @@ function sweepPayloadProcesses() {
   setTimeout(() => {
     execFile('pkill', ['-KILL', '-f', payloadDirGlobal], () => { });
   }, 3000).unref();
+}
+
+// ---------- AppImage アプリ内アップデート ----------
+// AppImage は実行中のファイルを上書きできないため、
+// 新バージョンを `<AppImage>.new` にダウンロードし、
+// 脱出シェルスクリプトがこのプロセスの終了を待ってから
+// 置き換えて再起動する方式を取る。
+function sendUpdateProgress(phase, percent, extra) {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('craftmate:update-progress',
+        Object.assign({ phase, percent }, extra || {}));
+    }
+  } catch (_) { /* ignore */ }
+}
+
+function sha256File(filePath) {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash('sha256');
+    const stream = fs.createReadStream(filePath);
+    stream.on('data', (d) => hash.update(d));
+    stream.on('end', () => resolve(hash.digest('hex')));
+    stream.on('error', reject);
+  });
+}
+
+async function downloadToFile(url, destPath, onProgress) {
+  const res = await electronNet.fetch(url, { redirect: 'follow' });
+  if (!res.ok || !res.body) {
+    throw new Error('download failed: HTTP ' + res.status);
+  }
+  const total = Number(res.headers.get('content-length')) || 0;
+  const out = fs.createWriteStream(destPath);
+  const reader = res.body.getReader();
+  let received = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      out.write(Buffer.from(value));
+      received += value.length;
+      if (onProgress && total > 0) onProgress(received / total);
+    }
+  } finally {
+    await new Promise((resolve, reject) => out.end((e) => (e ? reject(e) : resolve())));
+  }
+  return received;
+}
+
+async function applyAppImageUpdate(opts) {
+  if (process.platform !== 'linux') return { ok: false, error: 'linux-only' };
+  const appImage = process.env.APPIMAGE;
+  if (!appImage) return { ok: false, error: 'not-an-appimage' };
+  const downloadUrl = opts && opts.downloadUrl;
+  if (!downloadUrl) return { ok: false, error: 'no-download-url' };
+
+  const target = appImage;
+  const staging = target + '.new';
+  const scriptPath = path.join(os.tmpdir(), 'craftmate-update-' + process.pid + '.sh');
+  sendUpdateProgress('download', 0);
+  try {
+    await downloadToFile(downloadUrl, staging, (ratio) => {
+      sendUpdateProgress('download', Math.round(ratio * 100));
+    });
+
+    // SHA256 検証: リリースに `<asset>.sha256` があれば必ず照合する。
+    // 無い場合は警告ログのみで続行（旧リリース互換）。
+    const shaUrl = downloadUrl.replace(/([^/?#]+)(\?[^#]*)?$/, '$1.sha256$2');
+    try {
+      const shaRes = await electronNet.fetch(shaUrl, { redirect: 'follow' });
+      if (shaRes.ok) {
+        const text = await shaRes.text();
+        const expected = (String(text).match(/[0-9a-fA-F]{64}/) || [''])[0].toLowerCase();
+        if (expected) {
+          sendUpdateProgress('verify', 0);
+          const actual = await sha256File(staging);
+          if (actual !== expected) {
+            try { fs.unlinkSync(staging); } catch (_) { }
+            return { ok: false, error: 'sha256-mismatch' };
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[CraftMate] sha256 check skipped:', e && e.message);
+    }
+
+    fs.chmodSync(staging, 0o755);
+    sendUpdateProgress('replace', 0);
+
+    // このプロセスが終了するまで待ってから .new を本体に置き換えて再起動する。
+    const script = [
+      '#!/bin/sh',
+      '# CraftMate AppImage updater: wait for app exit, then replace and relaunch',
+      'TARGET="' + target.replace(/"/g, '\\"') + '"',
+      'STAGING="' + staging.replace(/"/g, '\\"') + '"',
+      'SELF="' + scriptPath.replace(/"/g, '\\"') + '"',
+      'for i in $(seq 1 240); do',
+      '  kill -0 ' + process.pid + ' 2>/dev/null || break',
+      '  sleep 0.5',
+      'done',
+      'sleep 1',
+      'mv -f "$STAGING" "$TARGET" && chmod +x "$TARGET"',
+      'nohup "$TARGET" >/dev/null 2>&1 &',
+      'rm -f "$SELF"',
+      '',
+    ].join('\n');
+    fs.writeFileSync(scriptPath, script, { mode: 0o755 });
+    const helper = spawn('sh', [scriptPath], { detached: true, stdio: 'ignore' });
+    helper.unref();
+
+    // 少し待ってから終了（IPC応答を返すため）
+    setTimeout(() => { app.exit(0); }, 800);
+    return { ok: true };
+  } catch (e) {
+    try { fs.unlinkSync(staging); } catch (_) { }
+    return { ok: false, error: String((e && e.message) || e) };
+  }
+}
+
+function registerUpdateIpc() {
+  ipcMain.handle('craftmate:update:apply', (_event, opts) => applyAppImageUpdate(opts));
 }
 
 // ---------- GUI インストーラー（--install / --uninstall） ----------
@@ -334,6 +456,14 @@ function createWindow() {
     },
   });
   mainWindow.removeMenu();
+  // window.open（OAuth認証ページ等）はアプリ内ウィンドウを増やさず
+  // システムブラウザで開く。ポップアップ自体は拒否する。
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) {
+      shell.openExternal(url).catch(() => { });
+    }
+    return { action: 'deny' };
+  });
   mainWindow.webContents.on('render-process-gone', () => app.quit());
   mainWindow.on('closed', () => { mainWindow = null; });
   return mainWindow;
@@ -463,6 +593,7 @@ if (!gotLock) {
   });
 
   app.whenReady().then(() => {
+    registerUpdateIpc();
     if (installerMode) showInstaller();
     else boot();
   });

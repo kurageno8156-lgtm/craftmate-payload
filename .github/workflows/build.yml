@@ -107,13 +107,23 @@ jobs:
             -c.appImage.artifactName="CraftMate-linux-x64.AppImage" \
             -c.deb.artifactName="CraftMate-linux-x64.deb"
 
+      # アプリ内アップデートの SHA256 検証用チェックサムを生成する
+      - name: Generate SHA256 checksums (x64)
+        working-directory: electron/dist-installer
+        run: |
+          for f in *.AppImage *.deb; do
+            [ -f "$f" ] && sha256sum "$f" > "$f.sha256"
+          done
+
       - uses: actions/upload-artifact@v4
         with:
           name: craftmate-linux-x64
           path: |
             craftmate-linux-x64.tar.gz
             electron/dist-installer/*.AppImage
+            electron/dist-installer/*.AppImage.sha256
             electron/dist-installer/*.deb
+            electron/dist-installer/*.deb.sha256
 
   # ARM64 Linux も同様に実行可能（self-hosted ARM runner が必要な場合あり）
   build-linux-arm64:
@@ -137,13 +147,22 @@ jobs:
           npx electron-builder --linux AppImage --arm64 \
             -c.appImage.artifactName="CraftMate-linux-arm64.AppImage"
 
+      - name: Generate SHA256 checksums (arm64)
+        working-directory: electron/dist-installer
+        run: |
+          for f in *.AppImage *.deb; do
+            [ -f "$f" ] && sha256sum "$f" > "$f.sha256"
+          done
+
       - uses: actions/upload-artifact@v4
         with:
           name: craftmate-linux-arm64
           path: |
             craftmate-linux-arm64.tar.gz
             electron/dist-installer/*.AppImage
+            electron/dist-installer/*.AppImage.sha256
             electron/dist-installer/*.deb
+            electron/dist-installer/*.deb.sha256
 
   # ============================================================
   # macOS ビルド（準備中プレースホルダー）
