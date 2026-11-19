@@ -31,7 +31,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -89,7 +89,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
       # Linux 向け prebuilt の取得 + 必要時ソースビルド（build-essential/python3 は ubuntu-latest に同梱）
       # craftmate-payload/ にステージングされる（Electron の extraResources が参照）
@@ -134,7 +134,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
       - name: Build portable tarball (linux/arm64)
         run: bash build-release.sh ${{ inputs.version || '1.4.0' }} linux arm64
@@ -191,7 +191,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
       # macOS ランナーには Xcode CLT 同梱。better-sqlite3 は darwin 向け prebuilt を取得、
       # 無い場合はソースビルド（xcode-select --install 済み）。
@@ -214,9 +214,9 @@ jobs:
     # Windows アセットはローカルの Auto-Release.ps1 が作成済みのため、
     # ここでは workflow_dispatch（version 入力あり）時のみ実行する。
     # macOS ジョブが失敗/キャンセルでも Linux アセットは添付する。
-    needs: [build-linux, build-linux-arm64, build-macos]
+    needs: [build-linux, build-linux-arm64]
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' }}
+    if: ${{ success() && github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/download-artifact@v4
         with:
