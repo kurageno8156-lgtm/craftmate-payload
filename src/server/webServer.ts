@@ -1019,6 +1019,10 @@ export class WebServer {
       (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath
         ? path.join((process as NodeJS.Process & { resourcesPath?: string }).resourcesPath as string, 'payload', 'oauth-clients.json')
         : '',
+      // ユーザー配置用フォールバック: %LOCALAPPDATA%\CraftMate\oauth-clients.json
+      process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'CraftMate', 'oauth-clients.json') : '',
+      process.env.XDG_CONFIG_HOME ? path.join(process.env.XDG_CONFIG_HOME, 'craftmate', 'oauth-clients.json') : '',
+      path.join(os.homedir(), '.config', 'craftmate', 'oauth-clients.json'),
     ].filter(Boolean);
     let embeddedOAuthClientsPath: string | null = null;
     const embeddedOAuthClients = (() => {

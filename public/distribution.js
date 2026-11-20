@@ -114,51 +114,73 @@
     });
   });
 
-  // 配布サイトは GitHub Pages 等の静的ホスティングでも動作する。
-  // その場合 /api/reviews への POST は 405 になるため、mailto へフォールバックする。
-  function mailtoReview(rating, name, comment) {
-    var subject = 'CraftMate レビュー（' + rating + '/5）';
-    var body = '【評価】' + rating + '/5\n【ニックネーム】' + (name || '匿名') +
-      '\n【内容】\n' + comment + '\n';
-    window.location.href = 'mailto:kurageno8156@gmail.com?subject=' +
-      encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  // 静的ホスティング（GitHub Pages 等）では /api/reviews が使えないため、
+  // FormSubmit の AJAX エンドポイント経由でメール送信する（要アクティベーション：
+  // 初回送信時に kurageno8156@gmail.com 宛へ確認メールが届きます）。
+  var FORMSUBMIT_ENDPOINT = 'https://formsubmit.co/ajax/kurageno8156@gmail.com';
+
+  function postViaFormSubmit(fields) {
+    return fetch(FORMSUBMIT_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(Object.assign({ _subject: 'CraftMate', _template: 'table' }, fields))
+    }).then(function (res) {
+      return res.json().then(function (data) {
+        if (!res.ok || data.success !== 'true') throw new Error((data && data.message) || 'HTTP ' + res.status);
+        return data;
+      });
+    });
+  }
+
+  function showFormStatus(el, text, ok) {
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = ok ? '#4ade80' : '#f87171';
   }
 
   if (form) {
+    var reviewStatus = document.getElementById('review-status');
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var text = textInput ? textInput.value.trim() : '';
       var name = nameInput ? nameInput.value.trim() : '';
       if (!text || selectedRating < 1) return;
       var rating = selectedRating;
+      var submitBtn = form.querySelector('.review-submit');
+      if (submitBtn) submitBtn.disabled = true;
+      showFormStatus(reviewStatus, '送信中…', true);
+
+      // 1) アプリ内サーバー経由（SQLite保存）を試行
       fetch('/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rating: rating, name: name, comment: text })
       }).then(function (res) {
-        if (!res.ok) {
-          // 静的ホスティング（405 等）では API が使えない → メールで送信
-          if (res.status === 405 || res.status === 404 || (res.headers.get('content-type') || '').indexOf('text/html') >= 0) {
-            mailtoReview(rating, name, text);
-            alert('このサイトではレビューAPIが利用できないため、メール作成画面を開きました。内容を確認して送信してください。');
-            return null;
-          }
-          return res.text().then(function (bodyText) {
-            var detail = '';
-            try { detail = JSON.parse(bodyText).error || bodyText.slice(0, 200); } catch (e) { detail = bodyText.slice(0, 200); }
-            throw new Error('HTTP ' + res.status + (detail ? ' - ' + detail : ''));
-          });
+        if (res.ok) return res.json().then(function () { return 'api'; });
+        // 静的ホスティング（405 等）→ FormSubmit へフォールバック
+        var ct = res.headers.get('content-type') || '';
+        if (res.status === 405 || res.status === 404 || ct.indexOf('text/html') >= 0) {
+          return postViaFormSubmit({
+            _subject: 'CraftMate レビュー（' + rating + '/5）',
+            rating: rating + '/5', name: name || '匿名', comment: text
+          }).then(function () { return 'formsubmit'; });
         }
-        return res.json();
-      }).then(function (data) {
-        if (data === null) return; // mailto フォールバック済み
+        return res.text().then(function (bodyText) {
+          var detail = '';
+          try { detail = JSON.parse(bodyText).error || bodyText.slice(0, 200); } catch (e2) { detail = bodyText.slice(0, 200); }
+          throw new Error('HTTP ' + res.status + (detail ? ' - ' + detail : ''));
+        });
+      }).then(function (mode) {
+        if (submitBtn) submitBtn.disabled = false;
         textInput.value = '';
         if (nameInput) nameInput.value = '';
         selectedRating = 0;
         updateStarButtons();
-        loadReviews();
+        if (mode === 'api') { loadReviews(); showFormStatus(reviewStatus, 'レビューを投稿しました！', true); }
+        else showFormStatus(reviewStatus, 'レビューを送信しました。ありがとうございます！', true);
       }).catch(function (error) {
-        alert('レビューの投稿に失敗しました: ' + (error && error.message ? error.message : error));
+        if (submitBtn) submitBtn.disabled = false;
+        showFormStatus(reviewStatus, '投稿に失敗しました: ' + (error && error.message ? error.message : error), false);
       });
     });
   }
@@ -166,19 +188,27 @@
   // ---- お問い合わせフォーム ----
   var contactForm = document.getElementById('contact-form');
   if (contactForm) {
+    var contactStatus = document.getElementById('contact-status');
     contactForm.addEventListener('submit', function (e) {
       e.preventDefault();
       var name = (document.getElementById('contact-name') || {}).value || '';
-      var email = (document.getElementById('contact-email') || {}).value || '';
       var message = (document.getElementById('contact-message') || {}).value || '';
       if (!message.trim()) return;
-      var subject = 'CraftMate お問い合わせ - ' + (name.trim() || '匿名');
-      var body = '【お名前】' + (name.trim() || '（未入力）') +
-        '\n【メールアドレス】' + (email.trim() || '（未入力）') +
-        '\n【内容】\n' + message.trim() + '\n';
-      window.location.href = 'mailto:kurageno8156@gmail.com?subject=' +
-        encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-      contactForm.reset();
+      var submitBtn = contactForm.querySelector('.review-submit');
+      if (submitBtn) submitBtn.disabled = true;
+      showFormStatus(contactStatus, '送信中…', true);
+      postViaFormSubmit({
+        _subject: 'CraftMate お問い合わせ - ' + (name.trim() || '匿名'),
+        name: name.trim() || '（未入力）',
+        message: message.trim()
+      }).then(function () {
+        if (submitBtn) submitBtn.disabled = false;
+        contactForm.reset();
+        showFormStatus(contactStatus, '送信しました。ご連絡ありがとうございます！', true);
+      }).catch(function (error) {
+        if (submitBtn) submitBtn.disabled = false;
+        showFormStatus(contactStatus, '送信に失敗しました: ' + (error && error.message ? error.message : error), false);
+      });
     });
   }
 

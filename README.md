@@ -179,7 +179,7 @@ v1.3.157 以降、初回起動時にログイン画面が表示されます。�
 
 ### OAuth アプリの登録（開発者向け）
 
-ボタン1つでログインできるようにするには、各プロバイダで OAuth アプリを登録し、Client ID / Client Secret を `.env` に設定してビルドしてください。リダイレクト URI は以下を全プロバイダ共通で登録します:
+ボタン1つでログインできるようにするには、各プロバイダで OAuth アプリを登録し、Client ID / Client Secret を `oauth-clients.json`（ローカルビルド）または GitHub Secrets（CI ビルド：`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` 等）に設定してください。リダイレクト URI は以下を全プロバイダ共通で登録します:
 
 ```
 http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
@@ -199,6 +199,10 @@ http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
 4. 「認証情報」→「認証情報を作成」→「OAuthクライアントID」→ アプリの種類は「ウェブアプリケーション」
 5. 承認済みリダイレクトURIに `http://127.0.0.1:3000/api/integrations/google/oauth/callback` を追加
 6. 発行された Client ID / Client Secret を `oauth-clients.json` の `google` セクションに記入
+7. **テストユーザーの確認（重要）**: OAuth 同意画面の公開ステータスが「テスト」の場合、登録済みテストユーザー以外はログインできません。
+   - Google Cloud Console →「APIとサービス」→「OAuth同意画面」→「対象」→「テストユーザー」に、ログインに使う Gmail アドレスを追加
+   - 追加しないと `access_denied` エラー（「このアカウントはテストユーザーに登録されていない可能性があります」と表示）になります
+   - 本番公開する場合は「対象」→「公開」を選択（`openid email profile` スコープのみなら審査は通常不要）
 
 #### Microsoft
 
@@ -227,11 +231,26 @@ http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
 }
 ```
 
-実行時の環境変数（`GOOGLE_CLIENT_ID` 等、`.env.example` 参照）や、ログイン画面の「上級者向け」手動入力も引き続き利用できます。優先順位は **手動入力 > 環境変数 > oauth-clients.json** です。
+実行時の環境変数（`GOOGLE_CLIENT_ID` 等、`.env.example` 参照）でも設定できます。優先順位は **環境変数 > oauth-clients.json** です。
+
+**フォールバック配置場所**: ペイロード内の `oauth-clients.json` が見つからない場合、以下も検索されます:
+
+- `%LOCALAPPDATA%\CraftMate\oauth-clients.json`（Windows）
+- `$XDG_CONFIG_HOME/craftmate/oauth-clients.json` または `~/.config/craftmate/oauth-clients.json`（Linux/macOS）
+
+インストール先にファイルを置けば、再インストールなしで OAuth クライアントを有効化できます。起動時に `%TEMP%\CraftMate_server.log` の `oauth-clients:` 行で、どのファイルが読み込まれたか確認できます。
 
 > **注意**: Client Secret を配布物に埋め込むと、リバースエンジニアリングで取り出される可能性があります。ネイティブアプリ向けの OAuth では一般的なトレードオフですが、公開クライアント（PKCE のみ・シークレットなし）構成も検討してください。GitHub OAuth Apps はシークレット必須です。
 
 Client ID が未設定のプロバイダはログインボタンを押しても「このログイン方法は現在利用できません」と表示されます。ダッシュボードへのアクセスにはいずれかのプロバイダでのログインが必須です（スキップ機能はありません）。
+
+### 配布サイトのフォーム送信（レビュー・お問い合わせ）
+
+`distribution.html` のレビュー投稿とお問い合わせフォームは、静的ホスティング（GitHub Pages）ではサーバー API が使えないため **FormSubmit**（`https://formsubmit.co/ajax/kurageno8156@gmail.com`）経由でメール送信します。メーラーは起動せず、サイト上で送信完了まで完結します。
+
+- **初回送信時**: FormSubmit から `kurageno8156@gmail.com` 宛にアクティベーションメールが届きます。メール内のリンクをクリックすると以降の送信が有効になります
+- アプリ内サーバー経由で配布ページを開いた場合、レビューは従来通り SQLite に保存されます
+- 別サービス（Formspree 等）に切り替える場合は `public/distribution.js` の `FORMSUBMIT_ENDPOINT` を変更してください
 
 ---
 

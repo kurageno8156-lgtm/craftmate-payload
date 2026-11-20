@@ -230,6 +230,7 @@
           <input type="text" id="review-name" maxlength="30" placeholder="ニックネーム（任意）">
           <textarea id="review-text" rows="4" maxlength="1000" placeholder="使ってみた感想を書いてください…" required></textarea>
           <button type="submit" class="review-submit">レビューを投稿</button>
+          <p class="form-status" id="review-status" role="status"></p>
         </form>
         <div class="review-list" id="review-list"></div>
       </div>
@@ -257,12 +258,12 @@
 
     <!-- お問い合わせ -->
     <section class="info-section" id="contact">
-      <div class="section-heading"><p class="eyebrow">CONTACT</p><h2>お問い合わせ</h2><p>バグ報告・要望・ご質問はこちらから。送信するとメール作成画面が開きます。</p></div>
+      <div class="section-heading"><p class="eyebrow">CONTACT</p><h2>お問い合わせ</h2><p>バグ報告・要望・ご質問はこちらから。サイト上でそのまま送信できます。</p></div>
       <form class="review-form" id="contact-form" style="max-width:560px;">
         <input type="text" id="contact-name" maxlength="50" placeholder="お名前（任意）">
-        <input type="email" id="contact-email" maxlength="100" placeholder="メールアドレス（返信用・任意）">
         <textarea id="contact-message" rows="5" maxlength="2000" placeholder="お問い合わせ内容を入力してください…" required></textarea>
-        <button type="submit" class="review-submit">メールで送信</button>
+        <button type="submit" class="review-submit">送信する</button>
+        <p class="form-status" id="contact-status" role="status"></p>
       </form>
     </section>
 

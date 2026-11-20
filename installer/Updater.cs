@@ -422,6 +422,7 @@ namespace CraftMateUpdater
                 "dist", "public", "node_modules",
                 "CraftMate.exe", "CraftMate_Updater.exe", "CraftMate_ScreenViewer.exe",
                 "node.exe", ".env", ".env.example", "package.json", "package-lock.json",
+                "oauth-clients.json", "craftmate.png",
                 "README.md", "Uninstall.exe", "app.ico", "backup", "logs", "log",
                 "screen-share", "screenshots"
             };
