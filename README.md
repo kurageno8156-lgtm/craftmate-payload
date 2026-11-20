@@ -182,9 +182,14 @@ http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
 
 1. [Google Cloud Console](https://console.cloud.google.com/) でプロジェクトを作成
 2. 「APIとサービス」→「OAuth同意画面」でユーザータイプ（外部/内部）とスコープ（`openid`, `email`, `profile`）を設定
-3. 「認証情報」→「認証情報を作成」→「OAuthクライアントID」→ アプリの種類は「ウェブアプリケーション」
-4. 承認済みリダイレクトURIに `http://127.0.0.1:3000/api/integrations/google/oauth/callback` を追加
-5. 発行された Client ID / Client Secret を控える
+3. **アプリのロゴを設定**（Google のログイン画面に CraftMate アイコンを表示するには必須）:
+   - 「OAuth同意画面」→「ブランディング」（旧: アプリの情報）の「アプリのロゴをアップロード」で画像を選択
+   - 使用する画像: リポジトリの `public/icon-512.png`（512x512 PNG。`app.ico` は ICO 形式のため使えません。PNG/JPG のみ対応）
+   - アップロード後、Google の審査（数分〜数日）を経てログイン画面にアイコンが表示されます
+   - ※ ロゴ未設定でもログイン自体は動作しますが、同意画面にアイコンが表示されず信頼性が下がります
+4. 「認証情報」→「認証情報を作成」→「OAuthクライアントID」→ アプリの種類は「ウェブアプリケーション」
+5. 承認済みリダイレクトURIに `http://127.0.0.1:3000/api/integrations/google/oauth/callback` を追加
+6. 発行された Client ID / Client Secret を `oauth-clients.json` の `google` セクションに記入
 
 #### Microsoft
 
@@ -217,7 +222,7 @@ http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
 
 > **注意**: Client Secret を配布物に埋め込むと、リバースエンジニアリングで取り出される可能性があります。ネイティブアプリ向けの OAuth では一般的なトレードオフですが、公開クライアント（PKCE のみ・シークレットなし）構成も検討してください。GitHub OAuth Apps はシークレット必須です。
 
-Client ID が未設定のビルドでは、ログイン画面に「上級者向け」の手動入力フォームが表示されます。また「ローカルで続行」ボタンで OAuth なしのスキップも可能です。
+Client ID が未設定のプロバイダはログインボタンを押しても「このログイン方法は現在利用できません」と表示されます。ダッシュボードへのアクセスにはいずれかのプロバイダでのログインが必須です（スキップ機能はありません）。
 
 ---
 

@@ -151,4 +151,17 @@ if ($pfxPath -and (Test-Path -LiteralPath $pfxPath)) {
   Write-Output 'Code signing skipped (CRAFTMATE_PFX_PATH not set).'
 }
 
-Write-Output "Built release $($version): $setupPath, $uninstallPath, and $payloadPath"
+# SmartScreen対策の代替配布形式: Setup.exe を ZIP にまとめる。
+# ZIP 解凍後の exe 実行は SmartScreen の評価対象になりにくい場合がある。
+$setupZipPath = Join-Path $OutputDirectory 'CraftMate_Setup.zip'
+$zipFs = [System.IO.File]::Open($setupZipPath, [System.IO.FileMode]::Create)
+try {
+  $zip = [System.IO.Compression.ZipArchive]::new($zipFs, [System.IO.Compression.ZipArchiveMode]::Create)
+  try {
+    [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+      $zip, $setupPath, 'CraftMate_Setup.exe', [System.IO.Compression.CompressionLevel]::Optimal
+    ) | Out-Null
+  } finally { $zip.Dispose() }
+} finally { $zipFs.Dispose() }
+
+Write-Output "Built release $($version): $setupPath, $setupZipPath, $uninstallPath, and $payloadPath"

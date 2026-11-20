@@ -131,3 +131,13 @@
 .search-result-desc{font-size:13px;color:#a1a1aa}
 .search-results-note{font-size:12px;color:#71717a;margin-top:6px}
 .cse-container{min-height:200px}
+
+/* SmartScreen 回避手順コールアウト */
+.smartscreen-callout{margin:14px 0;padding:14px 16px;border:1px solid rgba(251,191,36,.4);border-radius:12px;background:rgba(251,191,36,.07)}
+.smartscreen-callout-title{font-weight:700;font-size:14px;color:#fbbf24;margin:0 0 10px}
+.smartscreen-steps{display:grid;gap:12px}
+.smartscreen-step{display:flex;gap:12px;align-items:flex-start}
+.smartscreen-step .step-num{flex:0 0 26px;height:26px;border-radius:50%;background:#f59e0b;color:#111;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px}
+.smartscreen-step strong{font-size:13px;display:block;margin-bottom:4px}
+.smartscreen-svg{display:block;width:100%;max-width:320px;height:auto;border-radius:8px;border:1px solid rgba(255,255,255,.1);margin-top:6px}
+.smartscreen-note{font-size:12px;color:#a1a1aa;margin:6px 0 0;line-height:1.6}

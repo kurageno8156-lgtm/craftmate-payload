@@ -102,6 +102,23 @@ export class WebServer {
     this.setupBotEvents();
   }
 
+  /**
+   * ログインセッションを integrations テーブルの '__auth_session' 行から復号する。
+   * provider='local'（旧スキップセッション）は無効として扱う。
+   */
+  private getAuthSession(): { provider: string; account: { label?: string; detail?: string } | null; loginAt: number } | null {
+    try {
+      const row = getIntegration('__auth_session');
+      if (!row || row.status !== 'connected') return null;
+      const data = decryptJson<any>(row.payload);
+      if (!data || !data.provider || data.provider === 'local') return null;
+      if (data.expiresAt && Date.now() > data.expiresAt) return null;
+      return { provider: String(data.provider), account: data.account || null, loginAt: data.loginAt || 0 };
+    } catch {
+      return null;
+    }
+  }
+
   private setupMiddlewares(): void {
     this.app.use((req, res, next) => {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -113,7 +130,10 @@ export class WebServer {
     // 「wedged」状態が観測されたため、タイムアウト付きの独自パーサーに置き換える
     this.app.use((req, res, next) => this.readJsonBody(req, res, next));
     const publicPath = path.resolve(__dirname, '../../public');
-    this.app.get('/', (_req, res) => {
+    // ダッシュボード本体はサーバー側でも認証を強制する。
+    // 未ログインの直接アクセス（/ および /index.html）はログイン画面へ。
+    this.app.get('/', (req, res) => {
+      if (!this.getAuthSession()) return res.redirect('/login.html');
       try {
         let html = fs.readFileSync(path.join(publicPath, 'index.html'), 'utf8');
         html = html.replace(/(src|href)="(\/?)(app\.js|i18n\.js|style\.css|manifest\.json)(\?[^"]*)?"/g, `$1="$2$3?v=${this.appVersion}"`);
@@ -123,6 +143,8 @@ export class WebServer {
         res.status(500).send('Dashboard could not be loaded.');
       }
     });
+    // /index.html への直接アクセスも / に集約して認証ゲートを通す
+    this.app.get('/index.html', (_req, res) => res.redirect('/'));
     this.app.use(express.static(publicPath, { index: false }));
     this.app.use((error: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
       const parseError = error as { status?: number; type?: string };
@@ -1004,18 +1026,9 @@ export class WebServer {
       };
     };
 
-    const readAuthSession = (): { provider: string; account: { label?: string; detail?: string } | null; loginAt: number } | null => {
-      const row = getIntegration(AUTH_SESSION_PLATFORM);
-      if (!row || row.status !== 'connected') return null;
-      const data = decryptJson<any>(row.payload);
-      if (!data || !data.provider) return null;
-      if (data.expiresAt && Date.now() > data.expiresAt) return null;
-      return { provider: String(data.provider), account: data.account || null, loginAt: data.loginAt || 0 };
-    };
-
     this.app.get('/api/auth/status', (req, res) => {
       if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
-      const session = readAuthSession();
+      const session = this.getAuthSession();
       res.json({ authenticated: !!session, session });
     });
 
@@ -1038,16 +1051,6 @@ export class WebServer {
       const authUrl = buildAuthorizeUrl(provider, { redirectUri, state, codeChallenge: challenge, clientId });
       this.debugLog(`auth login start: ${provider.id} redirect=${redirectUri}`);
       res.json({ success: true, authUrl });
-    });
-
-    // OAuth クライアント未設定の環境向けのローカルスキップ（セッションのみ発行）
-    this.app.post('/api/auth/skip', (req, res) => {
-      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
-      upsertIntegration(AUTH_SESSION_PLATFORM, 'connected', encryptJson({
-        provider: 'local', account: { label: 'Local session' }, loginAt: Date.now(),
-      }));
-      this.debugLog('auth skip: local session created');
-      res.json({ success: true });
     });
 
     this.app.post('/api/auth/logout', (req, res) => {

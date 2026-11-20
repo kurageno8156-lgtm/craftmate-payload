@@ -63,9 +63,13 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
   {
     id: 'discord',
     label: 'Discord',
-    description: 'Discord Bot 連携（Webhook / Bot Token）',
-    style: 'token',
-    tokenHint: 'Discord Bot Token または Webhook URL を貼り付け',
+    description: 'Discord アカウント連携（OAuth2）',
+    style: 'oauth',
+    authorizeUrl: 'https://discord.com/oauth2/authorize',
+    tokenUrl: 'https://discord.com/api/oauth2/token',
+    scopes: 'identify',
+    clientIdEnv: 'DISCORD_CLIENT_ID',
+    clientSecretEnv: 'DISCORD_CLIENT_SECRET',
   },
 ];
 
@@ -204,8 +208,8 @@ export function summarizeAccount(platform: string, tokenData: Record<string, unk
     if (platform === 'github' && tokenData.access_token) {
       return { label: 'GitHub token', detail: 'connected' };
     }
-    if (platform === 'discord' && tokenData.token) {
-      return { label: 'Discord', detail: 'connected' };
+    if (platform === 'discord' && tokenData.access_token) {
+      return { label: 'Discord account', detail: 'connected' };
     }
   } catch { /* ignore */ }
   return { label: platform, detail: 'connected' };

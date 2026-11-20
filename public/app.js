@@ -1182,10 +1182,44 @@ function renderIntegrationRow(p) {
   } else {
     const btn = el('button', 'btn-secondary', translate('integrationConnect'));
     btn.type = 'button';
-    btn.addEventListener('click', () => showIntegrationForm(row, p));
+    // OAuth プロバイダは埋め込みクライアント（oauth-clients.json / .env）が
+    // あれば直接認証画面へ。未設定の場合のみ手動入力フォームを表示する。
+    btn.addEventListener('click', () => {
+      if (p.style === 'oauth') tryDirectOAuthConnect(row, p, btn);
+      else showIntegrationForm(row, p);
+    });
     row.appendChild(btn);
   }
   return row;
+}
+
+async function tryDirectOAuthConnect(row, p, btn) {
+  btn.disabled = true;
+  try {
+    const response = await fetchWithLocalSettingsAuth(`/api/integrations/${p.id}/connect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    const result = await response.json().catch(() => ({}));
+    if (response.status === 400 && result.code === 'CLIENT_ID_REQUIRED') {
+      showIntegrationForm(row, p);
+      return;
+    }
+    if (!response.ok) throw new Error(result.error || translate('integrationConnectFailed'));
+    if (result.authUrl) {
+      showSettingsMessage(translate('integrationConnecting'), 'success');
+      window.open(result.authUrl, '_blank');
+      startIntegrationPoll(p.id);
+    } else {
+      showSettingsMessage(translate('integrationConnected'), 'success');
+      await loadIntegrations();
+    }
+  } catch (e) {
+    showSettingsMessage(e.message || translate('integrationConnectFailed'), 'error');
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function showIntegrationForm(row, p) {

@@ -216,6 +216,13 @@ foreach ($artifact in @($setupPath, $uninstallerPath, $updaterPath, $payloadPath
     }
 }
 
+# Alternative distribution format for SmartScreen: Setup.exe packaged as ZIP.
+# The ZIP is produced by installer\Build-Release.ps1 as CraftMate_Setup.zip.
+$setupZipPath = Join-Path $OutputDirectory 'CraftMate_Setup.zip'
+if (-not (Test-Path -LiteralPath $setupZipPath -PathType Leaf) -or (Get-Item -LiteralPath $setupZipPath).Length -eq 0) {
+    throw "Release artifact is missing or empty: $setupZipPath"
+}
+
 Copy-Item -LiteralPath $setupPath -Destination (Join-Path $projectRoot 'CraftMate_Setup.exe') -Force
 Copy-Item -LiteralPath $uninstallerPath -Destination (Join-Path $projectRoot 'Uninstall.exe') -Force
 Copy-Item -LiteralPath $updaterPath -Destination (Join-Path $projectRoot 'CraftMate_Updater.exe') -Force
@@ -265,7 +272,7 @@ $noteParts.Add('')
 foreach ($changeLine in $changeLines) { $noteParts.Add($changeLine) }
 $notes = ($noteParts -join [Environment]::NewLine)
 
-gh release create $tag $setupPath $updaterPath $payloadPath --repo $repo --target $defaultBranch --title "CraftMate Setup $tag" --notes $notes
+gh release create $tag $setupPath $setupZipPath $updaterPath $payloadPath --repo $repo --target $defaultBranch --title "CraftMate Setup $tag" --notes $notes
 if ($LASTEXITCODE -ne 0) { throw "GitHub release creation failed. The version commit was pushed; retry with -Version $Version after resolving the release error." }
 
 Write-Output "Released $tag to $repo"
