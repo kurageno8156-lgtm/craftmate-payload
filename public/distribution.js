@@ -40,6 +40,11 @@
   var textInput = document.getElementById('review-text');
   var starButtons = Array.prototype.slice.call(document.querySelectorAll('#star-input .star'));
   var selectedRating = 0;
+  // GitHub Pages 等の静的ホスティングでは /api/* が存在しない。
+  // GET /api/reviews の結果で判定し、静的ホストでは最初から FormSubmit を使う。
+  var staticHost = /(^|\.)github\.io$/i.test(window.location.hostname) ||
+    window.location.protocol === 'file:';
+  var apiChecked = false;
 
   function starsHtml(rating) {
     var html = '';
@@ -94,8 +99,17 @@
   }
 
   function loadReviews() {
-    fetch('/api/reviews')
-      .then(function (res) { return res.ok ? res.json() : { reviews: [], average: 0, count: 0 }; })
+    if (staticHost) { renderReviews({ reviews: [] }); return Promise.resolve(); }
+    return fetch('/api/reviews')
+      .then(function (res) {
+        if (res.status === 404 || res.status === 405 || (res.headers.get('content-type') || '').indexOf('text/html') >= 0) {
+          // 静的ホスティングと判定 → 以降は FormSubmit を使う
+          staticHost = true; apiChecked = true;
+          return { reviews: [], average: 0, count: 0 };
+        }
+        apiChecked = true;
+        return res.ok ? res.json() : { reviews: [], average: 0, count: 0 };
+      })
       .then(renderReviews)
       .catch(function () { renderReviews({ reviews: [] }); });
   }
@@ -150,27 +164,34 @@
       if (submitBtn) submitBtn.disabled = true;
       showFormStatus(reviewStatus, '送信中…', true);
 
-      // 1) アプリ内サーバー経由（SQLite保存）を試行
-      fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating: rating, name: name, comment: text })
-      }).then(function (res) {
-        if (res.ok) return res.json().then(function () { return 'api'; });
-        // 静的ホスティング（405 等）→ FormSubmit へフォールバック
-        var ct = res.headers.get('content-type') || '';
-        if (res.status === 405 || res.status === 404 || ct.indexOf('text/html') >= 0) {
-          return postViaFormSubmit({
+      // 静的ホスティングでは /api/reviews を呼ばず最初から FormSubmit へ
+      var request = staticHost
+        ? Promise.resolve(postViaFormSubmit({
             _subject: 'CraftMate レビュー（' + rating + '/5）',
             rating: rating + '/5', name: name || '匿名', comment: text
-          }).then(function () { return 'formsubmit'; });
-        }
-        return res.text().then(function (bodyText) {
-          var detail = '';
-          try { detail = JSON.parse(bodyText).error || bodyText.slice(0, 200); } catch (e2) { detail = bodyText.slice(0, 200); }
-          throw new Error('HTTP ' + res.status + (detail ? ' - ' + detail : ''));
-        });
-      }).then(function (mode) {
+          }).then(function () { return 'formsubmit'; }))
+        : fetch('/api/reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rating: rating, name: name, comment: text })
+          }).then(function (res) {
+            if (res.ok) return res.json().then(function () { return 'api'; });
+            // 静的ホスティング（405 等）→ FormSubmit へフォールバック
+            var ct = res.headers.get('content-type') || '';
+            if (res.status === 405 || res.status === 404 || ct.indexOf('text/html') >= 0) {
+              staticHost = true;
+              return postViaFormSubmit({
+                _subject: 'CraftMate レビュー（' + rating + '/5）',
+                rating: rating + '/5', name: name || '匿名', comment: text
+              }).then(function () { return 'formsubmit'; });
+            }
+            return res.text().then(function (bodyText) {
+              var detail = '';
+              try { detail = JSON.parse(bodyText).error || bodyText.slice(0, 200); } catch (e2) { detail = bodyText.slice(0, 200); }
+              throw new Error('HTTP ' + res.status + (detail ? ' - ' + detail : ''));
+            });
+          });
+      request.then(function (mode) {
         if (submitBtn) submitBtn.disabled = false;
         textInput.value = '';
         if (nameInput) nameInput.value = '';

@@ -154,6 +154,10 @@ export function setChatRoomTitleIfEmpty(id: string, title: string): void {
   prepare("UPDATE chat_rooms SET title = ? WHERE id = ? AND (title IS NULL OR title = '')").run(title.slice(0, 100), id);
 }
 
+export function renameChatRoom(id: string, title: string): void {
+  prepare('UPDATE chat_rooms SET title = ? WHERE id = ?').run(title.slice(0, 100), id);
+}
+
 export function deleteChatRoom(id: string): void {
   prepare('DELETE FROM chat_messages WHERE room_id = ?').run(id);
   prepare('DELETE FROM chat_rooms WHERE id = ?').run(id);

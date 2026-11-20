@@ -13,7 +13,7 @@ import { randomBytes, timingSafeEqual } from 'crypto';
 import { spawn, execFile } from 'child_process';
 import dotenv from 'dotenv';
 import {
-  listChatRooms, createChatRoom, deleteChatRoom, listChatMessages, addChatMessage, setChatRoomTitleIfEmpty,
+  listChatRooms, createChatRoom, deleteChatRoom, renameChatRoom, listChatMessages, addChatMessage, setChatRoomTitleIfEmpty,
   listReviews, addReview,
   listIntegrations, getIntegration, upsertIntegration, deleteIntegration,
 } from '../db.js';
@@ -950,12 +950,21 @@ export class WebServer {
           const data = decryptJson(row.payload);
           if (data) account = summarizeAccount(p.id, data);
         }
+        // OAuth クライアントが設定済みか（埋め込みファイル/環境変数）を UI に伝える
+        let oauthConfigured: boolean | null = null;
+        if (p.style === 'oauth') {
+          try {
+            const { clientId } = resolveOAuthClient(p.id, {}, p.clientIdEnv, p.clientSecretEnv);
+            oauthConfigured = !!clientId;
+          } catch { oauthConfigured = null; }
+        }
         return {
           id: p.id,
           label: p.label,
           description: p.description,
           style: p.style,
           tokenHint: p.tokenHint || null,
+          oauthConfigured,
           connected: !!(row && row.status === 'connected'),
           account,
           updatedAt: row ? row.updated_at : null,
@@ -1139,7 +1148,14 @@ export class WebServer {
             loginAt: Date.now(),
             expiresAt: Number.isFinite(expiresIn) && expiresIn > 0 ? Date.now() + expiresIn * 1000 : null,
           }));
-          this.debugLog(`auth login success: ${platform} account=${account.label || '-'}`);
+          // ログインに使ったプロバイダを「外部アカウント連携」でも連携済みにする
+          upsertIntegration(platform, 'connected', encryptJson({
+            ...tokenData,
+            clientId: pending.clientId,
+            connectedAt: Date.now(),
+            via: 'login',
+          }));
+          this.debugLog(`auth login success: ${platform} account=${account.label || '-'} (integration synced)`);
           return finish(true, `ログインが完了しました${account.label ? `（${account.label}）` : ''}。ダッシュボードに戻ってください。`);
         }
         upsertIntegration(platform, 'connected', encryptJson({
@@ -1194,6 +1210,13 @@ export class WebServer {
 
     this.app.delete('/api/chat-rooms/:id', (req, res) => {
       deleteChatRoom(String(req.params.id));
+      res.json({ success: true });
+    });
+
+    this.app.post('/api/chat-rooms/:id/rename', (req, res) => {
+      const title = String(req.body?.title || '').trim().slice(0, 100);
+      if (!title) return res.status(400).json({ error: 'title is required' });
+      renameChatRoom(String(req.params.id), title);
       res.json({ success: true });
     });
 

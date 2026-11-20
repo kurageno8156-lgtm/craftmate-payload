@@ -76,7 +76,7 @@
       const data = await res.json().catch(() => ({}));
       if (res.status === 400 && data.code === 'CLIENT_ID_REQUIRED') {
         // OAuth クライアントが埋め込まれていないプロバイダは利用不可
-        setStatus('このログイン方法は現在利用できません。', 'error');
+        setStatus('このログイン方法は現在利用できません（OAuthクライアント未設定）。管理者が各プロバイダでアプリを登録する必要があります。', 'error');
         btn.disabled = false;
         return;
       }

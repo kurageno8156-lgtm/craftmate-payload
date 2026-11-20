@@ -794,6 +794,18 @@ function renderChatRooms() {
       renderChatRooms();
       loadRoom(room.id);
     });
+    // ダブルクリックでルーム名を変更（DB に永続化）
+    label.addEventListener('dblclick', async (e) => {
+      e.stopPropagation();
+      const current = room.title || translate('newChatRoom');
+      const next = prompt(translate('renameChatRoom'), current);
+      if (next === null || next.trim() === '' || next.trim() === current) return;
+      try {
+        await apiSend('POST', '/api/chat-rooms/' + encodeURIComponent(room.id) + '/rename', { title: next.trim() });
+        room.title = next.trim();
+        await refreshRooms(room.id);
+      } catch (err) { uiError('チャットルーム名変更', err); }
+    });
     const del = document.createElement('button');
     del.className = 'chat-room-delete';
     del.type = 'button';
@@ -1162,6 +1174,13 @@ function renderIntegrationRow(p) {
   const status = el('span', 'integration-status ' + (p.connected ? 'on' : 'off'),
     p.connected ? translate('integrationConnected') : translate('integrationNotConnected'));
   row.appendChild(status);
+
+  // OAuth クライアント未設定のプロバイダには「未設定」バッジを表示
+  if (p.style === 'oauth' && p.oauthConfigured === false) {
+    const badge = el('span', 'integration-status off', translate('integrationNotConfigured'));
+    badge.title = translate('integrationNotConfiguredHint');
+    row.appendChild(badge);
+  }
 
   if (p.connected) {
     const btn = el('button', 'btn-secondary', translate('integrationDisconnect'));
