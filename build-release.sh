@@ -79,6 +79,8 @@ fi
 mkdir -p "$STAGE"
 cp -r dist public node_modules package.json package-lock.json "$STAGE"/ 2>/dev/null || true
 cp .env.example "$STAGE"/ 2>/dev/null || true
+# OAuth クライアント埋め込み（存在する場合のみ。秘密情報を含むため git 管理外）
+cp oauth-clients.json "$STAGE"/ 2>/dev/null || true
 # デスクトップ登録用アイコン（electron/icon.png = app.ico 由来 256x256）
 cp electron/icon.png "$STAGE/craftmate.png" 2>/dev/null || true
 

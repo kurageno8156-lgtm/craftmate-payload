@@ -164,6 +164,63 @@ $env:CRAFTMATE_PFX_PASSWORD = "your-password"   # パスワードなしなら省
 
 ---
 
+## 🔐 ログイン認証（OAuth 2.0 / OpenID Connect）
+
+v1.3.157 以降、初回起動時にログイン画面が表示されます。ユーザーは「Googleでログイン」「Microsoftでログイン」「GitHubでログイン」ボタンを押すだけで、各プロバイダの標準ログイン画面に遷移して認証できます。セッションは AES-256-GCM で暗号化してローカルに保存され、次回起動時は自動ログインされます。
+
+### OAuth アプリの登録（開発者向け）
+
+ボタン1つでログインできるようにするには、各プロバイダで OAuth アプリを登録し、Client ID / Client Secret を `.env` に設定してビルドしてください。リダイレクト URI は以下を全プロバイダ共通で登録します:
+
+```
+http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
+```
+
+`<provider>` は `google` / `microsoft` / `github` のいずれかです（プロバイダごとに個別のURIを登録）。
+
+#### Google
+
+1. [Google Cloud Console](https://console.cloud.google.com/) でプロジェクトを作成
+2. 「APIとサービス」→「OAuth同意画面」でユーザータイプ（外部/内部）とスコープ（`openid`, `email`, `profile`）を設定
+3. 「認証情報」→「認証情報を作成」→「OAuthクライアントID」→ アプリの種類は「ウェブアプリケーション」
+4. 承認済みリダイレクトURIに `http://127.0.0.1:3000/api/integrations/google/oauth/callback` を追加
+5. 発行された Client ID / Client Secret を控える
+
+#### Microsoft
+
+1. [Azure Portal](https://portal.azure.com/) →「Microsoft Entra ID」→「アプリの登録」→「新規登録」
+2. 名前を入力し、「リダイレクトURI」に `http://127.0.0.1:3000/api/integrations/microsoft/oauth/callback` を「Web」プラットフォームで追加
+3. 「APIのアクセス許可」で `openid`, `email`, `profile`, `offline_access` を追加し管理者の同意を付与
+4. 「証明書とシークレット」で新しいクライアントシークレットを作成
+5. 「概要」のアプリケーション (クライアント) ID とシークレットを控える
+
+#### GitHub
+
+1. GitHub → Settings → Developer settings → OAuth Apps →「New OAuth App」
+2. Application name と Homepage URL（任意）を入力
+3. Authorization callback URL に `http://127.0.0.1:3000/api/integrations/github/oauth/callback` を設定
+4. 「Register application」後、Client ID を控え、「Generate a new client secret」でシークレットを発行
+
+### クライアント情報の埋め込み
+
+リポジトリルートに `oauth-clients.json` を作成し（テンプレート: `oauth-clients.example.json`）、Client ID / Secret を記入してからビルドしてください。このファイルは `.gitignore` 済みで、Windows ペイロード（`app_payload.zip`）と Linux tarball の両方に自動で同梱されます。
+
+```json
+{
+  "google":    { "clientId": "xxxxx.apps.googleusercontent.com", "clientSecret": "GOCSPX-xxxxx" },
+  "microsoft": { "clientId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "clientSecret": "xxxxx" },
+  "github":    { "clientId": "xxxxx", "clientSecret": "xxxxx" }
+}
+```
+
+実行時の環境変数（`GOOGLE_CLIENT_ID` 等、`.env.example` 参照）や、ログイン画面の「上級者向け」手動入力も引き続き利用できます。優先順位は **手動入力 > 環境変数 > oauth-clients.json** です。
+
+> **注意**: Client Secret を配布物に埋め込むと、リバースエンジニアリングで取り出される可能性があります。ネイティブアプリ向けの OAuth では一般的なトレードオフですが、公開クライアント（PKCE のみ・シークレットなし）構成も検討してください。GitHub OAuth Apps はシークレット必須です。
+
+Client ID が未設定のビルドでは、ログイン画面に「上級者向け」の手動入力フォームが表示されます。また「ローカルで続行」ボタンで OAuth なしのスキップも可能です。
+
+---
+
 ## 📁 ディレクトリ構成
 
 ```

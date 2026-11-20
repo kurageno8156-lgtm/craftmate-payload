@@ -78,8 +78,9 @@ try {
     foreach ($directory in @('dist', 'public', 'node_modules')) {
       & $addDirectory (Join-Path $projectRoot $directory) $directory
     }
-    foreach ($file in @('CraftMate.exe', 'Launcher.exe', 'node.exe', '.env.example', 'package.json', 'package-lock.json', 'README.md')) {
-      & $addFile (Join-Path $projectRoot $file) $file
+    foreach ($file in @('CraftMate.exe', 'Launcher.exe', 'node.exe', '.env.example', 'package.json', 'package-lock.json', 'README.md', 'oauth-clients.json')) {
+      $src = Join-Path $projectRoot $file
+      if (Test-Path -LiteralPath $src -PathType Leaf) { & $addFile $src $file }
     }
     & $addFile $uninstallPath 'Uninstall.exe'
     & $addFile $updaterPath 'CraftMate_Updater.exe'

@@ -963,9 +963,8 @@ export class WebServer {
         return res.status(400).json({ error: 'This platform does not support OAuth.' });
       }
 
-      // clientId はリクエスト > .env の順で解決
-      const clientId = (body.clientId || '').trim() || (provider.clientIdEnv ? process.env[provider.clientIdEnv] : '') || '';
-      const clientSecret = (body.clientSecret || '').trim() || (provider.clientSecretEnv ? process.env[provider.clientSecretEnv] : '') || undefined;
+      // clientId はリクエスト > .env > 埋め込み oauth-clients.json の順で解決
+      const { clientId, clientSecret } = resolveOAuthClient(provider.id, body, provider.clientIdEnv, provider.clientSecretEnv);
       if (!clientId) {
         return res.status(400).json({ error: 'clientId is required (or set the corresponding env var).', code: 'CLIENT_ID_REQUIRED' });
       }
@@ -987,6 +986,23 @@ export class WebServer {
     // ---- 初回起動ログイン（OAuth 2.0 / OIDC）----
     // セッションは integrations テーブルの '__auth_session' 行に暗号化保存する。
     const AUTH_SESSION_PLATFORM = '__auth_session';
+
+    // ビルド時に埋め込まれた OAuth クライアント情報（oauth-clients.json）。
+    // 優先順位: リクエスト body > 環境変数 > 埋め込みファイル
+    const embeddedOAuthClients = (() => {
+      try {
+        const p = path.resolve(__dirname, '../../oauth-clients.json');
+        if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8')) as Record<string, { clientId?: string; clientSecret?: string }>;
+      } catch { }
+      return {} as Record<string, { clientId?: string; clientSecret?: string }>;
+    })();
+    const resolveOAuthClient = (providerId: string, body: { clientId?: string; clientSecret?: string }, clientIdEnv?: string, clientSecretEnv?: string) => {
+      const embedded = embeddedOAuthClients[providerId] || {};
+      return {
+        clientId: (body.clientId || '').trim() || (clientIdEnv ? process.env[clientIdEnv] : '') || (embedded.clientId || '').trim(),
+        clientSecret: (body.clientSecret || '').trim() || (clientSecretEnv ? process.env[clientSecretEnv] : '') || (embedded.clientSecret || '').trim() || undefined,
+      };
+    };
 
     const readAuthSession = (): { provider: string; account: { label?: string; detail?: string } | null; loginAt: number } | null => {
       const row = getIntegration(AUTH_SESSION_PLATFORM);
@@ -1011,8 +1027,7 @@ export class WebServer {
         return res.status(400).json({ error: 'This platform does not support OAuth login.' });
       }
       const body = (req.body || {}) as { clientId?: string; clientSecret?: string };
-      const clientId = (body.clientId || '').trim() || (provider.clientIdEnv ? process.env[provider.clientIdEnv] : '') || '';
-      const clientSecret = (body.clientSecret || '').trim() || (provider.clientSecretEnv ? process.env[provider.clientSecretEnv] : '') || undefined;
+      const { clientId, clientSecret } = resolveOAuthClient(provider.id, body, provider.clientIdEnv, provider.clientSecretEnv);
       if (!clientId) {
         return res.status(400).json({ error: 'clientId is required (or set the corresponding env var).', code: 'CLIENT_ID_REQUIRED' });
       }

@@ -1,5 +1,7 @@
 // CraftMate ログイン画面
-// OAuth プロバイダ一覧を取得し、認証フローを開始する。
+// 「Googleでログイン」等のボタン1つで OAuth 認証を開始する。
+// Client ID/Secret はビルド時に .env へ埋め込まれた値が使われるため、
+// 通常ユーザーは入力不要。未設定の場合のみ「上級者向け」フォームを表示する。
 // 認証完了は /api/auth/status のポーリングで検知し、ダッシュボードへ遷移する。
 
 (function () {
@@ -57,15 +59,44 @@
     btn.type = 'button';
     btn.className = 'provider-btn';
     btn.innerHTML = '<span class="icon">' + meta.icon + '</span><span>' + meta.label + '</span>';
-    btn.addEventListener('click', () => {
-      const form = wrap.querySelector('.provider-form');
-      if (form) { form.classList.toggle('open'); return; }
-      wrap.appendChild(buildCredentialForm(p));
-    });
+    btn.addEventListener('click', () => startLogin(p, btn, wrap));
     wrap.appendChild(btn);
     return wrap;
   }
 
+  async function startLogin(p, btn, wrap) {
+    btn.disabled = true;
+    setStatus('認証ページを開いています…');
+    try {
+      const res = await fetch('/api/auth/login/' + encodeURIComponent(p.id), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 400 && data.code === 'CLIENT_ID_REQUIRED') {
+        // ビルドに OAuth クライアントが埋め込まれていない場合のみ、
+        // 上級者向けの手動入力フォームを表示する
+        setStatus('このビルドには OAuth クライアントが設定されていません。下のフォームから Client ID を入力してください。', 'error');
+        btn.disabled = false;
+        if (!wrap.querySelector('.provider-form')) {
+          wrap.appendChild(buildCredentialForm(p));
+        }
+        return;
+      }
+      if (!res.ok) throw new Error(data.error || 'login failed');
+      if (data.authUrl) {
+        window.open(data.authUrl, '_blank');
+        setStatus('ブラウザで認証を完了してください…（自動で遷移します）');
+        pollForSession();
+      }
+    } catch (e) {
+      setStatus(e.message || 'ログイン開始に失敗しました', 'error');
+      btn.disabled = false;
+    }
+  }
+
+  // 上級者向け: Client ID/Secret を手動で指定するフォーム
   function buildCredentialForm(p) {
     const meta = PROVIDER_META[p.id] || { label: p.label || p.id };
     const form = document.createElement('div');
@@ -73,7 +104,7 @@
 
     const idInput = document.createElement('input');
     idInput.type = 'text';
-    idInput.placeholder = 'Client ID（.env 設定済みなら省略可）';
+    idInput.placeholder = 'Client ID';
     idInput.autocomplete = 'off';
 
     const secretInput = document.createElement('input');
