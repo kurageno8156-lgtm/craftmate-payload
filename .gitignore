@@ -17,3 +17,4 @@ craftmate-payload/
 electron/node_modules/
 electron/dist-installer/
 electron/dist/
+oauth-clients.json
