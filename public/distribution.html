@@ -67,11 +67,15 @@
         </article>
 
         <article class="platform-card" data-os="macos">
-          <div class="platform-head"><span class="platform-icon" aria-hidden="true">🍎</span><div class="platform-title"><h3>macOS</h3><span class="badge badge-soon">近日公開</span></div></div>
-          <p class="platform-desc">Intel Mac と Apple Silicon（M1以降）の両対応で .dmg 配布を準備中。</p>
-          <span class="download-button platform-download disabled" aria-disabled="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3h14v-3"/></svg><span><strong>Coming Soon</strong><small>CraftMate-macos-x64 / arm64.dmg</small></span><span class="button-arrow" aria-hidden="true">…</span></span>
-          <details class="platform-details"><summary>対応予定・システム要件</summary>
-            <ul><li>macOS 13 Ventura 以降（Intel / Apple Silicon）</li><li>配布形式: .dmg（署名・公証予定）</li><li>注意: Apple Silicon では x64 版も Rosetta 2 で動作可能</li></ul>
+          <div class="platform-head"><span class="platform-icon" aria-hidden="true">🍎</span><div class="platform-title"><h3>macOS</h3><span class="badge">Apple Silicon / Intel</span></div></div>
+          <p class="platform-desc">Electron製デスクトップアプリを .dmg で配布。Apple Silicon（M1以降）と Intel Mac の両対応です。</p>
+          <a class="download-button platform-download" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate-macos-arm64.dmg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3h14v-3"/></svg><span><strong>Download for macOS (Apple Silicon)</strong><small>CraftMate-macos-arm64.dmg — 最新版</small></span><span class="button-arrow" aria-hidden="true">↗</span></a>
+          <div class="platform-alt-links">
+            <a class="platform-alt-link" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate-macos-x64.dmg">Intel Mac（x64）はこちら</a>
+          </div>
+          <details class="platform-details"><summary>起動方法・注意事項</summary>
+            <ol><li>.dmg を開き、CraftMate を Applications フォルダへドラッグ</li><li>初回起動時は「CraftMate は壊れている可能性があるため、開けません」と表示される場合があります</li><li>その場合は <strong>Finder で CraftMate を Control+クリック →「開く」→「開く」</strong> で起動できます（Gatekeeper の警告を回避）</li></ol>
+            <p>※ 署名・公証は未実施のため、初回のみ右クリック→開くの手順が必要です。</p>
           </details>
         </article>
 

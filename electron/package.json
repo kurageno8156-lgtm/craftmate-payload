@@ -50,6 +50,16 @@
         }
       }
     },
+    "mac": {
+      "category": "public.app-category.games",
+      "target": [
+        "dmg"
+      ],
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "artifactName": "CraftMate-macos-${arch}.dmg"
+    },
     "deb": {
       "depends": [
         "libgtk-3-0",

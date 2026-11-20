@@ -52,11 +52,20 @@
 |---|---|---|---|
 | **Windows** (x64 / x86 / ARM64) | ✅ **利用可能** | `CraftMate_Setup.exe` | Node.js同梱・完全ポータブル |
 | Linux (x64 / ARM64) | ✅ **利用可能** | `CraftMate-linux-{x64,arm64}.AppImage` / `.deb` / `.tar.gz` | Electronデスクトップアプリ＋ポータブルtarball |
-| macOS (Intel / Apple Silicon) | 🚧 開発中 | `.dmg` 予定 | 署名・公証対応予定 |
+| macOS (Intel / Apple Silicon) | ✅ **利用可能** | `CraftMate-macos-{arm64,x64}.dmg` | 署名・公証なし（後述の手順で起動） |
 | Android | 💭 検討中 | APK / Google Play 検討 | Minecraft PE 連携が前提 |
 | iOS | 💭 検討中 | App Store / TestFlight 検討 | 同上 |
 
-> **macOS / モバイルをお使いの方へ**: macOS 版は開発中です。リリースタグは `v1.4.0-macos` のような OS 識別子付き命名を予定しています。
+> **モバイルをお使いの方へ**: Android / iOS 版は検討中です。
+
+### macOS 版の起動方法
+
+1. `CraftMate-macos-arm64.dmg`（Apple Silicon）または `CraftMate-macos-x64.dmg`（Intel）をダウンロードして開く
+2. `CraftMate` を `Applications` フォルダへドラッグ＆ドロップ
+3. 初回起動時、Gatekeeper により「壊れている可能性があるため開けません」と表示される場合があります（署名・公証を行っていないため）。その場合は：
+   - **Finder で CraftMate を Control + クリック →「開く」→ ダイアログの「開く」**
+   - または `システム設定 → プライバシーとセキュリティ →「このまま開く」`
+4. 以降は通常通り起動できます
 
 ### Linux 版の起動方法
 

@@ -1010,20 +1010,50 @@ export class WebServer {
     const AUTH_SESSION_PLATFORM = '__auth_session';
 
     // ビルド時に埋め込まれた OAuth クライアント情報（oauth-clients.json）。
-    // 優先順位: リクエスト body > 環境変数 > 埋め込みファイル
+    // 配置候補: ペイロードルート（dist/server から2階層上）、カレントディレクトリ、
+    // Electron の resources/payload。最初に見つかったものを使う。
+    const oauthClientCandidates = [
+      path.resolve(__dirname, '../../oauth-clients.json'),
+      path.resolve(process.cwd(), 'oauth-clients.json'),
+      process.env.CRAFTMATE_RESOURCES_PATH ? path.join(process.env.CRAFTMATE_RESOURCES_PATH, 'payload', 'oauth-clients.json') : '',
+      (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath
+        ? path.join((process as NodeJS.Process & { resourcesPath?: string }).resourcesPath as string, 'payload', 'oauth-clients.json')
+        : '',
+    ].filter(Boolean);
+    let embeddedOAuthClientsPath: string | null = null;
     const embeddedOAuthClients = (() => {
-      try {
-        const p = path.resolve(__dirname, '../../oauth-clients.json');
-        if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8')) as Record<string, { clientId?: string; clientSecret?: string }>;
-      } catch { }
+      for (const p of oauthClientCandidates) {
+        try {
+          if (fs.existsSync(p)) {
+            embeddedOAuthClientsPath = p;
+            return JSON.parse(fs.readFileSync(p, 'utf8')) as Record<string, { clientId?: string; clientSecret?: string }>;
+          }
+        } catch (e) {
+          this.debugLog(`oauth-clients.json parse failed at ${p}: ${(e as Error).message}`);
+        }
+      }
       return {} as Record<string, { clientId?: string; clientSecret?: string }>;
     })();
+    // 起動時に設定状況をログへ（シークレットは出力しない）
+    {
+      const configured = Object.keys(embeddedOAuthClients)
+        .filter((k) => (embeddedOAuthClients[k]?.clientId || '').trim());
+      this.debugLog(
+        `oauth-clients: path=${embeddedOAuthClientsPath || '(not found)'} candidates=${oauthClientCandidates.join(' | ')} ` +
+        `configured=[${configured.join(',')}] env=[${INTEGRATION_PROVIDERS.filter(p => p.clientIdEnv && process.env[p.clientIdEnv]).map(p => p.id).join(',')}]`
+      );
+    }
     const resolveOAuthClient = (providerId: string, body: { clientId?: string; clientSecret?: string }, clientIdEnv?: string, clientSecretEnv?: string) => {
       const embedded = embeddedOAuthClients[providerId] || {};
-      return {
+      const resolved = {
         clientId: (body.clientId || '').trim() || (clientIdEnv ? process.env[clientIdEnv] : '') || (embedded.clientId || '').trim(),
         clientSecret: (body.clientSecret || '').trim() || (clientSecretEnv ? process.env[clientSecretEnv] : '') || (embedded.clientSecret || '').trim() || undefined,
       };
+      const source = (body.clientId || '').trim() ? 'request'
+        : (clientIdEnv && process.env[clientIdEnv]) ? 'env'
+        : (embedded.clientId || '').trim() ? 'embedded-file' : 'none';
+      this.debugLog(`oauth resolve ${providerId}: clientId=${resolved.clientId ? resolved.clientId.slice(0, 12) + '…' : '(empty)'} source=${source} hasSecret=${!!resolved.clientSecret}`);
+      return resolved;
     };
 
     this.app.get('/api/auth/status', (req, res) => {
@@ -1042,6 +1072,7 @@ export class WebServer {
       const body = (req.body || {}) as { clientId?: string; clientSecret?: string };
       const { clientId, clientSecret } = resolveOAuthClient(provider.id, body, provider.clientIdEnv, provider.clientSecretEnv);
       if (!clientId) {
+        this.debugLog(`auth login rejected: ${provider.id} no clientId (file=${embeddedOAuthClientsPath || 'none'})`);
         return res.status(400).json({ error: 'clientId is required (or set the corresponding env var).', code: 'CLIENT_ID_REQUIRED' });
       }
       const state = generateState();
@@ -1070,7 +1101,15 @@ export class WebServer {
       };
       if (!provider) return finish(false, 'Unknown platform.');
       const { code, state, error, error_description } = req.query as Record<string, string>;
-      if (error) return finish(false, `${error}: ${error_description || ''}`);
+      if (error) {
+        this.debugLog(`oauth callback error: platform=${platform} error=${error} desc=${error_description || ''}`);
+        let message = `${error}: ${error_description || ''}`;
+        // Google の「テスト」公開ステータスでは未登録アカウントが access_denied になる
+        if (platform === 'google' && error === 'access_denied') {
+          message += '（このアカウントは Google Cloud Console の「テストユーザー」に登録されていない可能性があります）';
+        }
+        return finish(false, message);
+      }
       const pending = this.pendingOAuth.get(platform) || this.pendingOAuth.get(`login:${platform}`);
       if (!pending || pending.state !== state || !code) {
         return finish(false, '認証セッションが無効か期限切れです。もう一度お試しください。');
@@ -1167,6 +1206,21 @@ export class WebServer {
       // 最初のユーザーメッセージをルーム名にする
       if (sender === 'user') setChatRoomTitleIfEmpty(roomId, content);
       res.json({ message });
+    });
+
+    // ---- Minecraft統合版リソースパック (.mcpack) ----
+    this.app.get('/api/bedrock-pack', async (_req, res) => {
+      try {
+        const { buildBedrockResourcePack } = await import('../bedrockPack.js');
+        const buf = await buildBedrockResourcePack();
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Content-Disposition', 'attachment; filename="CraftMate-HUD.mcpack"');
+        res.send(buf);
+        this.debugLog('GET /api/bedrock-pack served');
+      } catch (e) {
+        this.debugLog(`GET /api/bedrock-pack FAILED: ${(e as Error).message}`);
+        res.status(500).json({ error: 'Failed to generate resource pack.' });
+      }
     });
 
     // ---- レビュー（SQLite 永続化・全ユーザー共有）----

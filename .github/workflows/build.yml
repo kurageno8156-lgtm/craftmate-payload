@@ -29,6 +29,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # OAuth クライアント情報を Secrets から生成（git 管理外のため CI では未存在）
+      - name: Generate oauth-clients.json from secrets
+        shell: bash
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
+          MICROSOFT_CLIENT_SECRET: ${{ secrets.MICROSOFT_CLIENT_SECRET }}
+          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+        run: |
+          cat > oauth-clients.json <<EOF
+          {
+            "google":    { "clientId": "${GOOGLE_CLIENT_ID}",    "clientSecret": "${GOOGLE_CLIENT_SECRET}" },
+            "microsoft": { "clientId": "${MICROSOFT_CLIENT_ID}", "clientSecret": "${MICROSOFT_CLIENT_SECRET}" },
+            "github":    { "clientId": "${GITHUB_CLIENT_ID}",    "clientSecret": "${GITHUB_CLIENT_SECRET}" },
+            "discord":   { "clientId": "${DISCORD_CLIENT_ID}",   "clientSecret": "${DISCORD_CLIENT_SECRET}" }
+          }
+          EOF
+          echo "oauth-clients.json generated (providers with clientId: $(grep -o '\"clientId\": \"[^\"]\{8,\}' oauth-clients.json | wc -l))"
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -99,6 +122,26 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
+      - name: Generate oauth-clients.json from secrets
+        shell: bash
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
+          MICROSOFT_CLIENT_SECRET: ${{ secrets.MICROSOFT_CLIENT_SECRET }}
+          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+        run: |
+          cat > oauth-clients.json <<EOF
+          {
+            "google":    { "clientId": "${GOOGLE_CLIENT_ID}",    "clientSecret": "${GOOGLE_CLIENT_SECRET}" },
+            "microsoft": { "clientId": "${MICROSOFT_CLIENT_ID}", "clientSecret": "${MICROSOFT_CLIENT_SECRET}" },
+            "github":    { "clientId": "${GITHUB_CLIENT_ID}",    "clientSecret": "${GITHUB_CLIENT_SECRET}" },
+            "discord":   { "clientId": "${DISCORD_CLIENT_ID}",   "clientSecret": "${DISCORD_CLIENT_SECRET}" }
+          }
+          EOF
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -144,6 +187,26 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
+      - name: Generate oauth-clients.json from secrets
+        shell: bash
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
+          MICROSOFT_CLIENT_SECRET: ${{ secrets.MICROSOFT_CLIENT_SECRET }}
+          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+        run: |
+          cat > oauth-clients.json <<EOF
+          {
+            "google":    { "clientId": "${GOOGLE_CLIENT_ID}",    "clientSecret": "${GOOGLE_CLIENT_SECRET}" },
+            "microsoft": { "clientId": "${MICROSOFT_CLIENT_ID}", "clientSecret": "${MICROSOFT_CLIENT_SECRET}" },
+            "github":    { "clientId": "${GITHUB_CLIENT_ID}",    "clientSecret": "${GITHUB_CLIENT_SECRET}" },
+            "discord":   { "clientId": "${DISCORD_CLIENT_ID}",   "clientSecret": "${DISCORD_CLIENT_SECRET}" }
+          }
+          EOF
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -187,32 +250,60 @@ jobs:
   #   4. 署名・公証（Developer ID + notarytool）
   # ============================================================
   build-macos:
-    strategy:
-      matrix:
-        include:
-          - runner: macos-13   # Intel
-            arch: x64
-            node-arch: x64
-          - runner: macos-14   # Apple Silicon
-            arch: arm64
-            node-arch: arm64
-    runs-on: ${{ matrix.runner }}
+    runs-on: macos-latest
     # 手動実行（workflow_dispatch）のみ
     if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
+      - name: Generate oauth-clients.json from secrets
+        shell: bash
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
+          MICROSOFT_CLIENT_SECRET: ${{ secrets.MICROSOFT_CLIENT_SECRET }}
+          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+        run: |
+          cat > oauth-clients.json <<EOF
+          {
+            "google":    { "clientId": "${GOOGLE_CLIENT_ID}",    "clientSecret": "${GOOGLE_CLIENT_SECRET}" },
+            "microsoft": { "clientId": "${MICROSOFT_CLIENT_ID}", "clientSecret": "${MICROSOFT_CLIENT_SECRET}" },
+            "github":    { "clientId": "${GITHUB_CLIENT_ID}",    "clientSecret": "${GITHUB_CLIENT_SECRET}" },
+            "discord":   { "clientId": "${DISCORD_CLIENT_ID}",   "clientSecret": "${DISCORD_CLIENT_SECRET}" }
+          }
+          EOF
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
-      # macOS ランナーには Xcode CLT 同梱。better-sqlite3 は darwin 向け prebuilt を取得、
-      # 無い場合はソースビルド（xcode-select --install 済み）。
-      - name: Build portable tarball (macos/${{ matrix.arch }})
-        run: bash build-release.sh ${{ inputs.version || '1.4.0' }} darwin ${{ matrix.arch }}
+
+      # arm64 (Apple Silicon) と x64 (Intel) の両方の .dmg を生成する。
+      # payload はアーキ別に build-release.sh でステージングし、
+      # electron-builder の extraResources (../craftmate-payload) に載せる。
+      - name: Build macOS payloads and DMGs (arm64 + x64)
+        shell: bash
+        run: |
+          set -e
+          VERSION="${{ inputs.version || '1.4.0' }}"
+          cd electron
+          npm install --no-audit --no-fund
+          cd ..
+          for ARCH in arm64 x64; do
+            echo "==> Building payload for darwin/$ARCH"
+            SKIP_PAYLOAD_COPY=0 bash build-release.sh "$VERSION" darwin "$ARCH"
+            (cd electron && npx electron-builder --mac dmg --${ARCH} \
+              -c.mac.identity=null \
+              -c.mac.artifactName="CraftMate-macos-${ARCH}.dmg")
+          done
+          ls -la electron/dist-installer/*.dmg
+
       - uses: actions/upload-artifact@v4
         with:
-          name: craftmate-macos-${{ matrix.arch }}
-          path: craftmate-darwin-${{ matrix.arch }}.tar.gz
+          name: craftmate-macos
+          path: electron/dist-installer/*.dmg
 
   # ============================================================
   # リリース（タグ push 時のみ）
