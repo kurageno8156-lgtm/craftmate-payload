@@ -46,6 +46,12 @@ jobs:
       - name: TypeScript build
         run: npm run build
 
+      - name: Stage node.exe for payload
+        # Build-Release.ps1 はプロジェクトルートの node.exe をペイロードに同梱する。
+        # node.exe は .gitignore 対象のため、setup-node のものをコピーする。
+        run: cp "$(dirname "$(which node)")/node.exe" ./node.exe
+        shell: bash
+
       - name: Build Windows installers (x64)
         shell: pwsh
         env:
