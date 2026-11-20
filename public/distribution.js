@@ -114,21 +114,35 @@
     });
   });
 
+  // 配布サイトは GitHub Pages 等の静的ホスティングでも動作する。
+  // その場合 /api/reviews への POST は 405 になるため、mailto へフォールバックする。
+  function mailtoReview(rating, name, comment) {
+    var subject = 'CraftMate レビュー（' + rating + '/5）';
+    var body = '【評価】' + rating + '/5\n【ニックネーム】' + (name || '匿名') +
+      '\n【内容】\n' + comment + '\n';
+    window.location.href = 'mailto:kurageno8156@gmail.com?subject=' +
+      encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  }
+
   if (form) {
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var text = textInput ? textInput.value.trim() : '';
+      var name = nameInput ? nameInput.value.trim() : '';
       if (!text || selectedRating < 1) return;
+      var rating = selectedRating;
       fetch('/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rating: selectedRating,
-          name: nameInput ? nameInput.value.trim() : '',
-          comment: text
-        })
+        body: JSON.stringify({ rating: rating, name: name, comment: text })
       }).then(function (res) {
         if (!res.ok) {
+          // 静的ホスティング（405 等）では API が使えない → メールで送信
+          if (res.status === 405 || res.status === 404 || (res.headers.get('content-type') || '').indexOf('text/html') >= 0) {
+            mailtoReview(rating, name, text);
+            alert('このサイトではレビューAPIが利用できないため、メール作成画面を開きました。内容を確認して送信してください。');
+            return null;
+          }
           return res.text().then(function (bodyText) {
             var detail = '';
             try { detail = JSON.parse(bodyText).error || bodyText.slice(0, 200); } catch (e) { detail = bodyText.slice(0, 200); }
@@ -136,7 +150,8 @@
           });
         }
         return res.json();
-      }).then(function () {
+      }).then(function (data) {
+        if (data === null) return; // mailto フォールバック済み
         textInput.value = '';
         if (nameInput) nameInput.value = '';
         selectedRating = 0;
@@ -145,6 +160,25 @@
       }).catch(function (error) {
         alert('レビューの投稿に失敗しました: ' + (error && error.message ? error.message : error));
       });
+    });
+  }
+
+  // ---- お問い合わせフォーム ----
+  var contactForm = document.getElementById('contact-form');
+  if (contactForm) {
+    contactForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var name = (document.getElementById('contact-name') || {}).value || '';
+      var email = (document.getElementById('contact-email') || {}).value || '';
+      var message = (document.getElementById('contact-message') || {}).value || '';
+      if (!message.trim()) return;
+      var subject = 'CraftMate お問い合わせ - ' + (name.trim() || '匿名');
+      var body = '【お名前】' + (name.trim() || '（未入力）') +
+        '\n【メールアドレス】' + (email.trim() || '（未入力）') +
+        '\n【内容】\n' + message.trim() + '\n';
+      window.location.href = 'mailto:kurageno8156@gmail.com?subject=' +
+        encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      contactForm.reset();
     });
   }
 

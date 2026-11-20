@@ -1183,7 +1183,7 @@ function renderIntegrationRow(p) {
     const btn = el('button', 'btn-secondary', translate('integrationConnect'));
     btn.type = 'button';
     // OAuth プロバイダは埋め込みクライアント（oauth-clients.json / .env）が
-    // あれば直接認証画面へ。未設定の場合のみ手動入力フォームを表示する。
+    // あれば直接認証画面へ。未設定の場合は利用不可メッセージを表示する。
     btn.addEventListener('click', () => {
       if (p.style === 'oauth') tryDirectOAuthConnect(row, p, btn);
       else showIntegrationForm(row, p);
@@ -1203,7 +1203,8 @@ async function tryDirectOAuthConnect(row, p, btn) {
     });
     const result = await response.json().catch(() => ({}));
     if (response.status === 400 && result.code === 'CLIENT_ID_REQUIRED') {
-      showIntegrationForm(row, p);
+      // OAuth クライアントはビルド時に埋め込まれるため、未設定なら利用不可
+      showSettingsMessage(translate('integrationOAuthUnavailable'), 'error');
       return;
     }
     if (!response.ok) throw new Error(result.error || translate('integrationConnectFailed'));
@@ -1231,6 +1232,9 @@ function showIntegrationForm(row, p) {
   form.style.flexBasis = '100%';
   form.style.marginLeft = '0';
 
+  // NOTE: OAuth プロバイダの手動 Client ID/Secret 入力は廃止。
+  // クライアント情報は oauth-clients.json / 環境変数に埋め込まれる。
+  // このフォームは token スタイル（Discord 等）のみで使用される。
   if (p.style === 'token') {
     const input = document.createElement('input');
     input.type = 'password';
@@ -1238,24 +1242,6 @@ function showIntegrationForm(row, p) {
     input.autocomplete = 'off';
     form.appendChild(input);
     form.appendChild(buildIntegrationSubmit(p, { getToken: () => input.value.trim() }));
-  } else {
-    const idInput = document.createElement('input');
-    idInput.placeholder = translate('integrationClientId');
-    idInput.autocomplete = 'off';
-    const secretInput = document.createElement('input');
-    secretInput.type = 'password';
-    secretInput.placeholder = translate('integrationClientSecret') + ' (optional if set in .env)';
-    secretInput.autocomplete = 'off';
-    form.appendChild(idInput);
-    form.appendChild(secretInput);
-    const note = el('div', 'integrations-help', translate('integrationOAuthNote'));
-    form.appendChild(note);
-    form.appendChild(buildIntegrationSubmit(p, {
-      getBody: () => ({
-        clientId: idInput.value.trim(),
-        clientSecret: secretInput.value.trim() || undefined,
-      }),
-    }));
   }
   row.appendChild(form);
 }
@@ -1302,6 +1288,18 @@ function buildIntegrationSubmit(p, opts) {
   return wrap;
 }
 
+// OAuth コールバックページからの完了通知を受け取り、連携状態を即時更新する。
+// （ポーリング startIntegrationPoll に加えた高速パス）
+window.addEventListener('message', (event) => {
+  const data = event.data;
+  if (data && data.type === 'craftmate:oauth-done') {
+    if (data.ok) {
+      loadIntegrations();
+      showSettingsMessage(translate('integrationConnected'), 'success');
+    }
+  }
+});
+
 // OAuth 認証は別タブ/外部ブラウザで行われるため、コールバック完了を
 // ポーリングで検知して連携状態を自動更新する（最大約3分）。
 async function startIntegrationPoll(platformId) {
@@ -1320,6 +1318,14 @@ async function startIntegrationPoll(platformId) {
     } catch { /* サーバー一時停止などは無視して継続 */ }
   }
 }
+
+on(document.getElementById('btn-logout'), 'click', async () => {
+  if (!confirm(translate('logoutConfirm') || 'ログアウトしますか？')) return;
+  try {
+    await fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+  } catch { /* サーバー停止時も画面遷移は行う */ }
+  window.location.replace('/login.html');
+});
 
 on(document.getElementById('btn-settings'), 'click', () => {
   if (settingsModal) settingsModal.hidden = false;

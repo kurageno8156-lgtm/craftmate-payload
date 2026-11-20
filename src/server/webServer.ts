@@ -1066,7 +1066,7 @@ export class WebServer {
       const finish = (ok: boolean, message: string) => {
         // window.open で開かれたウィンドウは script から閉じられる。
         // ダッシュボードへの復帰リンクも併記する。
-        res.type('html').send(`<!doctype html><html><head><meta charset="utf-8"><title>CraftMate</title></head><body style="font-family:sans-serif;background:#0b0f14;color:#e4e4e7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center;max-width:480px"><h2 style="color:${ok ? '#4ade80' : '#f87171'}">${ok ? '連携が完了しました' : '連携に失敗しました'}</h2><p>${message}</p><p style="color:#71717a;font-size:13px">このウィンドウは自動で閉じます。閉じない場合は <a href="http://127.0.0.1:3000" style="color:#60a5fa">ダッシュボードに戻る</a> をクリックしてください。</p></div><script>setTimeout(function(){try{window.close()}catch(e){}},1200)</script></body></html>`);
+        res.type('html').send(`<!doctype html><html><head><meta charset="utf-8"><title>CraftMate</title></head><body style="font-family:sans-serif;background:#0b0f14;color:#e4e4e7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center;max-width:480px"><h2 style="color:${ok ? '#4ade80' : '#f87171'}">${ok ? '連携が完了しました' : '連携に失敗しました'}</h2><p>${message}</p><p style="color:#71717a;font-size:13px">このウィンドウは自動で閉じます。閉じない場合は <a href="http://127.0.0.1:3000" style="color:#60a5fa">ダッシュボードに戻る</a> をクリックしてください。</p></div><script>try{if(window.opener){window.opener.postMessage({type:'craftmate:oauth-done',platform:'${platform}',ok:${ok}},'*')}}catch(e){}setTimeout(function(){try{window.close()}catch(e){}},1200)</script></body></html>`);
       };
       if (!provider) return finish(false, 'Unknown platform.');
       const { code, state, error, error_description } = req.query as Record<string, string>;
