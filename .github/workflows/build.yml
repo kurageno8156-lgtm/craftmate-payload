@@ -35,7 +35,13 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        # better-sqlite3 は prebuilds/ に win32-x64 バイナリを同梱しており
+        # node-gyp ビルドは不要。windows-latest の VS 検出が失敗するため
+        # install scripts をスキップし、必要な esbuild の postinstall のみ実行する。
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/esbuild/install.js
+        shell: bash
 
       - name: TypeScript build
         run: npm run build
