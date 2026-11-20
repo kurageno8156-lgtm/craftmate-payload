@@ -19,7 +19,7 @@
 }
 
 body {
-  font-family: 'Segoe UI', 'Noto Sans JP', 'Noto Sans CJK JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'IPAGothic', 'VL Gothic', 'Microsoft YaHei', 'PingFang SC', system-ui, -apple-system, 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  font-family: 'Segoe UI', 'Noto Sans JP', 'Noto Sans CJK JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Yu Gothic', 'Meiryo', 'MS Gothic', 'IPAGothic', 'VL Gothic', 'Microsoft YaHei', 'PingFang SC', system-ui, -apple-system, 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
   background-color: var(--bg-main);
   color: var(--text-main);
   line-height: 1.5;
@@ -541,7 +541,7 @@ body {
 }
 
 .log-action {
-  font-family: monospace;
+  font-family: 'Cascadia Code', 'Consolas', 'Noto Sans JP', 'Yu Gothic', monospace;
   font-weight: bold;
   color: #7dd3fc;
 }

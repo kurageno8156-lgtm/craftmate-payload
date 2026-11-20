@@ -1,3 +1,15 @@
+// 認証ゲート: 未ログインならログイン画面へリダイレクト
+// （ログイン済みセッションはサーバー側で暗号化保存され、次回起動時に自動復帰する）
+(async () => {
+  try {
+    const res = await fetch('/api/auth/status', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+    const data = await res.json();
+    if (data && data.authenticated === false) {
+      window.location.replace('/login.html');
+    }
+  } catch { /* サーバー未応答時は従来通り表示 */ }
+})();
+
 // サーバー側が WebSocket 専用のため polling を無効化する。
 // polling の長時間接続がサーバーのHTTPパーサーを不安定にする問題の回避策。
 const socket = io({ transports: ['websocket'] });

@@ -61,46 +61,11 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     clientSecretEnv: 'GITHUB_CLIENT_SECRET',
   },
   {
-    id: 'apple',
-    label: 'Apple',
-    description: 'Apple ID 連携（Sign in with Apple）',
-    style: 'oauth',
-    authorizeUrl: 'https://appleid.apple.com/auth/authorize',
-    tokenUrl: 'https://appleid.apple.com/auth/token',
-    scopes: 'name email',
-    extraAuthParams: { response_mode: 'form_post' },
-    clientIdEnv: 'APPLE_CLIENT_ID',
-    clientSecretEnv: 'APPLE_CLIENT_SECRET',
-  },
-  {
-    id: 'x',
-    label: 'X (Twitter)',
-    description: 'X 連携（投稿 / 読み取り）',
-    style: 'oauth',
-    authorizeUrl: 'https://twitter.com/i/oauth2/authorize',
-    tokenUrl: 'https://api.twitter.com/2/oauth2/token',
-    scopes: 'tweet.read tweet.write users.read offline.access',
-    extraAuthParams: { code_challenge_method: 'S256' },
-    clientIdEnv: 'X_CLIENT_ID',
-    clientSecretEnv: 'X_CLIENT_SECRET',
-  },
-  {
-    id: 'facebook',
-    label: 'Facebook',
-    description: 'Meta / Facebook アカウント連携',
-    style: 'oauth',
-    authorizeUrl: 'https://www.facebook.com/v21.0/dialog/oauth',
-    tokenUrl: 'https://graph.facebook.com/v21.0/oauth/access_token',
-    scopes: 'public_profile email',
-    clientIdEnv: 'FACEBOOK_CLIENT_ID',
-    clientSecretEnv: 'FACEBOOK_CLIENT_SECRET',
-  },
-  {
-    id: 'line',
-    label: 'LINE',
-    description: 'LINE Messaging API 連携（チャネルアクセストークン）',
+    id: 'discord',
+    label: 'Discord',
+    description: 'Discord Bot 連携（Webhook / Bot Token）',
     style: 'token',
-    tokenHint: 'LINE Developers で発行したチャネルアクセストークン（長期）を貼り付け',
+    tokenHint: 'Discord Bot Token または Webhook URL を貼り付け',
   },
 ];
 
@@ -162,8 +127,6 @@ export async function exchangeCode(
     headers['Authorization'] = 'Basic ' + Buffer.from(`${opts.clientId}:${opts.clientSecret}`).toString('base64');
     body.delete('client_secret');
   }
-  // Apple は client_secret 必須（JWT）
-  if (provider.id === 'apple' && opts.clientSecret) body.set('client_secret', opts.clientSecret);
 
   const res = await fetch(provider.tokenUrl, { method: 'POST', headers, body });
   const text = await res.text();
@@ -241,14 +204,8 @@ export function summarizeAccount(platform: string, tokenData: Record<string, unk
     if (platform === 'github' && tokenData.access_token) {
       return { label: 'GitHub token', detail: 'connected' };
     }
-    if (platform === 'x' && tokenData.access_token) {
-      return { label: 'X account', detail: 'connected' };
-    }
-    if (platform === 'facebook' && tokenData.access_token) {
-      return { label: 'Facebook account', detail: 'connected' };
-    }
-    if (platform === 'line' && tokenData.token) {
-      return { label: 'LINE Messaging API', detail: 'connected' };
+    if (platform === 'discord' && tokenData.token) {
+      return { label: 'Discord', detail: 'connected' };
     }
   } catch { /* ignore */ }
   return { label: platform, detail: 'connected' };

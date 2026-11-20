@@ -149,4 +149,87 @@
   }
 
   loadReviews();
+
+  // ---- 「CraftMate 検索結果」セクション ----
+  // Google Custom Search（CSE）の cx が URL パラメータ ?cse_cx=... で指定された場合は
+  // 公式の検索結果ウィジェットを埋め込む。未指定の場合は、主要な検索リンクと
+  // 公式情報（GitHub / リリース / 配布ページ）をカード形式で表示する。
+  (function initSearchResults() {
+    var fallback = document.getElementById('search-results-fallback');
+    var cseContainer = document.getElementById('cse-container');
+    if (!fallback && !cseContainer) return;
+
+    var params = new URLSearchParams(window.location.search);
+    var cx = params.get('cse_cx') || window.CRAFTMATE_CSE_CX || '';
+
+    if (cx && cseContainer) {
+      cseContainer.hidden = false;
+      var script = document.createElement('script');
+      script.src = 'https://cse.google.com/cse.js?cx=' + encodeURIComponent(cx);
+      script.onload = function () {
+        if (window.google && window.google.search) {
+          window.google.search.cse.element.render({
+            div: 'cse-container',
+            results: 'cse-container',
+            tag: 'search-results-fallback'
+          });
+        }
+      };
+      document.head.appendChild(script);
+      return;
+    }
+
+    var cards = [
+      {
+        title: 'CraftMate — GitHub リポジトリ',
+        url: 'https://github.com/kurageno8156-lgtm/craftmate-payload',
+        desc: 'ソースコード・Issue・リリース情報。CraftMate の公式リポジトリです。'
+      },
+      {
+        title: 'Releases — 最新版ダウンロード',
+        url: 'https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest',
+        desc: 'Windows / Linux 向けの最新インストーラーとポータブル版。'
+      },
+      {
+        title: '配布ページ（このページ）',
+        url: 'distribution.html',
+        desc: 'CraftMate の機能紹介・使い方・ユーザーレビュー。'
+      }
+    ];
+
+    if (fallback) {
+      cards.forEach(function (c) {
+        var a = document.createElement('a');
+        a.className = 'search-result-card';
+        a.href = c.url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        var t = document.createElement('div');
+        t.className = 'search-result-title';
+        t.textContent = c.title;
+        var u = document.createElement('div');
+        u.className = 'search-result-url';
+        u.textContent = c.url;
+        var d = document.createElement('div');
+        d.className = 'search-result-desc';
+        d.textContent = c.desc;
+        a.appendChild(t); a.appendChild(u); a.appendChild(d);
+        fallback.appendChild(a);
+      });
+      var note = document.createElement('p');
+      note.className = 'search-results-note';
+      note.textContent = '※ Google 検索結果の直接埋め込みには Custom Search API キーが必要です。上の検索リンクから各検索エンジンで「CraftMate」を検索できます。';
+      fallback.appendChild(note);
+    }
+
+    var form = document.getElementById('craftmate-search');
+    var input = document.getElementById('craftmate-search-input');
+    if (form && input) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var q = (input.value || 'CraftMate').trim() || 'CraftMate';
+        window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank', 'noopener');
+      });
+    }
+  })();
 })();

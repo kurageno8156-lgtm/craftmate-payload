@@ -445,6 +445,7 @@ function probeDashboard(timeoutMs) {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
+    title: 'CraftMate',
     width: 1280,
     height: 800,
     minWidth: 960,

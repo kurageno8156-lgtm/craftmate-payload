@@ -59,8 +59,8 @@ export class WebServer {
   private lastSocketActivityAt: number = Date.now();
   private idleShutdownTimer: NodeJS.Timeout | null = null;
   private updateCheckCache: { at: number; data: any } | null = null;
-  // 進行中の OAuth フロー: platform -> { state, codeVerifier, clientId, clientSecret, createdAt }
-  private pendingOAuth: Map<string, { state: string; codeVerifier?: string; clientId: string; clientSecret?: string; createdAt: number }> = new Map();
+  // 進行中の OAuth フロー: platform -> { state, codeVerifier, clientId, clientSecret, createdAt, purpose }
+  private pendingOAuth: Map<string, { state: string; codeVerifier?: string; clientId: string; clientSecret?: string; createdAt: number; purpose?: 'login' | 'integration' }> = new Map();
 
 
   constructor(
@@ -984,6 +984,64 @@ export class WebServer {
       res.json({ success: true, authUrl, redirectUri });
     });
 
+    // ---- 初回起動ログイン（OAuth 2.0 / OIDC）----
+    // セッションは integrations テーブルの '__auth_session' 行に暗号化保存する。
+    const AUTH_SESSION_PLATFORM = '__auth_session';
+
+    const readAuthSession = (): { provider: string; account: { label?: string; detail?: string } | null; loginAt: number } | null => {
+      const row = getIntegration(AUTH_SESSION_PLATFORM);
+      if (!row || row.status !== 'connected') return null;
+      const data = decryptJson<any>(row.payload);
+      if (!data || !data.provider) return null;
+      if (data.expiresAt && Date.now() > data.expiresAt) return null;
+      return { provider: String(data.provider), account: data.account || null, loginAt: data.loginAt || 0 };
+    };
+
+    this.app.get('/api/auth/status', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      const session = readAuthSession();
+      res.json({ authenticated: !!session, session });
+    });
+
+    this.app.post('/api/auth/login/:platform', async (req, res) => {
+      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      const provider = getProvider(String(req.params.platform));
+      if (!provider) return res.status(404).json({ error: 'Unknown platform.' });
+      if (provider.style !== 'oauth' || !provider.authorizeUrl) {
+        return res.status(400).json({ error: 'This platform does not support OAuth login.' });
+      }
+      const body = (req.body || {}) as { clientId?: string; clientSecret?: string };
+      const clientId = (body.clientId || '').trim() || (provider.clientIdEnv ? process.env[provider.clientIdEnv] : '') || '';
+      const clientSecret = (body.clientSecret || '').trim() || (provider.clientSecretEnv ? process.env[provider.clientSecretEnv] : '') || undefined;
+      if (!clientId) {
+        return res.status(400).json({ error: 'clientId is required (or set the corresponding env var).', code: 'CLIENT_ID_REQUIRED' });
+      }
+      const state = generateState();
+      const { verifier, challenge } = generatePkce();
+      const redirectUri = `${integrationRedirectBase()}/api/integrations/${provider.id}/oauth/callback`;
+      this.pendingOAuth.set(`login:${provider.id}`, { state, codeVerifier: verifier, clientId, clientSecret, createdAt: Date.now(), purpose: 'login' });
+      const authUrl = buildAuthorizeUrl(provider, { redirectUri, state, codeChallenge: challenge, clientId });
+      this.debugLog(`auth login start: ${provider.id} redirect=${redirectUri}`);
+      res.json({ success: true, authUrl });
+    });
+
+    // OAuth クライアント未設定の環境向けのローカルスキップ（セッションのみ発行）
+    this.app.post('/api/auth/skip', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      upsertIntegration(AUTH_SESSION_PLATFORM, 'connected', encryptJson({
+        provider: 'local', account: { label: 'Local session' }, loginAt: Date.now(),
+      }));
+      this.debugLog('auth skip: local session created');
+      res.json({ success: true });
+    });
+
+    this.app.post('/api/auth/logout', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Forbidden' });
+      deleteIntegration(AUTH_SESSION_PLATFORM);
+      this.debugLog('auth logout');
+      res.json({ success: true });
+    });
+
     this.app.get('/api/integrations/:platform/oauth/callback', async (req, res) => {
       const platform = String(req.params.platform);
       const provider = getProvider(platform);
@@ -995,11 +1053,12 @@ export class WebServer {
       if (!provider) return finish(false, 'Unknown platform.');
       const { code, state, error, error_description } = req.query as Record<string, string>;
       if (error) return finish(false, `${error}: ${error_description || ''}`);
-      const pending = this.pendingOAuth.get(platform);
+      const pending = this.pendingOAuth.get(platform) || this.pendingOAuth.get(`login:${platform}`);
       if (!pending || pending.state !== state || !code) {
         return finish(false, '認証セッションが無効か期限切れです。もう一度お試しください。');
       }
       this.pendingOAuth.delete(platform);
+      this.pendingOAuth.delete(`login:${platform}`);
       try {
         const redirectUri = `${integrationRedirectBase()}/api/integrations/${platform}/oauth/callback`;
         const tokenData = await exchangeCode(provider, {
@@ -1009,6 +1068,19 @@ export class WebServer {
           codeVerifier: pending.codeVerifier,
         });
         const account = summarizeAccount(platform, tokenData);
+        if (pending.purpose === 'login') {
+          const expiresIn = Number(tokenData.expires_in);
+          upsertIntegration('__auth_session', 'connected', encryptJson({
+            provider: platform,
+            account,
+            tokenData,
+            clientId: pending.clientId,
+            loginAt: Date.now(),
+            expiresAt: Number.isFinite(expiresIn) && expiresIn > 0 ? Date.now() + expiresIn * 1000 : null,
+          }));
+          this.debugLog(`auth login success: ${platform} account=${account.label || '-'}`);
+          return finish(true, `ログインが完了しました${account.label ? `（${account.label}）` : ''}。ダッシュボードに戻ってください。`);
+        }
         upsertIntegration(platform, 'connected', encryptJson({
           ...tokenData,
           clientId: pending.clientId,

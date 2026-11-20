@@ -113,3 +113,21 @@
 .platform-details code{background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px;font-size:10.5px}
 .smartscreen-note{margin-top:10px;padding:8px 10px;border-left:3px solid var(--accent-yellow,#f59e0b);background:rgba(245,158,11,.08);border-radius:0 6px 6px 0;font-size:11px;line-height:1.7;color:#d4d4d8}
 @media(max-width:640px){.platform-grid{grid-template-columns:1fr}}
+
+/* 検索結果セクション */
+.search-results-box{background:var(--card,#17171d);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px}
+.search-results-toolbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.search-box{display:flex;gap:8px;flex:1;min-width:240px}
+.search-box input{flex:1;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:#0d0d12;color:var(--text,#eee);font-size:14px}
+.search-box button{padding:10px 18px;border:none;border-radius:8px;background:#10b981;color:#fff;font-weight:600;cursor:pointer}
+.search-engine-links{display:flex;gap:14px;font-size:13px}
+.search-engine-links a{color:#10b981;text-decoration:none}
+.search-engine-links a:hover{text-decoration:underline}
+.search-results-fallback{display:grid;gap:10px}
+.search-result-card{display:block;padding:14px 16px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.02);text-decoration:none;color:inherit;transition:border-color .15s}
+.search-result-card:hover{border-color:#10b981}
+.search-result-title{font-weight:700;font-size:15px}
+.search-result-url{font-size:12px;color:#10b981;margin:2px 0 4px}
+.search-result-desc{font-size:13px;color:#a1a1aa}
+.search-results-note{font-size:12px;color:#71717a;margin-top:6px}
+.cse-container{min-height:200px}
