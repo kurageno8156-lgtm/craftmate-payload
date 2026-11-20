@@ -231,10 +231,11 @@ jobs:
           VERSION="${{ inputs.version }}"
           TAG="v${VERSION}"
           # Auto-Release.ps1 が先にリリースを作成する想定。無ければ保険として作成。
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --title "CraftMate $TAG" --notes "CraftMate $TAG"
+          REPO="${{ github.repository }}"
+          if ! gh release view "$TAG" -R "$REPO" >/dev/null 2>&1; then
+            gh release create "$TAG" -R "$REPO" --title "CraftMate $TAG" --notes "CraftMate $TAG"
           fi
           find artifacts -type f | sort | while read -r f; do
             echo "Uploading $f"
-            gh release upload "$TAG" "$f" --clobber
+            gh release upload "$TAG" "$f" -R "$REPO" --clobber
           done
