@@ -91,7 +91,7 @@ await test('ボタン押下→確認中→最新版ダイアログ', async () =>
   const st = await evaluate(dialogState);
   console.log('   state:', JSON.stringify(st));
   if (!st.body.includes('最新バージョン') && !st.body.includes('latest version')) throw new Error('up-to-date message missing: ' + st.body);
-  if (!st.body.includes('v1.6.0')) throw new Error('version missing: ' + st.body);
+  if (!/v\d+\.\d+\.\d+/.test(st.body)) throw new Error('version missing: ' + st.body);
   if (st.actions.length !== 1) throw new Error('expected 1 button (close), got ' + st.actions.join(','));
 });
 

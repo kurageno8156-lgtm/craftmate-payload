@@ -645,6 +645,19 @@ body {
 .settings-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; }
 .settings-backdrop { position: absolute; inset: 0; background: rgba(2, 6, 23, .76); backdrop-filter: blur(5px); }
 .settings-dialog { position: relative; width: min(620px, 100%); max-height: min(90vh, 850px); overflow-y: auto; padding: 26px; border: 1px solid #475569; border-radius: 18px; background: #172235; box-shadow: 0 24px 80px rgba(0, 0, 0, .55); }
+.settings-dialog-wide { width: min(880px, 100%); max-height: min(88vh, 800px); display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+.settings-form-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.settings-body { display: flex; flex: 1; min-height: 0; }
+.settings-sidebar { flex: 0 0 190px; display: flex; flex-direction: column; gap: 4px; padding: 18px 12px; border-right: 1px solid var(--border-color); background: rgba(15, 23, 42, .45); overflow-y: auto; }
+.settings-nav-item { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 12px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--text-muted); cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; text-align: left; transition: background .15s ease, color .15s ease; }
+.settings-nav-item:hover { background: var(--bg-card); color: var(--text-main); }
+.settings-nav-item.is-active { background: var(--bg-card); color: var(--text-main); border-color: var(--border-color); box-shadow: inset 3px 0 0 var(--accent-blue); }
+.settings-nav-icon { font-size: 15px; line-height: 1; }
+.settings-content { flex: 1; min-width: 0; padding: 22px 24px; overflow-y: auto; }
+.settings-tab-panel[hidden] { display: none; }
+.settings-footer-actions { display: flex; gap: 10px; }
+.settings-dialog-wide .settings-heading { padding: 20px 24px 0; margin-bottom: 14px; }
+.settings-dialog-wide .settings-footer { margin-top: 0; padding: 14px 24px 18px; border-top: 1px solid var(--border-color); }
 .settings-heading, .settings-footer, .connection-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .settings-heading { margin-bottom: 22px; }
 .settings-heading h2 { font-size: 22px; }
@@ -692,6 +705,13 @@ body {
   .header-status { gap: 8px; }
   .llm-badge { display: none; }
   .settings-dialog { padding: 20px; }
+  .settings-dialog-wide { padding: 0; }
+  .settings-body { flex-direction: column; }
+  .settings-sidebar { flex: none; flex-direction: row; overflow-x: auto; padding: 10px 12px; border-right: none; border-bottom: 1px solid var(--border-color); }
+  .settings-nav-item { flex: 0 0 auto; width: auto; white-space: nowrap; }
+  .settings-content { padding: 16px; }
+  .settings-dialog-wide .settings-heading { padding: 16px 16px 0; }
+  .settings-dialog-wide .settings-footer { padding: 12px 16px 14px; }
 }
 @media (max-width: 480px) {
   .settings-fields, .connection-cards { grid-template-columns: 1fr; }

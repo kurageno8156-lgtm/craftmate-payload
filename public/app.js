@@ -1474,13 +1474,31 @@ on(document.getElementById('btn-logout'), 'click', async () => {
   window.location.replace('/login.html');
 });
 
+// ---- 設定画面のカテゴリ切り替え（左サイドバー + 右コンテンツ）----
+function selectSettingsTab(tab) {
+  document.querySelectorAll('[data-settings-tab]').forEach((btn) => {
+    const active = btn.dataset.settingsTab === tab;
+    btn.classList.toggle('is-active', active);
+    if (active) btn.setAttribute('aria-current', 'true');
+    else btn.removeAttribute('aria-current');
+  });
+  document.querySelectorAll('[data-settings-panel]').forEach((panel) => {
+    panel.hidden = panel.dataset.settingsPanel !== tab;
+  });
+}
+document.querySelectorAll('[data-settings-tab]').forEach((btn) => {
+  btn.addEventListener('click', () => selectSettingsTab(btn.dataset.settingsTab));
+});
+
 on(document.getElementById('btn-settings'), 'click', () => {
   if (settingsModal) settingsModal.hidden = false;
+  selectSettingsTab('general');
   document.getElementById('setting-mc-port')?.focus();
   loadSettings();
   loadIntegrations();
 });
 on(document.getElementById('btn-close-settings'), 'click', () => { if (settingsModal) settingsModal.hidden = true; });
+on(document.getElementById('btn-cancel-settings'), 'click', () => { if (settingsModal) settingsModal.hidden = true; });
 if (settingsModal) {
   on(settingsModal.querySelector('[data-close-settings]'), 'click', () => { settingsModal.hidden = true; });
 }
