@@ -17,6 +17,7 @@ import {
   listChatRooms, createChatRoom, deleteChatRoom, renameChatRoom, listChatMessages, addChatMessage, setChatRoomTitleIfEmpty,
   listReviews, addReview,
   listIntegrations, getIntegration, upsertIntegration, deleteIntegration,
+  getLocalUser, createLocalUser, verifyLocalPassword,
 } from '../db.js';
 import {
   INTEGRATION_PROVIDERS, getProvider, buildAuthorizeUrl, exchangeCode,
@@ -1097,6 +1098,57 @@ export class WebServer {
       const authUrl = buildAuthorizeUrl(provider, { redirectUri, state, codeChallenge: challenge, clientId });
       this.debugLog(`auth login start: ${provider.id} redirect=${redirectUri}`);
       res.json({ success: true, authUrl });
+    });
+
+    // ---- 内部アカウント（OAuth が使えない場合のフォールバック認証）----
+    // ユーザー名/パスワードを SQLite に保存し、セッションは OAuth と同じ
+    // '__auth_session' 行（AES-256-GCM 暗号化）で管理する。
+    const LOCAL_AUTH_PROVIDER = 'internal';
+    const createLocalSession = (username: string) => {
+      upsertIntegration('__auth_session', 'connected', encryptJson({
+        provider: LOCAL_AUTH_PROVIDER,
+        account: { label: username, detail: 'internal account' },
+        loginAt: Date.now(),
+        expiresAt: null,
+      }));
+    };
+
+    this.app.post('/api/auth/register', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      const { username, password } = (req.body || {}) as { username?: string; password?: string };
+      const name = String(username || '').trim();
+      const pass = String(password || '');
+      if (!/^[A-Za-z0-9_\-]{3,32}$/.test(name)) {
+        return res.status(400).json({ error: 'ユーザー名は 3〜32 文字の英数字・_・- で入力してください。' });
+      }
+      if (pass.length < 8 || pass.length > 128) {
+        return res.status(400).json({ error: 'パスワードは 8 文字以上で入力してください。' });
+      }
+      if (getLocalUser(name)) {
+        return res.status(409).json({ error: 'このユーザー名は既に使われています。' });
+      }
+      try {
+        createLocalUser(name, pass);
+        createLocalSession(name);
+        this.debugLog(`auth register success: ${name}`);
+        res.json({ success: true });
+      } catch (e) {
+        this.debugLog(`auth register failed: ${(e as Error).message}`);
+        res.status(500).json({ error: 'アカウント作成に失敗しました。' });
+      }
+    });
+
+    this.app.post('/api/auth/local-login', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      const { username, password } = (req.body || {}) as { username?: string; password?: string };
+      const name = String(username || '').trim();
+      const user = getLocalUser(name);
+      if (!user || !verifyLocalPassword(String(password || ''), user.pass_hash)) {
+        return res.status(401).json({ error: 'ユーザー名またはパスワードが正しくありません。' });
+      }
+      createLocalSession(name);
+      this.debugLog(`auth local-login success: ${name}`);
+      res.json({ success: true });
     });
 
     this.app.post('/api/auth/logout', (req, res) => {

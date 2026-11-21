@@ -48,6 +48,11 @@ CREATE TABLE IF NOT EXISTS integrations (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS local_users (
+  username TEXT PRIMARY KEY,
+  pass_hash TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
 `;
 
 // ---- DB 初期化（モード分岐）----
@@ -232,4 +237,35 @@ export function upsertIntegration(platform: string, status: string, payload: str
 
 export function deleteIntegration(platform: string): void {
   prepare('DELETE FROM integrations WHERE platform = ?').run(platform);
+}
+
+// ---- 内部アカウント（OAuth 不要のフォールバック認証）----
+// パスワードは scrypt でハッシュ化して保存（salt:hash 形式）。
+import * as crypto from 'crypto';
+
+export function hashLocalPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+  return `scrypt$${salt}$${hash}`;
+}
+
+export function verifyLocalPassword(password: string, stored: string): boolean {
+  try {
+    const [algo, salt, hash] = stored.split('$');
+    if (algo !== 'scrypt' || !salt || !hash) return false;
+    const calc = crypto.scryptSync(password, salt, 64);
+    const expected = Buffer.from(hash, 'hex');
+    return calc.length === expected.length && crypto.timingSafeEqual(calc, expected);
+  } catch {
+    return false;
+  }
+}
+
+export function getLocalUser(username: string): { username: string; pass_hash: string; created_at: number } | undefined {
+  const rows = prepare('SELECT username, pass_hash, created_at FROM local_users WHERE username = ?').all(username) as any[];
+  return rows[0];
+}
+
+export function createLocalUser(username: string, password: string): void {
+  prepare('INSERT INTO local_users (username, pass_hash, created_at) VALUES (?, ?, ?)').run(username, hashLocalPassword(password), Date.now());
 }

@@ -216,23 +216,12 @@
 
     <!-- レビュー -->
     <section class="info-section" id="reviews">
-      <div class="section-heading"><p class="eyebrow">REVIEWS</p><h2>ユーザーレビュー</h2><p id="review-summary">CraftMate を使った感想を投稿できます。</p></div>
+      <div class="section-heading"><p class="eyebrow">REVIEWS</p><h2>ユーザーレビュー</h2><p id="review-summary">CraftMate を使った感想を GitHub で公開レビューとして投稿・閲覧できます。</p></div>
       <div class="review-layout">
-        <form class="review-form" id="review-form">
-          <h3>レビューを書く</h3>
-          <div class="star-input" id="star-input" role="radiogroup" aria-label="評価">
-            <button type="button" class="star" data-value="1" aria-label="1">★</button>
-            <button type="button" class="star" data-value="2" aria-label="2">★</button>
-            <button type="button" class="star" data-value="3" aria-label="3">★</button>
-            <button type="button" class="star" data-value="4" aria-label="4">★</button>
-            <button type="button" class="star" data-value="5" aria-label="5">★</button>
-          </div>
-          <input type="text" id="review-name" maxlength="30" placeholder="ニックネーム（任意）">
-          <textarea id="review-text" rows="4" maxlength="1000" placeholder="使ってみた感想を書いてください…" required></textarea>
-          <button type="submit" class="review-submit">レビューを投稿</button>
-          <p class="form-status" id="review-status" role="status"></p>
-        </form>
-        <div class="review-list" id="review-list"></div>
+        <div class="review-public">
+          <p class="review-public-note">レビューは GitHub アカウントで投稿・閲覧できます。投稿内容は公開 GitHub Issue として全世界に表示されます（メールアドレスへの送信は行いません）。</p>
+          <div class="utterances"></div>
+        </div>
       </div>
     </section>
 
@@ -293,5 +282,12 @@
 </main>
   <footer class="site-footer"><a class="brand" href="distribution.html"><img src="app.ico" alt="" width="27" height="27"><span>CraftMate</span></a><span>Minecraft の冒険に、自律型 AI エージェントを。</span><a href="https://github.com/kurageno8156-lgtm/craftmate-payload">GitHub <span aria-hidden="true">↗</span></a></footer>
   <script src="distribution.js"></script>
+  <!-- 公開レビュー: GitHub Issues ベースの Utterances ウィジェット（要 GitHub ログイン、全世界に公開） -->
+  <script src="https://utteranc.es/client.js"
+    repo="kurageno8156-lgtm/craftmate-payload"
+    issue-term="title"
+    theme="github-dark"
+    crossorigin="anonymous"
+    async></script>
 </body>
 </html>

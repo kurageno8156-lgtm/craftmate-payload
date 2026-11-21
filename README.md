@@ -185,7 +185,7 @@ v1.3.157 以降、初回起動時にログイン画面が表示されます。�
 http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
 ```
 
-`<provider>` は `google` / `microsoft` / `github` のいずれかです（プロバイダごとに個別のURIを登録）。
+`<provider>` は `google` / `microsoft` / `github` / `discord` のいずれかです（プロバイダごとに個別のURIを登録）。
 
 #### Google
 
@@ -219,6 +219,13 @@ http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
 3. Authorization callback URL に `http://127.0.0.1:3000/api/integrations/github/oauth/callback` を設定
 4. 「Register application」後、Client ID を控え、「Generate a new client secret」でシークレットを発行
 
+#### Discord
+
+1. [Discord Developer Portal](https://discord.com/developers/applications) →「New Application」でアプリを作成
+2. 左メニュー「OAuth2」→「Redirects」に `http://127.0.0.1:3000/api/integrations/discord/oauth/callback` を追加
+3. 同じ「OAuth2」ページの「Client Information」にある **Client ID** と **Client Secret**（「Reset Secret」で発行）を控える
+4. `oauth-clients.json` の `discord` セクションに記入（または GitHub Secrets に `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` を設定）
+
 ### クライアント情報の埋め込み
 
 リポジトリルートに `oauth-clients.json` を作成し（テンプレート: `oauth-clients.example.json`）、Client ID / Secret を記入してからビルドしてください。このファイルは `.gitignore` 済みで、Windows ペイロード（`app_payload.zip`）と Linux tarball の両方に自動で同梱されます。
@@ -242,15 +249,23 @@ http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
 
 > **注意**: Client Secret を配布物に埋め込むと、リバースエンジニアリングで取り出される可能性があります。ネイティブアプリ向けの OAuth では一般的なトレードオフですが、公開クライアント（PKCE のみ・シークレットなし）構成も検討してください。GitHub OAuth Apps はシークレット必須です。
 
-Client ID が未設定のプロバイダはログインボタンを押しても「このログイン方法は現在利用できません」と表示されます。ダッシュボードへのアクセスにはいずれかのプロバイダでのログインが必須です（スキップ機能はありません）。
+Client ID が未設定のプロバイダはログインボタンを押しても「このログイン方法は現在利用できません」と表示されます。
 
-### 配布サイトのフォーム送信（レビュー・お問い合わせ）
+#### 内部アカウント（OAuth フォールバック）
 
-`distribution.html` のレビュー投稿とお問い合わせフォームは、静的ホスティング（GitHub Pages）ではサーバー API が使えないため **FormSubmit**（`https://formsubmit.co/ajax/kurageno8156@gmail.com`）経由でメール送信します。メーラーは起動せず、サイト上で送信完了まで完結します。
+OAuth プロバイダが使えない場合でもログインできるよう、ログイン画面の下部に **内部アカウント** の作成・ログインフォームがあります。
 
-- **初回送信時**: FormSubmit から `kurageno8156@gmail.com` 宛にアクティベーションメールが届きます。メール内のリンクをクリックすると以降の送信が有効になります
-- アプリ内サーバー経由で配布ページを開いた場合、レビューは従来通り SQLite に保存されます
-- 別サービス（Formspree 等）に切り替える場合は `public/distribution.js` の `FORMSUBMIT_ENDPOINT` を変更してください
+- ユーザー名（3〜32文字の英数字・`_`・`-`）とパスワード（8文字以上）でアカウントを作成
+- アカウント情報は `%LOCALAPPDATA%\CraftMate\craftmate.db` の `local_users` テーブルに保存され、パスワードは **scrypt** でハッシュ化されます
+- セッションは OAuth ログインと同じ AES-256-GCM 暗号化ストア（`__auth_session`）で管理され、次回起動時に自動ログインされます
+- 内部アカウントはローカルPC専用です。複数PC間での同期はありません
+
+### 配布サイトのレビュー・お問い合わせ
+
+- **レビュー**: GitHub Issues ベースの [Utterances](https://utteranc.es/) ウィジェットを埋め込んでいます。誰でも閲覧でき、GitHub アカウントでログインすればサイト上からそのまま投稿できます（投稿は公開 GitHub Issue として表示されます。固定メールアドレスへの送信はありません）
+- **お問い合わせ**: 静的ホスティング（GitHub Pages）ではサーバー API が使えないため **FormSubmit**（`https://formsubmit.co/ajax/kurageno8156@gmail.com`）経由で `kurageno8156@gmail.com` にメール送信します。メーラーは起動せず、サイト上で送信完了まで完結します
+  - **初回送信時**: FormSubmit から `kurageno8156@gmail.com` 宛にアクティベーションメールが届きます。メール内のリンクをクリックすると以降の送信が有効になります。アクティベーション未完了の場合はサイト上にその旨の案内が表示されます
+  - 別サービスに切り替える場合は `public/distribution.js` の `FORMSUBMIT_ENDPOINT` を変更してください
 
 ---
 

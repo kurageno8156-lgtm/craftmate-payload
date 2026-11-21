@@ -32,19 +32,27 @@
     .provider-btn:hover { background: #273449; border-color: #34d399; }
     .provider-btn:disabled { opacity: .5; cursor: default; }
     .provider-btn .icon { width: 22px; text-align: center; font-size: 18px; }
-      width: 100%; padding: 10px 12px; margin-bottom: 8px; background: #0b0f14; color: #e4e4e7;
-      border: 1px solid rgba(255,255,255,.12); border-radius: 8px; font-size: 14px;
-    }
-      flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
-    }
     .status { margin-top: 16px; font-size: 13px; color: #a1a1aa; min-height: 20px; }
     .status.error { color: #f87171; }
     .status.ok { color: #4ade80; }
     .divider { display: flex; align-items: center; gap: 12px; margin: 22px 0 14px; color: #52525b; font-size: 12px; }
     .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.08); }
-      width: 100%; padding: 11px; background: transparent; color: #71717a; border: 1px dashed rgba(255,255,255,.15);
-      border-radius: 10px; font-size: 13px; cursor: pointer;
+    .local-form { display: grid; gap: 10px; }
+    .local-form input {
+      width: 100%; padding: 11px 12px; background: #0b0f14; color: #e4e4e7;
+      border: 1px solid rgba(255,255,255,.12); border-radius: 8px; font-size: 14px;
     }
+    .local-form input:focus { outline: none; border-color: rgba(16,185,129,.5); }
+    .local-form .local-row { display: flex; gap: 8px; }
+    .local-btn {
+      flex: 1; padding: 11px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .local-btn.primary { background: #10b981; color: #052e1b; }
+    .local-btn.primary:hover { background: #34d399; }
+    .local-btn.secondary { background: transparent; color: #a1a1aa; border: 1px dashed rgba(255,255,255,.2); }
+    .local-btn.secondary:hover { color: #e4e4e7; border-color: rgba(255,255,255,.4); }
+    .local-btn:disabled { opacity: .5; cursor: default; }
+    .local-hint { font-size: 11px; color: #52525b; margin-top: 4px; }
     .note { margin-top: 18px; font-size: 11px; color: #52525b; line-height: 1.6; }
   </style>
 </head>
@@ -59,6 +67,16 @@
     </div>
     <p class="lead">続行するにはアカウントでログインしてください。<br>ボタンを押すと各サービスのログイン画面が開きます。</p>
     <div id="providers"></div>
+    <div class="divider">または</div>
+    <form class="local-form" id="local-form" autocomplete="off">
+      <input type="text" id="local-username" placeholder="ユーザー名" maxlength="32" required>
+      <input type="password" id="local-password" placeholder="パスワード（8文字以上）" minlength="8" required>
+      <div class="local-row">
+        <button type="submit" class="local-btn primary" id="local-login-btn">内部アカウントでログイン</button>
+        <button type="button" class="local-btn secondary" id="local-register-btn">アカウント作成</button>
+      </div>
+      <p class="local-hint">OAuth が使えない場合のフォールバックです。アカウント情報はこのPC内の暗号化DBに保存されます。</p>
+    </form>
     <div class="status" id="status"></div>
     <p class="note">ログイン情報は AES-256-GCM で暗号化してローカルに保存され、次回起動時に自動でログインされます。</p>
   </div>

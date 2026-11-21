@@ -92,6 +92,41 @@
     }
   }
 
+  // ---- 内部アカウント（OAuth フォールバック）----
+  const localForm = document.getElementById('local-form');
+  const localUserInput = document.getElementById('local-username');
+  const localPassInput = document.getElementById('local-password');
+  const localLoginBtn = document.getElementById('local-login-btn');
+  const localRegisterBtn = document.getElementById('local-register-btn');
+
+  async function localAuth(endpoint) {
+    const username = (localUserInput.value || '').trim();
+    const password = localPassInput.value || '';
+    if (!username || !password) { setStatus('ユーザー名とパスワードを入力してください。', 'error'); return; }
+    localLoginBtn.disabled = true;
+    localRegisterBtn.disabled = true;
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || '認証に失敗しました');
+      setStatus('ログインしました。ダッシュボードを開きます…', 'ok');
+      setTimeout(() => window.location.replace('/'), 400);
+    } catch (e) {
+      setStatus(e.message || '認証に失敗しました', 'error');
+      localLoginBtn.disabled = false;
+      localRegisterBtn.disabled = false;
+    }
+  }
+
+  if (localForm) {
+    localForm.addEventListener('submit', (e) => { e.preventDefault(); localAuth('/api/auth/local-login'); });
+    localRegisterBtn.addEventListener('click', () => localAuth('/api/auth/register'));
+  }
+
   // OAuth は外部ブラウザで完了するため、セッション確立をポーリングで検知する
   async function pollForSession() {
     for (let i = 0; i < 60; i++) {

@@ -84,7 +84,10 @@ export async function buildBedrockResourcePack(): Promise<Buffer> {
   const hudIcon = await sharp(Buffer.from(iconSvg(64))).png().toBuffer();
 
   const manifest = {
-    format_version: 1,
+    // format_version 2 = JSON UI（modifications 対応）のパーサー。
+    // format_version 1 では min_engine_version は 1.13.0 未満に制限され、
+    // かつレガシー UI 形式で解釈されるため modifications が使えない。
+    format_version: 2,
     header: {
       name: 'CraftMate HUD',
       description: 'CraftMate AI エージェントのステータスを HUD に表示するリソースパック（Minecraft統合版）',
@@ -108,9 +111,11 @@ export async function buildBedrockResourcePack(): Promise<Buffer> {
       anchor_to: 'top_left',
       offset: [6, 6],
       layer: 10,
+      // JSON UI の子コントロール名は一意必須。"{no name}" エラーを防ぐため
+      // すべてのコントロールに craftmate_ プレフィックス付きの一意名を付ける。
       controls: [
         {
-          craftmate_icon: {
+          craftmate_icon_control: {
             type: 'image',
             texture: 'textures/ui/craftmate_icon',
             size: [26, 26],
@@ -118,7 +123,7 @@ export async function buildBedrockResourcePack(): Promise<Buffer> {
           },
         },
         {
-          craftmate_label: {
+          craftmate_label_control: {
             type: 'label',
             text: 'CraftMate AI',
             offset: [32, 8],
@@ -127,7 +132,7 @@ export async function buildBedrockResourcePack(): Promise<Buffer> {
           },
         },
         {
-          craftmate_status: {
+          craftmate_status_control: {
             type: 'label',
             text: 'bot ready',
             offset: [32, 18],
