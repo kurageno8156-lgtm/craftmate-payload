@@ -131,7 +131,7 @@ export class WebServer {
   }
 
   // ---- OAuth トークン自動更新 ----
-  // refresh_token を持つプロバイダ（Google/Microsoft/Discord、および expiring tokens が
+  // refresh_token を持つプロバイダ（Google/Discord、および expiring tokens が
   // 有効な GitHub）のみ更新する。GitHub OAuth Apps は通常 refresh_token を発行しないため
   // refresh_token が無ければ何もしない（＝自動更新されないのが正常）。
   private tokenRefreshInflight = new Map<string, Promise<void>>();

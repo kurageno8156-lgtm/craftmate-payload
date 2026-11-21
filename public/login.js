@@ -10,7 +10,6 @@
 
   const PROVIDER_META = {
     google: { icon: '🔵', label: 'Google でログイン', setupHint: 'Google Cloud Console でOAuthクライアントを登録する必要があります。' },
-    microsoft: { icon: '🟦', label: 'Microsoft でログイン', setupHint: 'Microsoft Entra ID（Azure Portal）でアプリケーションを登録する必要があります。' },
     github: { icon: '🐙', label: 'GitHub でログイン', setupHint: 'GitHub Developer Settings で OAuth App を登録する必要があります。' },
     discord: { icon: '💬', label: 'Discord でログイン', setupHint: 'Discord Developer Portal でアプリケーションを登録する必要があります。' },
   };

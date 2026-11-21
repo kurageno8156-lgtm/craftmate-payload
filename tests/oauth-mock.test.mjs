@@ -116,8 +116,8 @@ test('refreshAccessToken: grant_type=refresh_token を送信', async () => {
     body = opts.body.toString();
     return new Response(JSON.stringify({ access_token: 'at2', expires_in: 3600 }), { status: 200 });
   };
-  const ms = integ.getProvider('microsoft');
-  const r = await integ.refreshAccessToken(ms, { refreshToken: 'rt', clientId: 'cid', clientSecret: 'sec' });
+  const p = integ.getProvider('google');
+  const r = await integ.refreshAccessToken(p, { refreshToken: 'rt', clientId: 'cid', clientSecret: 'sec' });
   assert.equal(r.access_token, 'at2');
   assert.ok(body.includes('grant_type=refresh_token'));
   assert.ok(body.includes('refresh_token=rt'));
@@ -125,9 +125,9 @@ test('refreshAccessToken: grant_type=refresh_token を送信', async () => {
 
 test('refreshAccessToken: invalid_grant エラーが伝播（再認証要求の判定材料）', async () => {
   globalThis.fetch = async () => new Response(JSON.stringify({ error: 'invalid_grant' }), { status: 400 });
-  const ms = integ.getProvider('microsoft');
+  const p = integ.getProvider('google');
   await assert.rejects(
-    () => integ.refreshAccessToken(ms, { refreshToken: 'rt', clientId: 'cid' }),
+    () => integ.refreshAccessToken(p, { refreshToken: 'rt', clientId: 'cid' }),
     /invalid_grant/
   );
 });
@@ -172,13 +172,9 @@ test('連携済みGitHubでログイン → 所有者アカウントに解決', 
   assert.equal(r.conflict, false);
 });
 
-test('Microsoft連携→Microsoftログインも同じ所有者に解決', () => {
-  db.upsertExternalIdentity('microsoft', 'ms-1', 'oauth:google:g-sub-1', 'MS User', 'm@x.y');
-  const r = integ.resolveCraftmateUser({
-    purpose: 'login', providerId: 'microsoft', providerUserId: 'ms-1',
-    existingOwner: db.getExternalIdentity('microsoft', 'ms-1')?.craftmate_user,
-  });
-  assert.equal(r.craftmateUser, 'oauth:google:g-sub-1');
+test('Microsoftプロバイダは削除済み', () => {
+  assert.equal(integ.getProvider('microsoft'), undefined);
+  assert.ok(!integ.INTEGRATION_PROVIDERS.some(p => p.id === 'microsoft'));
 });
 
 test('Discord連携→Discordログインも同じ所有者に解決', () => {
@@ -245,20 +241,8 @@ test('GitHub スコープが最小権限', () => {
   assert.equal(gh.scopes, 'read:user user:email');
 });
 
-test('Microsoft テナント切替', () => {
-  const ms = integ.getProvider('microsoft');
-  process.env.MICROSOFT_TENANT_ID = 'consumers';
-  assert.ok(integ.resolveTokenUrl(ms).includes('/consumers/'));
-  assert.ok(integ.buildAuthorizeUrl(ms, { redirectUri: 'r', state: 's', clientId: 'c' }).includes('/consumers/'));
-  process.env.MICROSOFT_TENANT_ID = 'organizations';
-  assert.ok(integ.resolveTokenUrl(ms).includes('/organizations/'));
-  delete process.env.MICROSOFT_TENANT_ID;
-  assert.ok(integ.resolveTokenUrl(ms).includes('/common/'));
-});
-
-test('nonce は Google/Microsoft のみ', () => {
+test('nonce は Google のみ', () => {
   assert.equal(integ.providerUsesNonce(integ.getProvider('google')), true);
-  assert.equal(integ.providerUsesNonce(integ.getProvider('microsoft')), true);
   assert.equal(integ.providerUsesNonce(integ.getProvider('github')), false);
   assert.equal(integ.providerUsesNonce(integ.getProvider('discord')), false);
 });

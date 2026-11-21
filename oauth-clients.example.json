@@ -1,6 +1,5 @@
 {
   "_comment": "Copy this file to oauth-clients.json and fill in your OAuth app credentials. oauth-clients.json is gitignored and must NOT be committed (it contains secrets).",
   "google": { "clientId": "", "clientSecret": "" },
-  "microsoft": { "clientId": "", "clientSecret": "" },
   "github": { "clientId": "", "clientSecret": "" }
 }

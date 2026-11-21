@@ -41,17 +41,6 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
     clientSecretEnv: 'GOOGLE_CLIENT_SECRET',
   },
   {
-    id: 'microsoft',
-    label: 'Microsoft',
-    description: 'Microsoft アカウント連携（Azure OpenAI / Entra ID）',
-    style: 'oauth',
-    authorizeUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
-    tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
-    scopes: 'openid email profile offline_access',
-    clientIdEnv: 'MICROSOFT_CLIENT_ID',
-    clientSecretEnv: 'MICROSOFT_CLIENT_SECRET',
-  },
-  {
     id: 'github',
     label: 'GitHub',
     description: 'GitHub 連携（リポジトリ / Copilot）',
@@ -94,27 +83,17 @@ export function generateState(): string {
 }
 
 // ---------- プロバイダエンドポイント解決 ----------
-// Microsoft は MICROSOFT_TENANT_ID でテナントを切り替え可能（既定: common）。
-// 個人用/組織用アカウントの対象範囲を絞りたい場合に 'consumers' / 'organizations' / テナントID を指定する。
 export function resolveAuthorizeUrl(provider: IntegrationProvider): string {
-  if (provider.id === 'microsoft') {
-    const tenant = (process.env.MICROSOFT_TENANT_ID || 'common').trim() || 'common';
-    return `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize`;
-  }
   return provider.authorizeUrl as string;
 }
 
 export function resolveTokenUrl(provider: IntegrationProvider): string {
-  if (provider.id === 'microsoft') {
-    const tenant = (process.env.MICROSOFT_TENANT_ID || 'common').trim() || 'common';
-    return `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`;
-  }
   return provider.tokenUrl as string;
 }
 
 // OIDC の nonce を使うプロバイダ（GitHub OAuth Apps / Discord identify+email は nonce 非対応）
 export function providerUsesNonce(provider: IntegrationProvider): boolean {
-  return provider.id === 'google' || provider.id === 'microsoft';
+  return provider.id === 'google';
 }
 
 // ---------- OAuth 認可URL ----------
@@ -133,7 +112,7 @@ export function buildAuthorizeUrl(
   if (provider.extraAuthParams) {
     for (const [k, v] of Object.entries(provider.extraAuthParams)) u.searchParams.set(k, v);
   }
-  // X は PKCE 必須。Google/Microsoft/Discord も PKCE 対応のため常に付与してよい
+  // X は PKCE 必須。Google/Discord も PKCE 対応のため常に付与してよい
   if (opts.codeChallenge) {
     u.searchParams.set('code_challenge', opts.codeChallenge);
     u.searchParams.set('code_challenge_method', 'S256');
@@ -177,7 +156,7 @@ export async function exchangeCode(
 }
 
 // ---------- リフレッシュトークン ----------
-// Google / Microsoft / Discord が refresh_token を発行した場合に更新する。
+// Google / Discord が refresh_token を発行した場合に更新する。
 // GitHub OAuth Apps はリフレッシュトークンを発行しない（期限切れ・失効時は再連携が必要）。
 export async function refreshAccessToken(
   provider: IntegrationProvider,
@@ -297,36 +276,22 @@ export function decryptJson<T = any>(payload: string): T | null {
 }
 
 // ---------- OIDC ID トークン検証（JWKS / 署名 / iss / aud / exp / nonce） ----------
-// Google / Microsoft が発行する id_token を検証する。
+// Google が発行する id_token を検証する。
 // GitHub OAuth Apps は id_token を発行しない。Discord は identify+email 構成では
 // id_token を発行しないため API プロフィール取得のみ（将来 openid スコープ対応時に検証可能）。
 
 const OIDC_ISSUERS: Record<string, string[]> = {
   google: ['https://accounts.google.com', 'accounts.google.com'],
-  microsoft: ['https://login.microsoftonline.com/{tenant}/v2.0'],
   discord: ['https://discord.com'],
 };
 
-// Microsoft の iss はマルチテナント構成では実際のテナント GUID を含む
-// （例: https://login.microsoftonline.com/{tenant-guid}/v2.0）。
-// 'common' 指定時も GUID が返るため、厳密一致ではなく Entra ドメイン + /v2.0 を検査する。
 function issuerMatches(providerId: string, issuer: unknown): boolean {
   if (typeof issuer !== 'string') return false;
-  const candidates = issuerCandidates(providerId);
-  if (candidates.includes(issuer)) return true;
-  if (providerId === 'microsoft') {
-    return /^https:\/\/login\.microsoftonline\.com\/[A-Za-z0-9\-_.]+\/v2\.0$/.test(issuer);
-  }
-  return false;
+  return (OIDC_ISSUERS[providerId] || []).includes(issuer);
 }
 
 function issuerCandidates(providerId: string): string[] {
-  const list = OIDC_ISSUERS[providerId] || [];
-  if (providerId === 'microsoft') {
-    const tenant = (process.env.MICROSOFT_TENANT_ID || 'common').trim() || 'common';
-    return [`https://login.microsoftonline.com/${tenant}/v2.0`];
-  }
-  return list;
+  return OIDC_ISSUERS[providerId] || [];
 }
 
 const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
@@ -341,7 +306,6 @@ function getJwks(jwksUri: string) {
 
 const OIDC_JWKS: Record<string, string> = {
   google: 'https://www.googleapis.com/oauth2/v3/certs',
-  microsoft: 'https://login.microsoftonline.com/common/discovery/v2.0/keys',
   discord: 'https://discord.com/api/oauth2/keys',
 };
 
@@ -355,7 +319,7 @@ export async function verifyIdToken(
 ): Promise<VerifiedIdToken> {
   const jwksUri = OIDC_JWKS[providerId];
   if (!jwksUri) throw new Error(`id_token verification not supported for ${providerId}`);
-  // issuer はプロバイダごとの規則で別途検査（Microsoft はテナント GUID を許容）
+  // issuer はプロバイダごとの規則で別途検査
   const { payload } = await jwtVerify(idToken, getJwks(jwksUri), {
     audience: opts.clientId,
   });
@@ -429,17 +393,6 @@ export async function fetchProviderProfile(
           email: info.email,
           name: info.name,
           detail: 'google',
-        };
-      }
-      case 'microsoft': {
-        // Graph OIDC userinfo（openid/email/profile スコープで利用可能）
-        const info = await fetchJson('https://graph.microsoft.com/oidc/userinfo', accessToken);
-        return {
-          providerUserId: info.sub ? String(info.sub) : undefined,
-          label: info.email || info.preferred_username || info.name,
-          email: info.email,
-          name: info.name,
-          detail: 'microsoft',
         };
       }
       case 'github': {
@@ -531,7 +484,7 @@ export function summarizeAccount(platform: string, tokenData: Record<string, unk
     return { label: profile.label || profile.email, detail: profile.detail || platform };
   }
   try {
-    if ((platform === 'google' || platform === 'microsoft') && tokenData.id_token) {
+    if (platform === 'google' && tokenData.id_token) {
       const payload = JSON.parse(Buffer.from(String(tokenData.id_token).split('.')[1], 'base64url').toString());
       return { label: payload.email || payload.name || payload.preferred_username, detail: platform };
     }
