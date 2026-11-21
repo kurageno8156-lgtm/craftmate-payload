@@ -12,7 +12,7 @@
 //   bot spawn|dismiss （コンパニオン召喚・消去）
 //
 // 日本語の自然言語（「家建てて」「夜にして」等）も一部解釈します。
-import { world, system, ItemStack } from '@minecraft/server';
+import { world, system, ItemStack, CustomCommandStatus, CommandPermissionLevel } from '@minecraft/server';
 
 const BOT_NAME = 'CraftMate';
 const BOT_TAG = 'craftmate_bot';
@@ -409,8 +409,84 @@ async function dispatch(player, intent) {
   return handleCommand(player, [intent]);
 }
 
+// ---------- カスタムコマンド登録（/craftmate:* 形式） ----------
+// Minecraft 1.20.10+ の customCommandRegistry を使用。
+// スラッシュコマンドは chatSend では傍受できないため、こちらで正式に登録する。
+// さらに /scriptevent craftmate:* 経由でも同じコマンドを実行できる（フォールバック）。
+
+const COMMAND_DEFS = [
+  { name: 'help', desc: 'コマンド一覧を表示', args: [] },
+  { name: 'status', desc: 'ボット・プレイヤーの状態を表示', args: [] },
+  { name: 'say', desc: 'ボットがチャットで発言', args: [{ name: 'message', type: 'string', optional: false }] },
+  { name: 'follow', desc: 'ボットがプレイヤーに追従', args: [] },
+  { name: 'stop', desc: '追従を停止', args: [] },
+  { name: 'come', desc: 'ボットをプレイヤーの位置へテレポート', args: [] },
+  { name: 'build', desc: '定型建築（家/塔/橋）', args: [{ name: 'kind', type: 'string', optional: true }] },
+  { name: 'time', desc: '時間変更（day/night/noon/midnight）', args: [{ name: 'value', type: 'string', optional: false }] },
+  { name: 'weather', desc: '天気変更（clear/rain/thunder）', args: [{ name: 'value', type: 'string', optional: false }] },
+  { name: 'give', desc: 'アイテム付与', args: [{ name: 'item', type: 'string', optional: false }, { name: 'count', type: 'integer', optional: true }] },
+  { name: 'tp', desc: '座標へテレポート', args: [{ name: 'x', type: 'integer', optional: false }, { name: 'y', type: 'integer', optional: false }, { name: 'z', type: 'integer', optional: false }] },
+  { name: 'pos', desc: '現在位置を表示', args: [] },
+  { name: 'gamemode', desc: 'ゲームモード変更', args: [{ name: 'mode', type: 'string', optional: false }] },
+  { name: 'difficulty', desc: '難易度変更', args: [{ name: 'level', type: 'string', optional: false }] },
+  { name: 'bot', desc: 'ボット操作（spawn/follow/come/stop/dismiss）', args: [{ name: 'action', type: 'string', optional: true }] },
+];
+
+// scriptevent / カスタムコマンド共通のエントリポイント
+async function runSlashCommand(playerLike, cmdName, rawArgs) {
+  const args = Array.isArray(rawArgs) ? rawArgs.map(String) : [];
+  await handleCommand(playerLike, [cmdName, ...args]);
+}
+
+function registerCustomCommands(startupEvent) {
+  const registry = startupEvent.customCommandRegistry;
+  if (!registry || typeof registry.registerCommand !== 'function') {
+    console.warn('[CraftMate] customCommandRegistry unavailable; /craftmate:* disabled (use !craftmate in chat or /scriptevent craftmate:*)');
+    return;
+  }
+  for (const def of COMMAND_DEFS) {
+    try {
+      const registration = {
+        name: `craftmate:${def.name}`,
+        description: def.desc,
+        permissionLevel: CommandPermissionLevel.Any,
+      };
+      // パラメータ定義（対応バージョンのみ）
+      if (def.args.length) {
+        const mandatory = def.args.filter(a => !a.optional).map(a => ({ name: a.name, type: a.type }));
+        const optional = def.args.filter(a => a.optional).map(a => ({ name: a.name, type: a.type }));
+        if (mandatory.length) registration.mandatoryParameters = mandatory;
+        if (optional.length) registration.optionalParameters = optional;
+      }
+      registry.registerCommand(registration, async (origin) => {
+        try {
+          const source = origin && origin.sourceEntity;
+          if (!source) return { status: CustomCommandStatus.Failure };
+          const params = origin.params || {};
+          const ordered = def.args.map(a => params[a.name]);
+          // 未指定の必須引数があれば失敗
+          if (def.args.some((a, i) => !a.optional && ordered[i] === undefined)) {
+            return { status: CustomCommandStatus.Failure };
+          }
+          await runSlashCommand(source, def.name, ordered.filter(v => v !== undefined));
+          return { status: CustomCommandStatus.Success };
+        } catch (e) {
+          try { origin && origin.sourceEntity && origin.sourceEntity.sendMessage(`§c[CraftMate] エラー: ${e}`); } catch { }
+          return { status: CustomCommandStatus.Failure };
+        }
+      });
+    } catch (e) {
+      console.warn(`[CraftMate] failed to register craftmate:${def.name}: ${e}`);
+    }
+  }
+  console.log('[CraftMate] custom commands registered: /craftmate:<cmd>');
+}
+
 // ---------- チャット受信 ----------
-system.beforeEvents.startup.subscribe(() => {
+system.beforeEvents.startup.subscribe((event) => {
+  // カスタムコマンド（/craftmate:help 等）を登録
+  try { registerCustomCommands(event); } catch (e) { console.warn('[CraftMate] customCommandRegistry error:', e); }
+
   world.beforeEvents.chatSend.subscribe(async (event) => {
     try {
       const msg = event.message.trim();
@@ -443,5 +519,33 @@ system.beforeEvents.startup.subscribe(() => {
     }
   });
 
-  world.sendMessage('§a[CraftMate Bedrock] §fアドオンが有効化されました。チャットで「!craftmate help」と入力してください。');
+  // /scriptevent craftmate:<cmd> [args...] フォールバック
+  // カスタムコマンドが使えない環境でも /scriptevent 経由で同じコマンドを実行できる。
+  // 例: /scriptevent craftmate:run help   /scriptevent craftmate:status
+  system.afterEvents.scriptEventReceive.subscribe((ev) => {
+    try {
+      const id = String(ev.messageId || '');
+      if (!id.toLowerCase().startsWith('craftmate:')) return;
+      const source = ev.sourceEntity;
+      if (!source) return;
+      const sub = id.slice('craftmate:'.length).toLowerCase();
+      const msgArgs = String(ev.message || '').trim();
+      let cmdName, cmdArgs;
+      if (sub === 'run' || sub === '') {
+        // /scriptevent craftmate:run <cmd> [args...]
+        const parts = msgArgs.split(/\s+/).filter(Boolean);
+        cmdName = parts[0] || 'help';
+        cmdArgs = parts.slice(1);
+      } else {
+        // /scriptevent craftmate:<cmd> [args...]
+        cmdName = sub;
+        cmdArgs = msgArgs ? msgArgs.split(/\s+/) : [];
+      }
+      runSlashCommand(source, cmdName, cmdArgs);
+    } catch (e) {
+      console.warn('[CraftMate] scriptevent error:', e);
+    }
+  });
+
+  world.sendMessage('§a[CraftMate Bedrock] §fアドオンが有効化されました。/craftmate:help またはチャットで「!craftmate help」と入力してください。');
 });

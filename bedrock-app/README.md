@@ -26,8 +26,48 @@ Java 版の CraftMate（Mineflayer 製デスクトップアプリ）とは完全
 
 ## 使い方
 
-ゲーム内チャットで `!craftmate <command>` または `craftmate <command>` を入力します
-（`!` は省略可、大文字小文字は区別しません。`!CRAFTMATE HELP` でも動作します）。
+### スラッシュコマンド（推奨）
+
+ゲーム内チャットで `/` から始まる **カスタムコマンド** として実行できます
+（Minecraft 1.20.10 以降の `customCommandRegistry` を使用）:
+
+```
+/craftmate:help
+/craftmate:status
+/craftmate:say こんにちは
+/craftmate:follow
+/craftmate:stop
+/craftmate:come
+/craftmate:build 家        （塔 / 橋 も可）
+/craftmate:time night
+/craftmate:weather rain
+/craftmate:give diamond 16
+/craftmate:tp 100 64 -200
+/craftmate:pos
+/craftmate:bot spawn
+/craftmate:bot dismiss
+/craftmate:gamemode creative
+/craftmate:difficulty hard
+```
+
+> カスタムコマンド名は必ず `craftmate:` 名前空間付きです。
+> `/craftmate help`（スペース区切り）は Minecraft の仕様上登録できないため、
+> `/craftmate:help` の形式を使ってください。
+
+### チャットコマンド（従来形式・引き続き利用可能）
+
+`!craftmate <command>` または `craftmate <command>` をチャットに入力しても動作します
+（`!` は省略可、大文字小文字は区別しません）。
+
+### scriptevent フォールバック
+
+カスタムコマンドが使えない環境では `/scriptevent` 経由でも実行できます:
+
+```
+/scriptevent craftmate:run help
+/scriptevent craftmate:status
+/scriptevent craftmate:run build 家
+```
 
 ### コマンド一覧
 
