@@ -1,0 +1,51 @@
+{
+  "namespace": "hud",
+  "craftmate_panel": {
+    "type": "panel",
+    "size": [170, 34],
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
+    "offset": [6, 6],
+    "layer": 10,
+    "controls": [
+      {
+        "craftmate_badge_control": {
+          "type": "image",
+          "texture": "textures/ui/craftmate_icon",
+          "size": [30, 30],
+          "offset": [2, 2]
+        }
+      },
+      {
+        "craftmate_title_control": {
+          "type": "label",
+          "text": "CraftMate Bedrock",
+          "offset": [38, 4],
+          "color": [0.55, 0.95, 0.65],
+          "shadow": true
+        }
+      },
+      {
+        "craftmate_hint_control": {
+          "type": "label",
+          "text": "chat: craftmate help",
+          "offset": [38, 20],
+          "color": [0.85, 0.9, 0.85],
+          "shadow": true,
+          "font_scale_factor": 0.75
+        }
+      }
+    ]
+  },
+  "root_panel": {
+    "modifications": [
+      {
+        "array_name": "controls",
+        "operation": "insert_front",
+        "value": [
+          { "@hud.craftmate_panel": {} }
+        ]
+      }
+    ]
+  }
+}

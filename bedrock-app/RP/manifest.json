@@ -1,0 +1,17 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "CraftMate Bedrock HUD",
+    "description": "CraftMate Bedrock アドオンの HUD カスタマイズ（リソースパック）",
+    "uuid": "2f6d8a1c-5e9b-4c7d-b1a3-8e4f6d2c9b5a",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 20, 0]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "9b3e5f7a-1d4c-4a6e-8f2b-5c7d9e1a3b6f",
+      "version": [1, 0, 0]
+    }
+  ]
+}
