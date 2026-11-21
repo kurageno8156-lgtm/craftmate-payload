@@ -97,6 +97,7 @@
           </details>
         </article>
       </div>
+      <p style="margin-top:18px;font-size:13px;color:#a1a1aa">🎮 <strong>Minecraft 統合版（Bedrock）</strong> の方は、ゲーム内アドオン <strong>CraftMate Bedrock</strong>（.mcaddon）をご利用ください。ダッシュボード不要・LANポート不使用で、ゲーム内チャットから操作できます → <a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate-Bedrock.mcaddon" style="color:#34d399">CraftMate-Bedrock.mcaddon ダウンロード</a></p>
     </section>
 
     <section class="feature-section" id="features">
@@ -219,8 +220,9 @@
       <div class="section-heading"><p class="eyebrow">REVIEWS</p><h2>ユーザーレビュー</h2><p id="review-summary">CraftMate を使った感想を GitHub で公開レビューとして投稿・閲覧できます。</p></div>
       <div class="review-layout">
         <div class="review-public">
-          <p class="review-public-note">レビューは GitHub アカウントで投稿・閲覧できます。投稿内容は公開 GitHub Issue として全世界に表示されます（メールアドレスへの送信は行いません）。</p>
-          <div class="utterances"></div>
+          <p class="review-public-note">みんなのレビュー一覧です（GitHub Issues から公開取得・閲覧専用）。新規レビューの投稿は GitHub リポジトリの Issue または Discussions からお願いします。</p>
+          <div id="review-list-public" class="review-list"></div>
+          <p class="form-status" id="review-public-status" role="status"></p>
         </div>
       </div>
     </section>
@@ -282,12 +284,5 @@
 </main>
   <footer class="site-footer"><a class="brand" href="distribution.html"><img src="app.ico" alt="" width="27" height="27"><span>CraftMate</span></a><span>Minecraft の冒険に、自律型 AI エージェントを。</span><a href="https://github.com/kurageno8156-lgtm/craftmate-payload">GitHub <span aria-hidden="true">↗</span></a></footer>
   <script src="distribution.js"></script>
-  <!-- 公開レビュー: GitHub Issues ベースの Utterances ウィジェット（要 GitHub ログイン、全世界に公開） -->
-  <script src="https://utteranc.es/client.js"
-    repo="kurageno8156-lgtm/craftmate-payload"
-    issue-term="title"
-    theme="github-dark"
-    crossorigin="anonymous"
-    async></script>
 </body>
 </html>

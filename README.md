@@ -262,32 +262,37 @@ OAuth プロバイダが使えない場合でもログインできるよう、�
 
 ### 配布サイトのレビュー・お問い合わせ
 
-- **レビュー**: GitHub Issues ベースの [Utterances](https://utteranc.es/) ウィジェットを埋め込んでいます。誰でも閲覧でき、GitHub アカウントでログインすればサイト上からそのまま投稿できます（投稿は公開 GitHub Issue として表示されます。固定メールアドレスへの送信はありません）
+- **レビュー**: GitHub Issues API から公開 Issue のコメントを取得し、**閲覧専用の一覧**として表示します（サイト上に投稿フォームはありません。新規レビューは GitHub リポジトリの Issue から投稿できます）。固定メールアドレスへの送信はありません
 - **お問い合わせ**: 静的ホスティング（GitHub Pages）ではサーバー API が使えないため **FormSubmit**（`https://formsubmit.co/ajax/kurageno8156@gmail.com`）経由で `kurageno8156@gmail.com` にメール送信します。メーラーは起動せず、サイト上で送信完了まで完結します
   - **初回送信時**: FormSubmit から `kurageno8156@gmail.com` 宛にアクティベーションメールが届きます。メール内のリンクをクリックすると以降の送信が有効になります。アクティベーション未完了の場合はサイト上にその旨の案内が表示されます
   - 別サービスに切り替える場合は `public/distribution.js` の `FORMSUBMIT_ENDPOINT` を変更してください
 
 ---
 
-## 🧱 Minecraft統合版（Bedrock Edition）対応
+## 🧱 Minecraft統合版（Bedrock Edition）対応 — CraftMate Bedrock アドオン
 
-v1.4.0 以降、統合版サーバーへのボット接続に対応しています。
+v1.5.0 以降、統合版向け機能は **`bedrock-app/` のゲーム内アドオン「CraftMate Bedrock」** として提供されます。Java 版 CraftMate（このリポジトリのデスクトップアプリ）とは完全に独立しており、Mineflayer / Node.js サーバーは使用しません。
 
-### できること
+### 仕組み
 
-- **ボット接続**: 統合版サーバー（自分で立てた Bedrock Dedicated Server 等）に CraftMate ボットを接続
-- **チャット**: 統合版内のチャットメッセージがダッシュボードに表示され、設定画面の「Minecraft 統合版」欄からメッセージを送信可能
-- **状態確認**: 接続状態・プレイヤー名・座標をダッシュボードで確認
-- **リソースパック**: ヘッダーの「Bedrock RP ⬇」から `.mcpack` をダウンロードすると、統合版 HUD 左上に CraftMate ロゴ＋ステータスを表示できます
+- **ビヘイビアパック + リソースパックのアドオン**（`.mcaddon`）を Minecraft 統合版にインポートするだけで動作
+- ゲーム内スクリプト（`@minecraft/server` Script API）がチャットコマンドを処理
+- **LAN ポート不使用・シングルプレイ（オフライン）対応**・ダッシュボード不要・外部通信なし
+- リソースパックが HUD 左上に「CraftMate Bedrock」ステータスを表示
 
 ### 使い方
 
-1. 統合版サーバーを起動（または参加可能な Bedrock サーバーを用意。Realm は非対応）
-2. CraftMate の設定画面 →「Minecraft 統合版（Bedrock）」欄を開く
-3. **ホスト**（サーバーのアドレス）・**ポート**（通常 `19132`）・**ユーザー名**を入力して「接続」
-4. 接続後、統合版のチャットがダッシュボードに表示され、設定画面の入力欄からメッセージを送信できます
+1. `bedrock-app/dist/CraftMate-Bedrock.mcaddon` をダウンロード（GitHub Releases の `CraftMate-Bedrock.mcaddon` アセット、または `node bedrock-app/build.mjs` でビルド）
+2. Minecraft 統合版にドラッグ＆ドロップ → ワールドの「ビヘイビアパック」「リソースパック」両方で有効化
+3. ゲーム内チャットで `craftmate help` または日本語で「家建てて」「夜にして」などと入力
 
-> **注意**: 統合版は Java 版とプロトコルが異なるため、Mineflayer ベースの自律行動AI（建築・採掘等）は**未対応**です。現状は「接続＋チャット＋状態確認」までの対応です。オフラインモード（Microsoftアカウント不要）で接続します。
+詳細は [`bedrock-app/README.md`](bedrock-app/README.md) を参照してください。
+
+### 制限事項
+
+- ゲーム内スクリプトのため外部 LLM には接続しません（ルールベースのコマンド解釈）
+- Java 版の Mineflayer 自律行動AI（自律採掘・建築・画面認識）は統合版では利用不可
+- Realm・LAN ワールドへの外部接続機能はありません（ワールド内で動作するアドオンです）
 
 ---
 
@@ -306,6 +311,7 @@ v1.4.0 以降、統合版サーバーへのボット接続に対応していま�
 │   ├── db.ts               # SQLite 永続化
 │   └── index.ts            # エントリーポイント
 ├── installer/              # Setup / Updater / Uninstall / ScreenViewer (C#)
+├── bedrock-app/            # CraftMate Bedrock（統合版専用アドオン: BP+RP+.mcaddon）
 └── Launcher.cs             # 起動・監視・プロセス管理 (C#)
 ```
 

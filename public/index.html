@@ -34,7 +34,6 @@
         <span id="app-version" class="app-version"></span>
       </div>
       <div class="header-actions">
-        <a class="distribution-link" href="/api/bedrock-pack" download>Bedrock RP ⬇</a>
         <a class="distribution-link" href="/distribution.html">CraftMate 配布ページ ↗</a>
         <div class="header-status">
           <div class="status-indicator" id="connection-status">
@@ -212,27 +211,6 @@
         <h3 data-i18n="integrationsTitle">外部アカウント連携</h3>
         <p class="integrations-help" data-i18n="integrationsHelp">Google / Microsoft / GitHub / Discord との連携。OAuthクライアントはアプリに埋め込まれています。トークンは暗号化してローカルDBに保存されます。</p>
         <div id="integrations-list" class="integrations-list"></div>
-      </div>
-      <div class="settings-divider"></div>
-      <div class="integrations-section">
-        <h3>Minecraft 統合版（Bedrock）</h3>
-        <p class="integrations-help">統合版サーバーへ CraftMate ボットを接続します。チャットメッセージはこのダッシュボードに表示されます。ホストは統合版サーバーのアドレス（例: play.example.com）、ポートは通常 19132 です。オフラインモード（Microsoftアカウント不要）で接続します。</p>
-        <div class="integration-row">
-          <div class="integration-info">
-            <input id="bedrock-host" type="text" placeholder="ホスト（例: play.example.com）" style="flex:2">
-            <input id="bedrock-port" type="number" placeholder="19132" style="flex:0 0 90px">
-            <input id="bedrock-username" type="text" placeholder="ユーザー名" value="CraftMate" style="flex:1">
-          </div>
-        </div>
-        <div class="integration-row">
-          <span class="integration-status off" id="bedrock-status-label">未接続</span>
-          <button id="btn-bedrock-connect" class="btn-secondary" type="button">接続</button>
-          <button id="btn-bedrock-disconnect" class="btn-secondary" type="button">切断</button>
-        </div>
-        <div class="integration-row">
-          <input id="bedrock-chat-input" type="text" placeholder="統合版へメッセージを送信…" style="flex:1">
-          <button id="btn-bedrock-send" class="btn-secondary" type="button">送信</button>
-        </div>
       </div>
       <div class="settings-divider"></div>
       <div class="connection-heading"><h3 data-i18n="connections">Connections</h3><span id="health-checked" data-i18n="checking">Checking…</span></div>
