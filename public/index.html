@@ -239,6 +239,18 @@
     </section>
   </div>
 
+  <div class="inventory-modal" id="update-dialog" role="dialog" aria-modal="true" aria-labelledby="update-dialog-title" hidden>
+    <div class="inventory-modal-backdrop" data-close-update-dialog></div>
+    <section class="inventory-modal-panel update-dialog-panel">
+      <header class="inventory-modal-header">
+        <h2 id="update-dialog-title" data-i18n="updateDialogTitle">CraftMate Update</h2>
+        <button class="inventory-modal-close" type="button" data-i18n="close" data-close-update-dialog>Close</button>
+      </header>
+      <div id="update-dialog-body" class="update-dialog-body"></div>
+      <div id="update-dialog-actions" class="update-dialog-actions"></div>
+    </section>
+  </div>
+
   <script src="i18n.js"></script>
   <script src="app.js"></script>
 

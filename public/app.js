@@ -238,6 +238,35 @@ async function applyUpdateViaIpc(info, onProgress) {
   }
 }
 
+// 既存のアップデート処理を実行する共通関数（バナー・設定ダイアログ共用）。
+// - Electron IPC がある場合: アプリ内更新（ダウンロード→検証→置換→再起動）
+// - Windows: /api/launch-updater で CraftMate_Updater.exe を起動
+// - Linux/macOS: 自OS用アセットまたはリリースページをブラウザで開く
+// 成功時は updatePending=true。失敗時は例外を投げる。
+async function performPlatformUpdate(info, onProgress) {
+  if (window.craftmateUpdate && typeof window.craftmateUpdate.apply === 'function' && info.downloadUrl) {
+    await applyUpdateViaIpc(info, onProgress);
+    updatePending = true;
+    return;
+  }
+  if (info.platform === 'win32') {
+    const response = await fetchWithLocalSettingsAuth('/api/launch-updater', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    const result = await response.json().catch(() => ({}));
+    if (result.manualUpdate === true) {
+      throw new Error(result.error || translate('updaterLaunchFailed'));
+    }
+    if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+    updatePending = true;
+    return;
+  }
+  // Linux/macOS/その他: 自OS用アセット（またはリリースページ）をブラウザで開く
+  window.open(info.downloadUrl || info.releaseUrl || 'https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest', '_blank');
+}
+
 async function applyUpdateFromBanner() {
   const info = updateCheckInfo;
   if (!info) {
@@ -245,71 +274,28 @@ async function applyUpdateFromBanner() {
     return;
   }
   console.log('[UpdateBanner] apply clicked', JSON.stringify({ platform: info.platform, canAutoUpdate: info.canAutoUpdate, latest: info.latestVersion }));
-  if (window.craftmateUpdate && typeof window.craftmateUpdate.apply === 'function' && info.downloadUrl) {
-    updateBannerApply.disabled = true;
-    try {
-      await applyUpdateViaIpc(info, (d) => {
-        if (!updateBannerText) return;
-        if (d.phase === 'verify' || d.phase === 'replace') {
-          updateBannerText.textContent = translate('updateApplying');
-        } else {
-          updateBannerText.textContent = translate('updateDownloading') + ' ' + (d.percent || 0) + '%';
-        }
-      });
-      updatePending = true;
-      dismissUpdateBanner(info.latestVersion);
-    } catch (error) {
-      updateBannerApply.disabled = false;
-      showUpdateBannerError((error && error.message) || translate('updateFailed'));
-    }
-    return;
-  }
-  const isWindows = info.platform === 'win32';
-  if (isWindows) {
-    // Windows: 既存のアップデーター起動フローを再利用
-    updateBannerApply.disabled = true;
-    try {
-      const response = await fetchWithLocalSettingsAuth('/api/launch-updater', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}',
-      });
-      const result = await response.json().catch(() => ({}));
-      console.log('[UpdateBanner] launch-updater response', response.status, JSON.stringify(result));
-      if (result.manualUpdate === true) {
-        // サーバーが手動更新を要求: Windows では exe を開かずエラー表示のみ
-        updateBannerApply.disabled = false;
-        showUpdateBannerError(result.error || translate('updaterLaunchFailed'));
-        return;
-      }
-      if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
-      updatePending = true;
-      dismissUpdateBanner(info.latestVersion);
-    } catch (error) {
-      updateBannerApply.disabled = false;
-      const message = (error && error.message) || translate('updaterLaunchFailed');
-      // 自動更新に失敗: Windows では exe ダウンロードを開かずエラー表示のみ
-      // （Linux/macOS のみ OS別アセットの手動ダウンロードを許可）
-      if (info.platform === 'linux' || info.platform === 'darwin') {
-        if (info.downloadUrl || info.releaseUrl) {
-          window.open(info.downloadUrl || info.releaseUrl, '_blank');
-          dismissUpdateBanner(info.latestVersion);
-        } else {
-          showUpdateBannerError(message);
-        }
+  updateBannerApply.disabled = true;
+  try {
+    await performPlatformUpdate(info, (d) => {
+      if (!updateBannerText) return;
+      if (d.phase === 'verify' || d.phase === 'replace') {
+        updateBannerText.textContent = translate('updateApplying');
       } else {
-        showUpdateBannerError(message);
+        updateBannerText.textContent = translate('updateDownloading') + ' ' + (d.percent || 0) + '%';
       }
+    });
+    dismissUpdateBanner(info.latestVersion);
+  } catch (error) {
+    updateBannerApply.disabled = false;
+    const message = (error && error.message) || translate('updateFailed');
+    // 自動更新に失敗: Linux/macOS は OS別アセットの手動ダウンロードを許可。
+    // Windows では exe ダウンロードを開かずエラー表示のみ（多層防御）。
+    if ((info.platform === 'linux' || info.platform === 'darwin') && (info.downloadUrl || info.releaseUrl)) {
+      window.open(info.downloadUrl || info.releaseUrl, '_blank');
+      dismissUpdateBanner(info.latestVersion);
+    } else {
+      showUpdateBannerError(message);
     }
-  } else if (info.platform === 'linux' || info.platform === 'darwin') {
-    // Linux/macOS: 自OS用アセット（またはリリースページ）をブラウザで開く
-    window.open(info.downloadUrl || info.releaseUrl || 'https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest', '_blank');
-    dismissUpdateBanner(info.latestVersion);
-  } else {
-    // platform 不明: Windows 以外として扱い、リリースページを開く
-    console.warn('[UpdateBanner] unknown platform, opening releases page');
-    window.open(info.releaseUrl || 'https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest', '_blank');
-    dismissUpdateBanner(info.latestVersion);
   }
 }
 
@@ -343,6 +329,148 @@ on(updateBannerLater, 'click', () => {
     updateBanner.classList.remove('show');
     updateBanner.hidden = true;
   }
+});
+
+// ---- アップデート確認ダイアログ（設定画面の「アップデートを確認」ボタン用）----
+const updateDialog = document.getElementById('update-dialog');
+const updateDialogBody = document.getElementById('update-dialog-body');
+const updateDialogActions = document.getElementById('update-dialog-actions');
+let updateDialogInfo = null;
+let updateCheckBusy = false;
+let updateApplyBusy = false;
+
+function updateDialogClear() {
+  if (updateDialogBody) updateDialogBody.textContent = '';
+  if (updateDialogActions) updateDialogActions.textContent = '';
+}
+
+function updateDialogMessage(text, kind) {
+  const p = document.createElement('p');
+  p.className = 'update-dialog-message' + (kind ? ' ' + kind : '');
+  p.textContent = text;
+  return p;
+}
+
+function updateDialogVersionRow(label, version, isLatest) {
+  const row = document.createElement('div');
+  row.className = 'update-version-row' + (isLatest ? ' latest' : '');
+  const labelEl = document.createElement('span');
+  labelEl.className = 'update-version-label';
+  labelEl.textContent = label;
+  const valueEl = document.createElement('span');
+  valueEl.className = 'update-version-value';
+  valueEl.textContent = 'v' + version;
+  row.appendChild(labelEl);
+  row.appendChild(valueEl);
+  return row;
+}
+
+function updateDialogButton(label, primary, onClick) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  if (primary) b.className = 'update-dialog-primary';
+  b.textContent = label;
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+function showUpdateDialogChecking() {
+  updateDialogClear();
+  if (updateDialogBody) updateDialogBody.appendChild(updateDialogMessage(translate('updateChecking')));
+}
+
+function showUpdateDialogResult(info) {
+  updateDialogInfo = info;
+  updateDialogClear();
+  if (!updateDialogBody || !updateDialogActions) return;
+  const current = info.currentVersion || '?';
+  const latest = info.latestVersion || '?';
+  updateDialogBody.appendChild(updateDialogVersionRow(translate('updateDialogCurrent'), current, false));
+  updateDialogBody.appendChild(updateDialogVersionRow(
+    info.updateAvailable ? translate('updateDialogNewest') : translate('updateDialogLatest'),
+    latest, !info.updateAvailable));
+  if (info.updateAvailable) {
+    updateDialogBody.appendChild(updateDialogMessage(translate('updateAvailableMsg'), 'ok'));
+    updateDialogActions.appendChild(updateDialogButton(translate('updateNowLong'), true, () => applyUpdateFromDialog(info)));
+    updateDialogActions.appendChild(updateDialogButton(translate('later'), false, closeUpdateDialog));
+  } else {
+    updateDialogBody.appendChild(updateDialogMessage(translate('updateUpToDateMsg'), 'ok'));
+    updateDialogActions.appendChild(updateDialogButton(translate('close'), false, closeUpdateDialog));
+  }
+}
+
+function showUpdateDialogError() {
+  updateDialogInfo = null;
+  updateDialogClear();
+  if (!updateDialogBody || !updateDialogActions) return;
+  updateDialogBody.appendChild(updateDialogMessage(translate('updateCheckFailedMsg'), 'error'));
+  updateDialogActions.appendChild(updateDialogButton(translate('retry'), true, () => { void runUpdateCheck(); }));
+  updateDialogActions.appendChild(updateDialogButton(translate('close'), false, closeUpdateDialog));
+}
+
+function closeUpdateDialog() {
+  if (updateApplyBusy) return; // 更新適用中は閉じない
+  if (updateDialog) updateDialog.hidden = true;
+  updateDialogInfo = null;
+}
+
+async function runUpdateCheck() {
+  if (updateCheckBusy || updateApplyBusy) return;
+  updateCheckBusy = true;
+  const button = document.getElementById('btn-check-updates');
+  if (button) button.disabled = true;
+  if (updateDialog) updateDialog.hidden = false;
+  showUpdateDialogChecking();
+  try {
+    const res = await fetch('/api/version/check', { signal: AbortSignal.timeout(12000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const info = await res.json();
+    // checkError または latestVersion 未取得は失敗として扱う
+    if (!info || info.checkError || !info.latestVersion) {
+      throw new Error((info && info.checkError) || 'no latest version');
+    }
+    showUpdateDialogResult(info);
+  } catch (error) {
+    console.warn('[UpdateDialog] check failed:', error);
+    showUpdateDialogError();
+  } finally {
+    updateCheckBusy = false;
+    if (button) button.disabled = false;
+  }
+}
+
+async function applyUpdateFromDialog(info) {
+  if (!info || updateApplyBusy) return;
+  updateApplyBusy = true;
+  if (updateDialogActions) {
+    updateDialogActions.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+  }
+  try {
+    await performPlatformUpdate(info, (d) => {
+      if (!updateDialogBody) return;
+      updateDialogClear();
+      updateDialogBody.appendChild(updateDialogMessage(
+        (d.phase === 'verify' || d.phase === 'replace')
+          ? translate('updateApplying')
+          : translate('updateDownloading') + ' ' + (d.percent || 0) + '%'));
+    });
+    updateApplyBusy = false;
+    closeUpdateDialog();
+    showSettingsMessage(translate('updaterLaunched'), 'success');
+  } catch (error) {
+    updateApplyBusy = false;
+    updateDialogClear();
+    if (updateDialogBody) {
+      updateDialogBody.appendChild(updateDialogMessage((error && error.message) || translate('updateFailed'), 'error'));
+    }
+    if (updateDialogActions) {
+      updateDialogActions.appendChild(updateDialogButton(translate('close'), false, closeUpdateDialog));
+    }
+  }
+}
+
+document.querySelectorAll('[data-close-update-dialog]').forEach((el) => {
+  el.addEventListener('click', closeUpdateDialog);
 });
 
 // 起動時 + 1時間ごとに更新確認
@@ -1584,110 +1712,10 @@ on(document.getElementById('btn-ai-restart'), 'click', async event => {
   }
 });
 
-on(document.getElementById('btn-check-updates'), 'click', async event => {
-  const button = event.currentTarget;
-  button.disabled = true;
-  showSettingsMessage(translate('launchingUpdater'));
-  try {
-    // まずバージョンチェックを行い、プラットフォーム別に処理を分岐する。
-    // - Windows: /api/launch-updater で CraftMate_Updater.exe を起動（従来通り）
-    // - Linux/macOS で craftmateUpdate IPC がある場合: アプリ内更新
-    // - それ以外: 従来の launch-updater → 拒否時は手動ダウンロード
-    let checkInfo = null;
-    try {
-      const checkRes = await fetch('/api/version/check', { signal: AbortSignal.timeout(12000) });
-      if (checkRes.ok) checkInfo = await checkRes.json();
-    } catch (_) { /* チェック失敗時は launch-updater にフォールバック */ }
-    console.log('[CheckUpdates] click', JSON.stringify({
-      platform: checkInfo && checkInfo.platform,
-      updateAvailable: checkInfo && checkInfo.updateAvailable,
-      canAutoUpdate: checkInfo && checkInfo.canAutoUpdate,
-      latest: checkInfo && checkInfo.latestVersion,
-      hasIpc: !!(window.craftmateUpdate && typeof window.craftmateUpdate.apply === 'function'),
-    }));
-
-    // Windows: applyUpdateViaIpc は Electron(Linux/macOS)専用のため呼ばず、
-    // 必ず launch-updater で CraftMate_Updater.exe を起動する。
-    if (checkInfo && checkInfo.platform === 'win32') {
-      if (!checkInfo.updateAvailable) {
-        showSettingsMessage(translate('currentVersion', { version: checkInfo.currentVersion || '' }), 'success');
-        return;
-      }
-      const winResponse = await fetchWithLocalSettingsAuth('/api/launch-updater', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}',
-      });
-      const winResult = await winResponse.json().catch(() => ({}));
-      if (winResult.manualUpdate) {
-        showSettingsMessage(winResult.error || translate('updaterLaunchFailed'), 'error');
-        return;
-      }
-      if (!winResponse.ok) throw new Error(winResult.error || translate('updaterLaunchFailed'));
-      showSettingsMessage(translate('updaterLaunched'), 'success');
-      updatePending = true;
-      setTimeout(() => {
-        if (updatePending && !document.getElementById('update-overlay')) {
-          updatePending = false;
-          showSettingsMessage(translate('currentVersion', { version: '' }).replace(' ()', ''), 'success');
-        }
-      }, 10 * 60 * 1000);
-      return;
-    }
-
-    // Linux/macOS: craftmateUpdate IPC が使える場合のみアプリ内更新
-    // （AppImage のみ。deb/tarball/ブラウザ利用時は IPC が無い）
-    if (checkInfo && checkInfo.updateAvailable && checkInfo.canAutoUpdate &&
-        window.craftmateUpdate && typeof window.craftmateUpdate.apply === 'function' &&
-        checkInfo.downloadUrl) {
-      showSettingsMessage(translate('updateDownloading') + '…');
-      await applyUpdateViaIpc(checkInfo, () => { });
-      updatePending = true;
-      showSettingsMessage(translate('updaterLaunched'), 'success');
-      setTimeout(() => {
-        if (updatePending && !document.getElementById('update-overlay')) {
-          updatePending = false;
-          showSettingsMessage(translate('currentVersion', { version: '' }).replace(' ()', ''), 'success');
-        }
-      }, 10 * 60 * 1000);
-      return;
-    }
-
-    // フォールバック: チェック失敗・更新なし・自動更新不可の場合は
-    // 従来通り launch-updater を試し、拒否されたら手動ダウンロードへ。
-    const response = await fetchWithLocalSettingsAuth('/api/launch-updater', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: '{}',
-    });
-    const result = await response.json().catch(() => ({}));
-    if (result.manualUpdate && result.platform !== 'win32') {
-      showSettingsMessage(translate('updaterWindowsOnly'), 'error');
-      await openManualUpdateDownload();
-      return;
-    }
-    if (result.manualUpdate) {
-      // 念のための防御: Windows で manualUpdate が返った場合はダウンロードを開かない
-      showSettingsMessage(result.error || translate('updaterLaunchFailed'), 'error');
-      return;
-    }
-    if (!response.ok) throw new Error(result.error || translate('updaterLaunchFailed'));
-    showSettingsMessage(translate('updaterLaunched'), 'success');
-    // オーバーレイはソケット切断（＝サーバー実停止）を検知してから表示する。
-    // ダウンロード・解凍中はサーバーが生きているためUIは操作可能なままにする。
-    updatePending = true;
-    // フェイルセーフ: 一定時間内に切断も再接続も起きない場合（最新版で更新不要等）は解除
-    setTimeout(() => {
-      if (updatePending && !document.getElementById('update-overlay')) {
-        updatePending = false;
-        showSettingsMessage(translate('currentVersion', { version: '' }).replace(' ()', ''), 'success');
-      }
-    }, 10 * 60 * 1000);
-  } catch (error) {
-    showSettingsMessage(error.message || translate('updaterLaunchFailed'), 'error');
-  } finally {
-    button.disabled = false;
-  }
+on(document.getElementById('btn-check-updates'), 'click', () => {
+  // 確認→結果ポップアップ→（必要なら）既存アップデーター起動、の流れに統一。
+  // 二重クリックは runUpdateCheck 内の updateCheckBusy / updateApplyBusy で防止。
+  void runUpdateCheck();
 });
 
 // アップデート中の全画面オーバーレイ（サーバー停止中も「更新中」と表示し続ける）

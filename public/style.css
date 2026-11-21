@@ -347,6 +347,22 @@ body {
 .inventory-modal-close:hover { border-color: var(--accent-green); }
 .inventory-modal-grid.inventory-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); min-height: 120px; max-height: 65vh; padding: 12px; }
 
+/* ---- アップデート確認ダイアログ ---- */
+.update-dialog-panel { width: min(440px, 100%); }
+.update-dialog-body { display: flex; flex-direction: column; gap: 10px; padding: 4px 2px 12px; color: var(--text-main); font-size: 13px; line-height: 1.6; }
+.update-dialog-body .update-dialog-message { font-size: 14px; }
+.update-dialog-body .update-dialog-message.ok { color: var(--accent-green, #4ade80); }
+.update-dialog-body .update-dialog-message.error { color: #f87171; }
+.update-version-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-card); }
+.update-version-row .update-version-label { color: var(--text-muted, #94a3b8); font-size: 12px; }
+.update-version-row .update-version-value { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
+.update-version-row.latest .update-version-value { color: var(--accent-green, #4ade80); }
+.update-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 4px; }
+.update-dialog-actions button { padding: 9px 18px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; }
+.update-dialog-actions button:disabled { opacity: .55; cursor: default; }
+.update-dialog-actions .update-dialog-primary { border-color: var(--accent-green, #4ade80); background: rgba(74, 222, 128, .12); color: var(--accent-green, #4ade80); }
+.update-dialog-actions .update-dialog-primary:hover:not(:disabled) { background: rgba(74, 222, 128, .22); }
+
 /* エンティティリスト */
 .entities-list {
   display: grid;
