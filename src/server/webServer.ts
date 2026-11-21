@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { MinecraftBot } from '../bot/mcBot.js';
 import { AutonomousAgent } from '../ai/agent.js';
 import { captureScreenRegion } from '../bot/vision.js';
+import { BedrockBot, type BedrockStatus } from '../bot/bedrockBot.js';
 import { AgentStepLog, ChatMessage } from '../types.js';
 import * as fs from 'fs';
 import { randomBytes, timingSafeEqual } from 'crypto';
@@ -59,6 +60,7 @@ export class WebServer {
   private lastSocketActivityAt: number = Date.now();
   private idleShutdownTimer: NodeJS.Timeout | null = null;
   private updateCheckCache: { at: number; data: any } | null = null;
+  private bedrockBot: BedrockBot | null = null;
   // 進行中の OAuth フロー: platform -> { state, codeVerifier, clientId, clientSecret, createdAt, purpose }
   private pendingOAuth: Map<string, { state: string; codeVerifier?: string; clientId: string; clientSecret?: string; createdAt: number; purpose?: 'login' | 'integration' }> = new Map();
 
@@ -1233,6 +1235,50 @@ export class WebServer {
       // 最初のユーザーメッセージをルーム名にする
       if (sender === 'user') setChatRoomTitleIfEmpty(roomId, content);
       res.json({ message });
+    });
+
+    // ---- Minecraft統合版（Bedrock）ボット ----
+    const getBedrock = () => {
+      if (!this.bedrockBot) {
+        this.bedrockBot = new BedrockBot({
+          onChat: (sender, message) => {
+            this.debugLog(`Bedrock chat <${sender}>: ${message.slice(0, 200)}`);
+            this.io.emit('chatMessage', { sender: `Bedrock:${sender}`, text: message, timestamp: new Date().toISOString() });
+          },
+          onStatus: (status: BedrockStatus) => {
+            this.io.emit('bedrockStatus', status);
+            this.debugLog(`Bedrock status: ${status.state} ${status.message || ''}`);
+          },
+        });
+      }
+      return this.bedrockBot;
+    };
+
+    this.app.get('/api/bedrock/status', (_req, res) => {
+      res.json(getBedrock().getStatus());
+    });
+
+    this.app.post('/api/bedrock/connect', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Forbidden' });
+      const body = (req.body || {}) as { host?: string; port?: number | string; username?: string };
+      getBedrock().connect({ host: String(body.host || ''), port: Number(body.port) || 19132, username: body.username });
+      res.json({ success: true, status: getBedrock().getStatus() });
+    });
+
+    this.app.post('/api/bedrock/disconnect', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Forbidden' });
+      if (this.bedrockBot) this.bedrockBot.disconnect('user');
+      res.json({ success: true });
+    });
+
+    this.app.post('/api/bedrock/chat', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Forbidden' });
+      const message = String(req.body?.message || '').slice(0, 200);
+      if (!message.trim()) return res.status(400).json({ error: 'message is required' });
+      const bot = getBedrock();
+      if (!bot.isConnected()) return res.status(409).json({ error: 'Bedrock bot is not connected.' });
+      const ok = bot.say(message);
+      res.json({ success: ok });
     });
 
     // ---- Minecraft統合版リソースパック (.mcpack) ----

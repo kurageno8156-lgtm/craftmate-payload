@@ -140,10 +140,23 @@
       body: JSON.stringify(Object.assign({ _subject: 'CraftMate', _template: 'table' }, fields))
     }).then(function (res) {
       return res.json().then(function (data) {
-        if (!res.ok || data.success !== 'true') throw new Error((data && data.message) || 'HTTP ' + res.status);
+        if (!res.ok || data.success !== 'true') {
+          var msg = (data && data.message) || 'HTTP ' + res.status;
+          // FormSubmit 初回アクティベーション未完了
+          if (/activation/i.test(msg)) {
+            var err = new Error(msg);
+            err.code = 'FORMSUBMIT_NEEDS_ACTIVATION';
+            throw err;
+          }
+          throw new Error(msg);
+        }
         return data;
       });
     });
+  }
+
+  function activationHint() {
+    return 'フォーム送信には初回アクティベーションが必要です。kurageno8156@gmail.com に届いた「Activate Form」メールのリンクをクリックしてください。';
   }
 
   function showFormStatus(el, text, ok) {
@@ -201,7 +214,7 @@
         else showFormStatus(reviewStatus, 'レビューを送信しました。ありがとうございます！', true);
       }).catch(function (error) {
         if (submitBtn) submitBtn.disabled = false;
-        showFormStatus(reviewStatus, '投稿に失敗しました: ' + (error && error.message ? error.message : error), false);
+        showFormStatus(reviewStatus, (error && error.code === 'FORMSUBMIT_NEEDS_ACTIVATION' ? activationHint() : '投稿に失敗しました: ' + (error && error.message ? error.message : error)), false);
       });
     });
   }
@@ -228,7 +241,7 @@
         showFormStatus(contactStatus, '送信しました。ご連絡ありがとうございます！', true);
       }).catch(function (error) {
         if (submitBtn) submitBtn.disabled = false;
-        showFormStatus(contactStatus, '送信に失敗しました: ' + (error && error.message ? error.message : error), false);
+        showFormStatus(contactStatus, (error && error.code === 'FORMSUBMIT_NEEDS_ACTIVATION' ? activationHint() : '送信に失敗しました: ' + (error && error.message ? error.message : error)), false);
       });
     });
   }

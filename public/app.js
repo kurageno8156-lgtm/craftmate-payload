@@ -1346,6 +1346,62 @@ on(document.getElementById('btn-logout'), 'click', async () => {
   window.location.replace('/login.html');
 });
 
+// ---- Minecraft統合版（Bedrock）ボット ----
+const bedrockStatusLabel = document.getElementById('bedrock-status-label');
+function renderBedrockStatus(s) {
+  if (!bedrockStatusLabel || !s) return;
+  const labels = { disconnected: '未接続', connecting: '接続中…', connected: '接続済み', error: 'エラー' };
+  bedrockStatusLabel.textContent = labels[s.state] || s.state;
+  bedrockStatusLabel.className = 'integration-status ' + (s.state === 'connected' ? 'on' : 'off');
+  if (s.message) bedrockStatusLabel.title = s.message + (s.position ? ` (${s.position.x}, ${s.position.y}, ${s.position.z})` : '');
+}
+socket.on('bedrockStatus', renderBedrockStatus);
+
+async function bedrockApi(path, body) {
+  const res = await fetchWithLocalSettingsAuth(path, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Bedrock request failed');
+  return data;
+}
+
+on(document.getElementById('btn-bedrock-connect'), 'click', async () => {
+  const host = document.getElementById('bedrock-host')?.value.trim();
+  const port = document.getElementById('bedrock-port')?.value;
+  const username = document.getElementById('bedrock-username')?.value.trim();
+  if (!host) { showSettingsMessage('ホストを入力してください', 'error'); return; }
+  try {
+    const data = await bedrockApi('/api/bedrock/connect', { host, port: Number(port) || 19132, username });
+    if (data.status) renderBedrockStatus(data.status);
+    showSettingsMessage('統合版サーバーへ接続しています…', 'success');
+  } catch (e) { showSettingsMessage(e.message || '接続に失敗しました', 'error'); }
+});
+on(document.getElementById('btn-bedrock-disconnect'), 'click', async () => {
+  try { await bedrockApi('/api/bedrock/disconnect'); renderBedrockStatus({ state: 'disconnected' }); }
+  catch (e) { showSettingsMessage(e.message || '切断に失敗しました', 'error'); }
+});
+const bedrockSend = async () => {
+  const input = document.getElementById('bedrock-chat-input');
+  const msg = input?.value.trim();
+  if (!msg) return;
+  try {
+    await bedrockApi('/api/bedrock/chat', { message: msg });
+    input.value = '';
+  } catch (e) { showSettingsMessage(e.message || '送信に失敗しました', 'error'); }
+};
+on(document.getElementById('btn-bedrock-send'), 'click', bedrockSend);
+on(document.getElementById('bedrock-chat-input'), 'keydown', (e) => { if (e.key === 'Enter') bedrockSend(); });
+// 設定画面を開いた時に現在のステータスを取得
+const origLoadIntegrations = loadIntegrations;
+loadIntegrations = async function () {
+  await origLoadIntegrations();
+  try {
+    const res = await fetch('/api/bedrock/status', { cache: 'no-store' });
+    if (res.ok) renderBedrockStatus(await res.json());
+  } catch { /* ignore */ }
+};
+
 on(document.getElementById('btn-settings'), 'click', () => {
   if (settingsModal) settingsModal.hidden = false;
   document.getElementById('setting-mc-port')?.focus();
