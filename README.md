@@ -204,27 +204,41 @@ http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
    - 追加しないと `access_denied` エラー（「このアカウントはテストユーザーに登録されていない可能性があります」と表示）になります
    - 本番公開する場合は「対象」→「公開」を選択（`openid email profile` スコープのみなら審査は通常不要）
 
-#### Microsoft
+#### Microsoft（Microsoft Entra ID / Microsoft Identity Platform）
 
-1. [Azure Portal](https://portal.azure.com/) →「Microsoft Entra ID」→「アプリの登録」→「新規登録」
-2. 名前を入力し、「リダイレクトURI」に `http://127.0.0.1:3000/api/integrations/microsoft/oauth/callback` を「Web」プラットフォームで追加
-3. 「APIのアクセス許可」で `openid`, `email`, `profile`, `offline_access` を追加し管理者の同意を付与
-4. 「証明書とシークレット」で新しいクライアントシークレットを作成
-5. 「概要」のアプリケーション (クライアント) ID とシークレットを控える
+1. [Microsoft Entra 管理センター](https://entra.microsoft.com/)（旧 Azure Portal）→「アプリの登録」→「新規登録」
+2. 名前（例: CraftMate）を入力
+3. **サポートされるアカウントの種類**を選択:
+   - 「個人用 Microsoft アカウントのみ」→ `MICROSOFT_TENANT_ID=consumers`
+   - 「組織（職場・学校）のみ」→ `organizations`
+   - 「個人用＋組織」→ `common`（既定・推奨）
+4. 「リダイレクトURI（Web）」に `http://127.0.0.1:3000/api/integrations/microsoft/oauth/callback` を追加
+5. 登録後「APIのアクセス許可」→ Microsoft Graph → 委任されたアクセス許可で `openid`, `email`, `profile`, `offline_access` を追加
+6. 「認証」→「暗黙的な許可およびハイブリッドフロー」ではなく、**認可コードフロー＋PKCE** を使用（本アプリは PKCE S256 対応済み）
+7. 「証明書とシークレット」→「新しいクライアントシークレット」でシークレットを作成（**値は作成時に一度だけ表示**）
+8. 「概要」の**アプリケーション（クライアント）ID** とシークレットを控える
+
+> `MICROSOFT_TENANT_ID` 環境変数でテナントを切り替えられます（未設定時は `common`）。個人用アカウントのみに絞る場合は `consumers` を設定してください。
 
 #### GitHub
 
-1. GitHub → Settings → Developer settings → OAuth Apps →「New OAuth App」
-2. Application name と Homepage URL（任意）を入力
-3. Authorization callback URL に `http://127.0.0.1:3000/api/integrations/github/oauth/callback` を設定
-4. 「Register application」後、Client ID を控え、「Generate a new client secret」でシークレットを発行
+1. GitHub → Settings → Developer settings → **OAuth Apps** →「New OAuth App」
+2. Application name（例: CraftMate）を入力
+3. Homepage URL（任意、例: リポジトリURL）
+4. **Authorization callback URL** に `http://127.0.0.1:3000/api/integrations/github/oauth/callback` を設定
+5. 「Register application」後、**Client ID** を控える
+6. ページ下部「Generate a new client secret」でシークレットを発行
+7. 必要なスコープは `read:user` + `user:email` のみ（本アプリが自動要求。過剰な権限は要求しません）
+
+> GitHub OAuth Apps は OpenID Connect の ID トークンを発行しません。CraftMate はアクセストークンで `api.github.com/user` と `/user/emails` を呼び出してユーザー情報を取得します。
 
 #### Discord
 
 1. [Discord Developer Portal](https://discord.com/developers/applications) →「New Application」でアプリを作成
 2. 左メニュー「OAuth2」→「Redirects」に `http://127.0.0.1:3000/api/integrations/discord/oauth/callback` を追加
 3. 同じ「OAuth2」ページの「Client Information」にある **Client ID** と **Client Secret**（「Reset Secret」で発行）を控える
-4. `oauth-clients.json` の `discord` セクションに記入（または GitHub Secrets に `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` を設定）
+4. 本アプリが要求するスコープは `identify email`（ユーザーID・ユーザー名・メールアドレス取得に必要な最小限）
+5. `oauth-clients.json` の `discord` セクションに記入（または GitHub Secrets に `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` を設定）
 
 ### クライアント情報の埋め込み
 
@@ -234,11 +248,37 @@ http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
 {
   "google":    { "clientId": "xxxxx.apps.googleusercontent.com", "clientSecret": "GOCSPX-xxxxx" },
   "microsoft": { "clientId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "clientSecret": "xxxxx" },
-  "github":    { "clientId": "xxxxx", "clientSecret": "xxxxx" }
+  "github":    { "clientId": "xxxxx", "clientSecret": "xxxxx" },
+  "discord":   { "clientId": "xxxxxxxxxxxxxxxxxx", "clientSecret": "xxxxx" }
 }
 ```
 
-実行時の環境変数（`GOOGLE_CLIENT_ID` 等、`.env.example` 参照）でも設定できます。優先順位は **環境変数 > oauth-clients.json** です。
+実行時の環境変数（`.env.example` 参照）でも設定できます。優先順位は **環境変数 > oauth-clients.json** です。
+
+| 変数 | 用途 |
+|---|---|
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
+| `MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET` | Microsoft OAuth |
+| `MICROSOFT_TENANT_ID` | Microsoft テナント（`common`/`consumers`/`organizations`/テナントID。既定 `common`） |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth |
+| `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` | Discord OAuth |
+| `OAUTH_ENCRYPTION_KEY` | トークン暗号化鍵（32バイト hex64文字 または base64）。未設定時は `integrations.key` ファイルを使用 |
+| `OAUTH_SESSION_SECRET` | `OAUTH_ENCRYPTION_KEY` 未設定時の代替秘密文字列（SHA-256で鍵導出） |
+
+**GitHub Secrets への登録方法**（CI ビルドに認証情報を埋め込む場合）:
+
+```bash
+gh secret set GOOGLE_CLIENT_ID -R kurageno8156-lgtm/craftmate-payload
+gh secret set GOOGLE_CLIENT_SECRET -R kurageno8156-lgtm/craftmate-payload
+gh secret set MICROSOFT_CLIENT_ID -R kurageno8156-lgtm/craftmate-payload
+gh secret set MICROSOFT_CLIENT_SECRET -R kurageno8156-lgtm/craftmate-payload
+gh secret set GITHUB_CLIENT_ID -R kurageno8156-lgtm/craftmate-payload
+gh secret set GITHUB_CLIENT_SECRET -R kurageno8156-lgtm/craftmate-payload
+gh secret set DISCORD_CLIENT_ID -R kurageno8156-lgtm/craftmate-payload
+gh secret set DISCORD_CLIENT_SECRET -R kurageno8156-lgtm/craftmate-payload
+```
+
+CI（`.github/workflows/build.yml`）はこれらの Secrets から `oauth-clients.json` を生成します。**Secrets が未設定のプロバイダだけが利用不可**になり、アプリ全体は正常に起動します。
 
 **フォールバック配置場所**: ペイロード内の `oauth-clients.json` が見つからない場合、以下も検索されます:
 
@@ -249,7 +289,21 @@ http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
 
 > **注意**: Client Secret を配布物に埋め込むと、リバースエンジニアリングで取り出される可能性があります。ネイティブアプリ向けの OAuth では一般的なトレードオフですが、公開クライアント（PKCE のみ・シークレットなし）構成も検討してください。GitHub OAuth Apps はシークレット必須です。
 
-Client ID が未設定のプロバイダはログインボタンを押しても「このログイン方法は現在利用できません」と表示されます。
+Client ID が未設定のプロバイダは、ログインボタンに「未設定」バッジが表示され、押すとプロバイダ別の日本語メッセージ（例: 「Microsoft のOAuthが設定されていません。Microsoft Entra ID でアプリケーションを登録する必要があります。」）が表示されます。設定済みプロバイダには「設定済み」バッジが付きます。
+
+#### 外部アカウント連携のセキュリティ
+
+- **state パラメータ**で CSRF を防止（コールバックで厳密照合）
+- **PKCE (S256)** で認可コード横取りを防止
+- **OIDC nonce** でリプレイトークンを検証（Google / Microsoft。Discord は `identify email` 構成で id_token を発行しないため対象外）
+- **ID トークンは JWKS で署名検証**し、issuer・audience・有効期限・nonce を検証（`jose` ライブラリ使用）
+- GitHub は ID トークン非対応のため、`api.github.com/user` + `/user/emails` で `provider_user_id`（数値ID）を取得して紐付け
+- 連携情報は `external_identities` テーブルに `provider` / `provider_user_id` / `display_name` / `email` / `connected_at` / `updated_at` として記録。**メールアドレス一致による自動アカウント統合は行いません**
+- **外部アカウントの所有権は保護されます**: 同じ外部アカウントを別の CraftMate ユーザーが連携しようとすると拒否され、既存の所有者情報は上書きされません（DB 制約＋アプリ側チェックの二重防御）
+- **ログインは所有者アカウントに解決されます**: 連携済みの外部ID（例: Google でログイン後に連携した GitHub）でログインすると、`external_identities` の所有者である CraftMate アカウントに入ります。未連携の外部IDは新規アカウントとして扱われ、既存アカウントに勝手に紐付きません
+- トークンは AES-256-GCM で暗号化して SQLite に保存。鍵は `OAUTH_ENCRYPTION_KEY` 環境変数または `integrations.key` ファイル
+- **アクセストークンは自動更新されます**: `refresh_token` を持つプロバイダ（Google / Microsoft / Discord、expiring tokens 有効時の GitHub）は期限切れ60秒前に自動で更新し、暗号化して保存します。更新失敗時は再認証が要求されます。GitHub OAuth Apps は通常 `refresh_token` を発行しないため自動更新対象外です
+- アクセストークン・シークレット・リフレッシュトークンはログに出力しません
 
 #### 内部アカウント（OAuth フォールバック）
 
@@ -259,6 +313,18 @@ OAuth プロバイダが使えない場合でもログインできるよう、�
 - アカウント情報は `%LOCALAPPDATA%\CraftMate\craftmate.db` の `local_users` テーブルに保存され、パスワードは **scrypt** でハッシュ化されます
 - セッションは OAuth ログインと同じ AES-256-GCM 暗号化ストア（`__auth_session`）で管理され、次回起動時に自動ログインされます
 - 内部アカウントはローカルPC専用です。複数PC間での同期はありません
+
+#### 実機ログインテストの手順
+
+1. 各プロバイダで OAuth アプリを登録し、Redirect URI に `http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback` を設定（provider = `google` / `microsoft` / `github` / `discord`）
+2. Client ID / Secret を環境変数または `oauth-clients.json` に設定してアプリを起動
+3. ログイン画面で対象プロバイダのボタンを押し、「設定済み」バッジが付いていることを確認
+4. 認証ページでアカウントを選択・許可し、完了ページが表示されたらダッシュボードに自動遷移することを確認
+5. ダッシュボードの外部アカウント連携で、ログインに使ったプロバイダが「接続済み」になっていることを確認
+6. 別のプロバイダでもログインし、`external_identities` テーブルに複数プロバイダが記録されることを確認（`craftmate.db` を DB ブラウザで参照）
+7. ログアウト後に `/api/auth/status` が `authenticated:false` を返すことを確認
+
+> **注意**: GitHub OAuth Apps は ID トークン・リフレッシュトークンを通常発行しません。トークン失効・手動 revoke 時は再連携が必要です。Microsoft / Google / Discord は `offline_access` / `access_type=offline` によりリフレッシュトークンを取得し、アクセストークンは期限切れ前に自動更新されます（セッションも維持されます）。
 
 ### 配布サイトのレビュー・お問い合わせ
 

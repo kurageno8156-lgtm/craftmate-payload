@@ -17,10 +17,14 @@ import {
   listReviews, addReview,
   listIntegrations, getIntegration, upsertIntegration, deleteIntegration,
   getLocalUser, createLocalUser, verifyLocalPassword,
+  upsertExternalIdentity, listExternalIdentities, getExternalIdentity,
 } from '../db.js';
 import {
   INTEGRATION_PROVIDERS, getProvider, buildAuthorizeUrl, exchangeCode,
   generatePkce, generateState, encryptJson, decryptJson, summarizeAccount,
+  providerUsesNonce, fetchProviderProfile, refreshAccessToken, verifyIdToken, mergeRefreshedTokens,
+  resolveCraftmateUser,
+  type IntegrationProvider,
 } from '../integrations.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -63,7 +67,7 @@ export class WebServer {
   // 統合版（Bedrock）機能は bedrock-app/ のゲーム内アドオンへ移行。
   // 旧 /api/bedrock/* および /api/bedrock-pack は削除済み。
   // 進行中の OAuth フロー: platform -> { state, codeVerifier, clientId, clientSecret, createdAt, purpose }
-  private pendingOAuth: Map<string, { state: string; codeVerifier?: string; clientId: string; clientSecret?: string; createdAt: number; purpose?: 'login' | 'integration' }> = new Map();
+  private pendingOAuth: Map<string, { state: string; codeVerifier?: string; clientId: string; clientSecret?: string; createdAt: number; purpose?: 'login' | 'integration'; nonce?: string; craftmateUser?: string }> = new Map();
 
 
   constructor(
@@ -109,17 +113,138 @@ export class WebServer {
    * ログインセッションを integrations テーブルの '__auth_session' 行から復号する。
    * provider='local'（旧スキップセッション）は無効として扱う。
    */
-  private getAuthSession(): { provider: string; account: { label?: string; detail?: string } | null; loginAt: number } | null {
+  private getAuthSession(): { provider: string; account: { label?: string; detail?: string } | null; loginAt: number; craftmateUser?: string } | null {
     try {
       const row = getIntegration('__auth_session');
       if (!row || row.status !== 'connected') return null;
       const data = decryptJson<any>(row.payload);
       if (!data || !data.provider || data.provider === 'local') return null;
       if (data.expiresAt && Date.now() > data.expiresAt) return null;
-      return { provider: String(data.provider), account: data.account || null, loginAt: data.loginAt || 0 };
+      // craftmate_user 識別子: 新規セッションは payload に保存済み。
+      // 旧セッションは provider + account から推定する。
+      const craftmateUser = data.craftmateUser
+        || (data.provider === 'internal' ? `local:${data.account?.label || 'unknown'}` : `oauth:${data.provider}`);
+      return { provider: String(data.provider), account: data.account || null, loginAt: data.loginAt || 0, craftmateUser };
     } catch {
       return null;
     }
+  }
+
+  // ---- OAuth トークン自動更新 ----
+  // refresh_token を持つプロバイダ（Google/Microsoft/Discord、および expiring tokens が
+  // 有効な GitHub）のみ更新する。GitHub OAuth Apps は通常 refresh_token を発行しないため
+  // refresh_token が無ければ何もしない（＝自動更新されないのが正常）。
+  private tokenRefreshInflight = new Map<string, Promise<void>>();
+
+  /** トークン期限判定。tokenExpiresAt 優先、無ければ発行時刻+expires_in で推定（旧データ互換） */
+  private tokenExpiryMs(data: any): number | null {
+    const direct = Number(data?.tokenExpiresAt);
+    if (Number.isFinite(direct) && direct > 0) return direct;
+    const issuedAt = Number(data?.connectedAt || data?.loginAt || 0);
+    const expiresIn = Number(data?.expires_in || data?.tokenData?.expires_in || 0);
+    if (issuedAt > 0 && Number.isFinite(expiresIn) && expiresIn > 0) return issuedAt + expiresIn * 1000;
+    return null;
+  }
+
+  /** 期限切れ60秒前を「要更新」とみなす */
+  private tokenNeedsRefresh(data: any): boolean {
+    if (!data || !data.refresh_token) return false;
+    const exp = this.tokenExpiryMs(data);
+    return exp !== null && Date.now() > exp - 60_000;
+  }
+
+  /** refresh_token でトークンを更新し、マージ済みペイロードを返す。更新不可なら null */
+  private async doRefreshTokenData(provider: IntegrationProvider, tokenData: any): Promise<any | null> {
+    const refreshToken = String(tokenData.refresh_token || '');
+    const clientId = String(tokenData.clientId || '');
+    if (!refreshToken || !clientId) return null;
+    const fresh = await refreshAccessToken(provider, {
+      refreshToken,
+      clientId,
+      clientSecret: tokenData.clientSecret ? String(tokenData.clientSecret) : undefined,
+    });
+    const merged = mergeRefreshedTokens(tokenData, fresh);
+    // 新しい id_token が来た場合は署名検証してから採用（nonce は refresh grant では通常含まれない）
+    if (fresh.id_token && providerUsesNonce(provider)) {
+      try {
+        const claims = await verifyIdToken(provider.id, String(fresh.id_token), { clientId });
+        if (claims.sub) {
+          merged.profile = { ...(tokenData.profile || {}), providerUserId: String(claims.sub) };
+        }
+      } catch { /* id_token 検証失敗時は既存 profile を維持 */ }
+    }
+    return merged;
+  }
+
+  /** 恒久的な認証失敗（再認証が必要）か一時的な障害かを判定 */
+  private isPermanentAuthError(msg: string): boolean {
+    return /invalid_grant|invalid_client|unauthorized_client|bad_refresh_token/i.test(msg);
+  }
+
+  /** 連携プロバイダのトークンを必要に応じて更新（同時実行は1本に集約） */
+  private refreshIntegration(platform: string): Promise<void> {
+    const existing = this.tokenRefreshInflight.get(platform);
+    if (existing) return existing;
+    const job = (async () => {
+      const provider = getProvider(platform);
+      if (!provider) return;
+      const row = getIntegration(platform);
+      if (!row || row.status !== 'connected' || !row.payload) return;
+      const data = decryptJson<any>(row.payload);
+      if (!this.tokenNeedsRefresh(data)) return;
+      try {
+        const merged = await this.doRefreshTokenData(provider, data);
+        if (!merged) {
+          // refresh_token も clientId も無いのに期限切れ → 再認証要求
+          upsertIntegration(platform, 'error', encryptJson({ ...data, needsReauth: true, reauthReason: 'no_refresh_token' }));
+          this.debugLog(`token refresh: ${platform} needs reauth (no refresh token)`);
+          return;
+        }
+        upsertIntegration(platform, 'connected', encryptJson(merged));
+        this.debugLog(`token refreshed: ${platform}`);
+      } catch (e) {
+        const msg = (e as Error).message;
+        this.debugLog(`token refresh failed: ${platform} ${msg}`);
+        if (this.isPermanentAuthError(msg)) {
+          const data2 = decryptJson<any>(row.payload) || {};
+          upsertIntegration(platform, 'error', encryptJson({ ...data2, needsReauth: true, reauthReason: msg.slice(0, 200) }));
+        }
+        // 一時的障害（ネットワーク等）は connected のまま次回再試行
+      }
+    })().finally(() => { this.tokenRefreshInflight.delete(platform); });
+    this.tokenRefreshInflight.set(platform, job);
+    return job;
+  }
+
+  /** __auth_session のトークンを更新。恒久的失敗時はセッション削除（再ログイン要求） */
+  private refreshAuthSession(): Promise<void> {
+    const existing = this.tokenRefreshInflight.get('__auth_session');
+    if (existing) return existing;
+    const job = (async () => {
+      const row = getIntegration('__auth_session');
+      if (!row || row.status !== 'connected' || !row.payload) return;
+      const data = decryptJson<any>(row.payload);
+      if (!data || data.provider === 'internal' || !data.tokenData) return;
+      if (!this.tokenNeedsRefresh(data.tokenData)) return;
+      const provider = getProvider(String(data.provider));
+      if (!provider) return;
+      try {
+        const merged = await this.doRefreshTokenData(provider, data.tokenData);
+        if (!merged) {
+          deleteIntegration('__auth_session');
+          this.debugLog('auth session refresh: no refresh token, session cleared');
+          return;
+        }
+        upsertIntegration('__auth_session', 'connected', encryptJson({ ...data, tokenData: merged }));
+        this.debugLog(`auth session token refreshed: ${data.provider}`);
+      } catch (e) {
+        const msg = (e as Error).message;
+        this.debugLog(`auth session refresh failed: ${data.provider} ${msg}`);
+        if (this.isPermanentAuthError(msg)) deleteIntegration('__auth_session');
+      }
+    })().finally(() => { this.tokenRefreshInflight.delete('__auth_session'); });
+    this.tokenRefreshInflight.set('__auth_session', job);
+    return job;
   }
 
   private setupMiddlewares(): void {
@@ -943,8 +1068,10 @@ export class WebServer {
     const integrationRedirectBase = () =>
       (process.env.CRAFTMATE_PUBLIC_URL || `http://127.0.0.1:${this.port}`).replace(/\/+$/, '');
 
-    this.app.get('/api/integrations', (req, res) => {
+    this.app.get('/api/integrations', async (req, res) => {
       if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      // 期限切れ間近のトークンを事前に更新（refresh_token がある場合のみ。失敗しても応答は返す）
+      await Promise.allSettled(INTEGRATION_PROVIDERS.map(p => this.refreshIntegration(p.id)));
       const rows = new Map(listIntegrations().map(r => [r.platform, r]));
       const platforms = INTEGRATION_PROVIDERS.map(p => {
         const row = rows.get(p.id);
@@ -1006,13 +1133,19 @@ export class WebServer {
       const state = generateState();
       const { verifier, challenge } = generatePkce();
       const redirectUri = `${integrationRedirectBase()}/api/integrations/${provider.id}/oauth/callback`;
-      this.pendingOAuth.set(provider.id, { state, codeVerifier: verifier, clientId, clientSecret, createdAt: Date.now() });
+      const nonce = providerUsesNonce(provider) ? generateState() : undefined;
+      // 既存アカウントへの追加連携は本人確認済みセッションを必須とする
+      const session = this.getAuthSession();
+      if (!session?.craftmateUser) {
+        return res.status(401).json({ error: 'アカウント連携にはログインが必要です。', code: 'AUTH_REQUIRED' });
+      }
+      this.pendingOAuth.set(provider.id, { state, codeVerifier: verifier, clientId, clientSecret, createdAt: Date.now(), nonce, craftmateUser: session.craftmateUser });
       // 10分で期限切れにするため古いエントリを掃除
       const now = Date.now();
       for (const [k, v] of this.pendingOAuth) {
         if (now - v.createdAt > 10 * 60 * 1000) this.pendingOAuth.delete(k);
       }
-      const authUrl = buildAuthorizeUrl(provider, { redirectUri, state, codeChallenge: challenge, clientId });
+      const authUrl = buildAuthorizeUrl(provider, { redirectUri, state, codeChallenge: challenge, clientId, nonce });
       this.debugLog(`integration oauth start: ${provider.id} redirect=${redirectUri}`);
       res.json({ success: true, authUrl, redirectUri });
     });
@@ -1072,8 +1205,10 @@ export class WebServer {
       return resolved;
     };
 
-    this.app.get('/api/auth/status', (req, res) => {
+    this.app.get('/api/auth/status', async (req, res) => {
       if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      // セッションのアクセストークンが期限切れ間近なら更新を試行（失敗時は安全に再認証要求）
+      await this.refreshAuthSession().catch(() => { });
       const session = this.getAuthSession();
       res.json({ authenticated: !!session, session });
     });
@@ -1094,8 +1229,9 @@ export class WebServer {
       const state = generateState();
       const { verifier, challenge } = generatePkce();
       const redirectUri = `${integrationRedirectBase()}/api/integrations/${provider.id}/oauth/callback`;
-      this.pendingOAuth.set(`login:${provider.id}`, { state, codeVerifier: verifier, clientId, clientSecret, createdAt: Date.now(), purpose: 'login' });
-      const authUrl = buildAuthorizeUrl(provider, { redirectUri, state, codeChallenge: challenge, clientId });
+      const nonce = providerUsesNonce(provider) ? generateState() : undefined;
+      this.pendingOAuth.set(`login:${provider.id}`, { state, codeVerifier: verifier, clientId, clientSecret, createdAt: Date.now(), purpose: 'login', nonce });
+      const authUrl = buildAuthorizeUrl(provider, { redirectUri, state, codeChallenge: challenge, clientId, nonce });
       this.debugLog(`auth login start: ${provider.id} redirect=${redirectUri}`);
       res.json({ success: true, authUrl });
     });
@@ -1108,6 +1244,7 @@ export class WebServer {
       upsertIntegration('__auth_session', 'connected', encryptJson({
         provider: LOCAL_AUTH_PROVIDER,
         account: { label: username, detail: 'internal account' },
+        craftmateUser: `local:${username}`,
         loginAt: Date.now(),
         expiresAt: null,
       }));
@@ -1162,9 +1299,10 @@ export class WebServer {
       const platform = String(req.params.platform);
       const provider = getProvider(platform);
       const finish = (ok: boolean, message: string) => {
+        const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         // window.open で開かれたウィンドウは script から閉じられる。
         // ダッシュボードへの復帰リンクも併記する。
-        res.type('html').send(`<!doctype html><html><head><meta charset="utf-8"><title>CraftMate</title></head><body style="font-family:sans-serif;background:#0b0f14;color:#e4e4e7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center;max-width:480px"><h2 style="color:${ok ? '#4ade80' : '#f87171'}">${ok ? '連携が完了しました' : '連携に失敗しました'}</h2><p>${message}</p><p style="color:#71717a;font-size:13px">このウィンドウは自動で閉じます。閉じない場合は <a href="http://127.0.0.1:3000" style="color:#60a5fa">ダッシュボードに戻る</a> をクリックしてください。</p></div><script>try{if(window.opener){window.opener.postMessage({type:'craftmate:oauth-done',platform:'${platform}',ok:${ok}},'*')}}catch(e){}setTimeout(function(){try{window.close()}catch(e){}},1200)</script></body></html>`);
+        res.type('html').send(`<!doctype html><html><head><meta charset="utf-8"><title>CraftMate</title></head><body style="font-family:sans-serif;background:#0b0f14;color:#e4e4e7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center;max-width:480px"><h2 style="color:${ok ? '#4ade80' : '#f87171'}">${ok ? '連携が完了しました' : '連携に失敗しました'}</h2><p>${esc(message)}</p><p style="color:#71717a;font-size:13px">このウィンドウは自動で閉じます。閉じない場合は <a href="http://127.0.0.1:3000" style="color:#60a5fa">ダッシュボードに戻る</a> をクリックしてください。</p></div><script>try{if(window.opener){window.opener.postMessage({type:'craftmate:oauth-done',platform:${JSON.stringify(platform)},ok:${ok}},location.origin)}}catch(e){}setTimeout(function(){try{window.close()}catch(e){}},1200)</script></body></html>`);
       };
       if (!provider) return finish(false, 'Unknown platform.');
       const { code, state, error, error_description } = req.query as Record<string, string>;
@@ -1178,7 +1316,9 @@ export class WebServer {
         return finish(false, message);
       }
       const pending = this.pendingOAuth.get(platform) || this.pendingOAuth.get(`login:${platform}`);
-      if (!pending || pending.state !== state || !code) {
+      const pendingExpired = pending ? Date.now() - pending.createdAt > 10 * 60 * 1000 : false;
+      if (!pending || pendingExpired || pending.state !== state || !code) {
+        if (pendingExpired) { this.pendingOAuth.delete(platform); this.pendingOAuth.delete(`login:${platform}`); }
         return finish(false, '認証セッションが無効か期限切れです。もう一度お試しください。');
       }
       this.pendingOAuth.delete(platform);
@@ -1191,20 +1331,60 @@ export class WebServer {
           clientSecret: pending.clientSecret,
           codeVerifier: pending.codeVerifier,
         });
-        const account = summarizeAccount(platform, tokenData);
+        // プロバイダからユーザー情報を取得（id_token は署名/JWKS/iss/aud/exp/nonce を検証済み）
+        const profile = await fetchProviderProfile(provider, tokenData, {
+          clientId: pending.clientId,
+          nonce: pending.nonce,
+        });
+        const enriched = {
+          ...tokenData,
+          profile,
+          // リフレッシュに必要なクライアント情報とトークン期限を暗号化ペイロードに保持
+          clientId: pending.clientId,
+          clientSecret: pending.clientSecret,
+          tokenExpiresAt: Number.isFinite(Number(tokenData.expires_in)) && Number(tokenData.expires_in) > 0
+            ? Date.now() + Number(tokenData.expires_in) * 1000 : null,
+        };
+        const account = { label: profile.label, detail: profile.detail || platform };
+        // provider + provider_user_id から CraftMate アカウントを解決する。
+        // ログイン: 連携済みなら所有者アカウントでログイン、未連携なら新規アカウント。
+        // 連携: ログイン中ユーザーに紐付け、別所有者なら拒否。
+        const existingIdentity = profile.providerUserId
+          ? getExternalIdentity(platform, profile.providerUserId) : null;
+        const resolved = resolveCraftmateUser({
+          purpose: pending.purpose,
+          providerId: platform,
+          providerUserId: profile.providerUserId,
+          sessionUser: pending.craftmateUser,
+          accountLabel: account.label,
+          existingOwner: existingIdentity?.craftmate_user || null,
+        });
+        if (resolved.conflict) {
+          this.debugLog(`external identity conflict: ${platform} owned by ${existingIdentity!.craftmate_user}, rejected for ${resolved.craftmateUser}`);
+          return finish(false, 'この外部アカウントは既に別のCraftMateアカウントに連携されています。連携を解除してからやり直してください。');
+        }
+        const craftmateUser = resolved.craftmateUser;
+        // 外部IDと CraftMate ユーザーの紐付けを記録（メール一致での自動統合は行わない）
+        if (profile.providerUserId) {
+          upsertExternalIdentity(platform, profile.providerUserId, craftmateUser, profile.name || profile.label || '', profile.email || '');
+        }
         if (pending.purpose === 'login') {
           const expiresIn = Number(tokenData.expires_in);
+          // refresh_token がある場合はアクセストークン期限でセッションを切らない
+          // （トークン自動更新で延命する）。無い場合のみ expires_in をセッション期限に使う。
+          const hasRefresh = !!tokenData.refresh_token;
           upsertIntegration('__auth_session', 'connected', encryptJson({
             provider: platform,
             account,
-            tokenData,
+            craftmateUser,
+            tokenData: enriched,
             clientId: pending.clientId,
             loginAt: Date.now(),
-            expiresAt: Number.isFinite(expiresIn) && expiresIn > 0 ? Date.now() + expiresIn * 1000 : null,
+            expiresAt: !hasRefresh && Number.isFinite(expiresIn) && expiresIn > 0 ? Date.now() + expiresIn * 1000 : null,
           }));
           // ログインに使ったプロバイダを「外部アカウント連携」でも連携済みにする
           upsertIntegration(platform, 'connected', encryptJson({
-            ...tokenData,
+            ...enriched,
             clientId: pending.clientId,
             connectedAt: Date.now(),
             via: 'login',
@@ -1213,7 +1393,7 @@ export class WebServer {
           return finish(true, `ログインが完了しました${account.label ? `（${account.label}）` : ''}。ダッシュボードに戻ってください。`);
         }
         upsertIntegration(platform, 'connected', encryptJson({
-          ...tokenData,
+          ...enriched,
           clientId: pending.clientId,
           connectedAt: Date.now(),
         }));

@@ -53,6 +53,16 @@ CREATE TABLE IF NOT EXISTS local_users (
   pass_hash TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS external_identities (
+  provider TEXT NOT NULL,
+  provider_user_id TEXT NOT NULL,
+  craftmate_user TEXT NOT NULL DEFAULT 'default',
+  display_name TEXT NOT NULL DEFAULT '',
+  email TEXT NOT NULL DEFAULT '',
+  connected_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (provider, provider_user_id)
+);
 `;
 
 // ---- DB 初期化（モード分岐）----
@@ -268,4 +278,42 @@ export function getLocalUser(username: string): { username: string; pass_hash: s
 
 export function createLocalUser(username: string, password: string): void {
   prepare('INSERT INTO local_users (username, pass_hash, created_at) VALUES (?, ?, ?)').run(username, hashLocalPassword(password), Date.now());
+}
+
+// ---- 外部アカウント連携 ID マッピング ----
+// provider + provider_user_id で一意。同一 CraftMate ユーザーが複数プロバイダを連携可能。
+// 所有者（craftmate_user）は一度紐付いたら変更しない。
+// 別ユーザーによる連携はアプリ側で拒否するが、DB 側でも craftmate_user を上書きしない
+// （多層防御: 万が一アプリ側チェックを通過しても所有権は移らない）。
+export function getExternalIdentity(
+  provider: string,
+  providerUserId: string
+): { provider: string; provider_user_id: string; craftmate_user: string; display_name: string; email: string; connected_at: number; updated_at: number } | null {
+  const rows = prepare('SELECT provider, provider_user_id, craftmate_user, display_name, email, connected_at, updated_at FROM external_identities WHERE provider = ? AND provider_user_id = ?')
+    .all(provider, providerUserId) as any[];
+  return rows[0] || null;
+}
+
+export function upsertExternalIdentity(
+  provider: string,
+  providerUserId: string,
+  craftmateUser: string,
+  displayName: string,
+  email: string
+): void {
+  const now = Date.now();
+  prepare(`INSERT INTO external_identities (provider, provider_user_id, craftmate_user, display_name, email, connected_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(provider, provider_user_id) DO UPDATE SET
+             display_name = excluded.display_name,
+             email = excluded.email,
+             updated_at = excluded.updated_at`)
+    .run(provider, providerUserId, craftmateUser, displayName.slice(0, 100), email.slice(0, 200), now, now);
+}
+
+export function listExternalIdentities(craftmateUser = 'default'): Array<{
+  provider: string; provider_user_id: string; display_name: string; email: string; connected_at: number; updated_at: number;
+}> {
+  return prepare('SELECT provider, provider_user_id, display_name, email, connected_at, updated_at FROM external_identities WHERE craftmate_user = ? ORDER BY provider')
+    .all(craftmateUser) as any[];
 }
