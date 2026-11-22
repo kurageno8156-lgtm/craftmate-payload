@@ -10,6 +10,11 @@ on:
         description: 'Version to build (e.g. 1.4.0)'
         required: true
         default: '1.4.0'
+      publish_release:
+        description: 'Create/update a GitHub Release with the built assets (explicit opt-in; leave false for verification builds)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -218,6 +223,34 @@ jobs:
           done
           ls -la electron/dist-installer/*.dmg
 
+      # DMG 内部検査: oauth-clients.json（Client Secret を含み得る）と
+      # 実シークレットパターンが成果物に含まれないことを確認する。
+      # 検出時はカウントのみ出力し、ファイル内容・シークレット値はログに出さない。
+      - name: Inspect DMG contents for OAuth client secrets
+        shell: bash
+        run: |
+          set -e
+          FAIL=0
+          for DMG in electron/dist-installer/*.dmg; do
+            echo "==> Inspecting $(basename "$DMG")"
+            MOUNT=$(mktemp -d)
+            hdiutil attach -nobrowse -readonly -mountpoint "$MOUNT" "$DMG" >/dev/null
+            # .app 内の全ファイルを対象に検査
+            OAUTH_COUNT=$(find "$MOUNT" -name 'oauth-clients.json' | wc -l | tr -d ' ')
+            # 実シークレットの汎用パターン（Google OAuth / 非空 clientSecret / 既知ID形式）
+            SECRET_COUNT=$(grep -rlE 'GOCSPX-[A-Za-z0-9_-]{20,}|clientSecret"[[:space:]]*:[[:space:]]*"[^"]{16,}"' "$MOUNT" 2>/dev/null | wc -l | tr -d ' ')
+            echo "    oauth-clients.json entries: $OAUTH_COUNT"
+            echo "    files matching secret patterns: $SECRET_COUNT"
+            if [ "$OAUTH_COUNT" != "0" ] || [ "$SECRET_COUNT" != "0" ]; then
+              echo "    !! SECRET CONTAMINATION DETECTED in $DMG"
+              FAIL=1
+            fi
+            hdiutil detach "$MOUNT" -quiet || true
+            rm -rf "$MOUNT"
+          done
+          if [ "$FAIL" != "0" ]; then exit 1; fi
+          echo "All DMGs clean: no oauth-clients.json, no client secrets."
+
       - uses: actions/upload-artifact@v4
         with:
           name: craftmate-macos
@@ -237,7 +270,9 @@ jobs:
     # macOS ジョブが失敗/キャンセルでも Linux アセットは添付する。
     needs: [build-linux, build-linux-arm64]
     runs-on: ubuntu-latest
-    if: ${{ success() && github.event_name == 'workflow_dispatch' }}
+    # Release 作成は publish_release=true を明示した場合のみ。
+    # 通常のビルド検証（デフォルト false）では Release・タグを一切変更しない。
+    if: ${{ success() && github.event_name == 'workflow_dispatch' && inputs.publish_release == true }}
     steps:
       - uses: actions/download-artifact@v4
         with:
