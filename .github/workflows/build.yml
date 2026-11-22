@@ -238,7 +238,7 @@ jobs:
             # .app 内の全ファイルを対象に検査
             OAUTH_COUNT=$(find "$MOUNT" -name 'oauth-clients.json' | wc -l | tr -d ' ')
             # 実シークレットの汎用パターン（Google OAuth / 非空 clientSecret / 既知ID形式）
-            SECRET_COUNT=$(grep -rlE 'GOCSPX-[A-Za-z0-9_-]{20,}|clientSecret"[[:space:]]*:[[:space:]]*"[^"]{16,}"' "$MOUNT" 2>/dev/null | wc -l | tr -d ' ')
+            SECRET_COUNT=$( { grep -rlE 'GOCSPX-[A-Za-z0-9_-]{20,}|clientSecret"[[:space:]]*:[[:space:]]*"[^"]{16,}"' "$MOUNT" 2>/dev/null || true; } | wc -l | tr -d ' ')
             echo "    oauth-clients.json entries: $OAUTH_COUNT"
             echo "    files matching secret patterns: $SECRET_COUNT"
             if [ "$OAUTH_COUNT" != "0" ] || [ "$SECRET_COUNT" != "0" ]; then
