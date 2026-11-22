@@ -224,9 +224,11 @@ http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
 4. 本アプリが要求するスコープは `identify email`（ユーザーID・ユーザー名・メールアドレス取得に必要な最小限）
 5. `oauth-clients.json` の `discord` セクションに記入（または GitHub Secrets に `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` を設定）
 
-### クライアント情報の埋め込み
+### クライアント情報の設定（ユーザー配置方式）
 
-リポジトリルートに `oauth-clients.json` を作成し（テンプレート: `oauth-clients.example.json`）、Client ID / Secret を記入してからビルドしてください。このファイルは `.gitignore` 済みで、Windows ペイロード（`app_payload.zip`）と Linux tarball の両方に自動で同梱されます。
+**配布物（インストーラー / `app_payload.zip` / Linux tarball）には Client Secret を一切含めません。** OAuth を使うには、各ユーザーが自分で OAuth アプリを登録し、認証情報をローカルの設定ファイルに配置してください。
+
+テンプレート（`oauth-clients.example.json`）をコピーして Client ID / Secret を記入します:
 
 ```json
 {
@@ -235,6 +237,11 @@ http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
   "discord":   { "clientId": "xxxxxxxxxxxxxxxxxx", "clientSecret": "xxxxx" }
 }
 ```
+
+**配置場所**（見つかった最初のファイルが使われます）:
+
+- `%LOCALAPPDATA%\CraftMate\oauth-clients.json`（Windows・推奨）
+- `$XDG_CONFIG_HOME/craftmate/oauth-clients.json` または `~/.config/craftmate/oauth-clients.json`（Linux/macOS）
 
 実行時の環境変数（`.env.example` 参照）でも設定できます。優先順位は **環境変数 > oauth-clients.json** です。
 
@@ -246,27 +253,9 @@ http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
 | `OAUTH_ENCRYPTION_KEY` | トークン暗号化鍵（32バイト hex64文字 または base64）。未設定時は `integrations.key` ファイルを使用 |
 | `OAUTH_SESSION_SECRET` | `OAUTH_ENCRYPTION_KEY` 未設定時の代替秘密文字列（SHA-256で鍵導出） |
 
-**GitHub Secrets への登録方法**（CI ビルドに認証情報を埋め込む場合）:
+> **開発者向け**: リポジトリルートに `oauth-clients.json` を置くと `npm start` 等の開発実行で読み込まれます（`.gitignore` 済み・コミット禁止）。ただしリリースビルドでは同梱されません。
 
-```bash
-gh secret set GOOGLE_CLIENT_ID -R kurageno8156-lgtm/craftmate-payload
-gh secret set GOOGLE_CLIENT_SECRET -R kurageno8156-lgtm/craftmate-payload
-gh secret set GITHUB_CLIENT_ID -R kurageno8156-lgtm/craftmate-payload
-gh secret set GITHUB_CLIENT_SECRET -R kurageno8156-lgtm/craftmate-payload
-gh secret set DISCORD_CLIENT_ID -R kurageno8156-lgtm/craftmate-payload
-gh secret set DISCORD_CLIENT_SECRET -R kurageno8156-lgtm/craftmate-payload
-```
-
-CI（`.github/workflows/build.yml`）はこれらの Secrets から `oauth-clients.json` を生成します。**Secrets が未設定のプロバイダだけが利用不可**になり、アプリ全体は正常に起動します。
-
-**フォールバック配置場所**: ペイロード内の `oauth-clients.json` が見つからない場合、以下も検索されます:
-
-- `%LOCALAPPDATA%\CraftMate\oauth-clients.json`（Windows）
-- `$XDG_CONFIG_HOME/craftmate/oauth-clients.json` または `~/.config/craftmate/oauth-clients.json`（Linux/macOS）
-
-インストール先にファイルを置けば、再インストールなしで OAuth クライアントを有効化できます。起動時に `%TEMP%\CraftMate_server.log` の `oauth-clients:` 行で、どのファイルが読み込まれたか確認できます。
-
-> **注意**: Client Secret を配布物に埋め込むと、リバースエンジニアリングで取り出される可能性があります。ネイティブアプリ向けの OAuth では一般的なトレードオフですが、公開クライアント（PKCE のみ・シークレットなし）構成も検討してください。GitHub OAuth Apps はシークレット必須です。
+起動時に `%TEMP%\CraftMate_server.log` の `oauth-clients:` 行で、どのファイルが読み込まれたか確認できます。
 
 Client ID が未設定のプロバイダは、ログインボタンに「未設定」バッジが表示され、押すとプロバイダ別の日本語メッセージ（例: 「Google のOAuthが設定されていません。Google Cloud Console でOAuthクライアントを登録する必要があります。」）が表示されます。設定済みプロバイダには「設定済み」バッジが付きます。
 

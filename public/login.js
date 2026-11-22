@@ -8,10 +8,15 @@
   const providersEl = document.getElementById('providers');
   const statusEl = document.getElementById('status');
 
+  // OAuthクライアント未設定時の共通案内。
+  // 配布物に Client Secret は同梱されないため、ユーザー自身が設定ファイルを配置する必要がある。
+  const OAUTH_SETUP_FILE = '%LOCALAPPDATA%\\CraftMate\\oauth-clients.json';
+  const OAUTH_SETUP_HINT = 'Client ID/Secret を ' + OAUTH_SETUP_FILE + ' に設定してください（雛形: oauth-clients.example.json）。';
+
   const PROVIDER_META = {
-    google: { icon: '🔵', label: 'Google でログイン', setupHint: 'Google Cloud Console でOAuthクライアントを登録する必要があります。' },
-    github: { icon: '🐙', label: 'GitHub でログイン', setupHint: 'GitHub Developer Settings で OAuth App を登録する必要があります。' },
-    discord: { icon: '💬', label: 'Discord でログイン', setupHint: 'Discord Developer Portal でアプリケーションを登録する必要があります。' },
+    google: { icon: '🔵', label: 'Google でログイン', setupHint: 'Google Cloud Console でOAuthクライアントを登録し、' + OAUTH_SETUP_HINT },
+    github: { icon: '🐙', label: 'GitHub でログイン', setupHint: 'GitHub Developer Settings で OAuth App を登録し、' + OAUTH_SETUP_HINT },
+    discord: { icon: '💬', label: 'Discord でログイン', setupHint: 'Discord Developer Portal でアプリケーションを登録し、' + OAUTH_SETUP_HINT },
   };
 
   function setStatus(text, kind) {

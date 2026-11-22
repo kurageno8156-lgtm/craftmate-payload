@@ -78,7 +78,9 @@ try {
     foreach ($directory in @('dist', 'public', 'node_modules')) {
       & $addDirectory (Join-Path $projectRoot $directory) $directory
     }
-    foreach ($file in @('CraftMate.exe', 'Launcher.exe', 'node.exe', '.env.example', 'package.json', 'package-lock.json', 'README.md', 'oauth-clients.json')) {
+    # oauth-clients.json は Client Secret を含むため配布物に同梱しない。
+    # ユーザーは %LOCALAPPDATA%\CraftMate\oauth-clients.json に自分で配置する。
+    foreach ($file in @('CraftMate.exe', 'Launcher.exe', 'node.exe', '.env.example', 'package.json', 'package-lock.json', 'README.md')) {
       $src = Join-Path $projectRoot $file
       if (Test-Path -LiteralPath $src -PathType Leaf) { & $addFile $src $file }
     }

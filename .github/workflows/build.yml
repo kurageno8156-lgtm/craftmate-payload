@@ -29,25 +29,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # OAuth クライアント情報を Secrets から生成（git 管理外のため CI では未存在）
-      - name: Generate oauth-clients.json from secrets
-        shell: bash
-        env:
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
-          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
-          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
-          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
-        run: |
-          cat > oauth-clients.json <<EOF
-          {
-            "google":    { "clientId": "${GOOGLE_CLIENT_ID}",    "clientSecret": "${GOOGLE_CLIENT_SECRET}" },
-            "github":    { "clientId": "${GITHUB_CLIENT_ID}",    "clientSecret": "${GITHUB_CLIENT_SECRET}" },
-            "discord":   { "clientId": "${DISCORD_CLIENT_ID}",   "clientSecret": "${DISCORD_CLIENT_SECRET}" }
-          }
-          EOF
-          echo "oauth-clients.json generated (providers with clientId: $(grep -o '\"clientId\": \"[^\"]\{8,\}' oauth-clients.json | wc -l))"
 
       - uses: actions/setup-node@v4
         with:
@@ -119,23 +100,6 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
-      - name: Generate oauth-clients.json from secrets
-        shell: bash
-        env:
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
-          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
-          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
-          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
-        run: |
-          cat > oauth-clients.json <<EOF
-          {
-            "google":    { "clientId": "${GOOGLE_CLIENT_ID}",    "clientSecret": "${GOOGLE_CLIENT_SECRET}" },
-            "github":    { "clientId": "${GITHUB_CLIENT_ID}",    "clientSecret": "${GITHUB_CLIENT_SECRET}" },
-            "discord":   { "clientId": "${DISCORD_CLIENT_ID}",   "clientSecret": "${DISCORD_CLIENT_SECRET}" }
-          }
-          EOF
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -181,23 +145,6 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
-      - name: Generate oauth-clients.json from secrets
-        shell: bash
-        env:
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
-          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
-          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
-          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
-        run: |
-          cat > oauth-clients.json <<EOF
-          {
-            "google":    { "clientId": "${GOOGLE_CLIENT_ID}",    "clientSecret": "${GOOGLE_CLIENT_SECRET}" },
-            "github":    { "clientId": "${GITHUB_CLIENT_ID}",    "clientSecret": "${GITHUB_CLIENT_SECRET}" },
-            "discord":   { "clientId": "${DISCORD_CLIENT_ID}",   "clientSecret": "${DISCORD_CLIENT_SECRET}" }
-          }
-          EOF
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -246,23 +193,6 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
-      - name: Generate oauth-clients.json from secrets
-        shell: bash
-        env:
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
-          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
-          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
-          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
-        run: |
-          cat > oauth-clients.json <<EOF
-          {
-            "google":    { "clientId": "${GOOGLE_CLIENT_ID}",    "clientSecret": "${GOOGLE_CLIENT_SECRET}" },
-            "github":    { "clientId": "${GITHUB_CLIENT_ID}",    "clientSecret": "${GITHUB_CLIENT_SECRET}" },
-            "discord":   { "clientId": "${DISCORD_CLIENT_ID}",   "clientSecret": "${DISCORD_CLIENT_SECRET}" }
-          }
-          EOF
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
