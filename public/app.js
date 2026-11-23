@@ -864,15 +864,28 @@ async function apiSend(method, p, body) {
 }
 
 let roomsLoadError = false;
+let roomsRetryTimer = null;
+let roomsRetryCount = 0;
+const ROOMS_MAX_RETRIES = 6;
 
 async function refreshRooms(selectId) {
   try {
     const data = await apiGet('/api/chat-rooms');
     chatRooms = data.rooms || [];
     roomsLoadError = false;
+    roomsRetryCount = 0;
+    if (roomsRetryTimer) { clearTimeout(roomsRetryTimer); roomsRetryTimer = null; }
   } catch (e) {
     chatRooms = [];
     roomsLoadError = true;
+    // 起動直後のサーバー未準備（一時的な接続失敗）に備えて自動再試行する
+    if (roomsRetryCount < ROOMS_MAX_RETRIES && !roomsRetryTimer) {
+      roomsRetryCount += 1;
+      roomsRetryTimer = setTimeout(() => {
+        roomsRetryTimer = null;
+        refreshRooms();
+      }, 5000);
+    }
   }
   if (selectId && chatRooms.find(r => r.id === selectId)) activeRoomId = selectId;
   else if (!chatRooms.find(r => r.id === activeRoomId)) activeRoomId = chatRooms.length ? chatRooms[0].id : null;
@@ -972,7 +985,7 @@ function renderChatMessages() {
     bubble.className = 'chat-bubble chat-bubble-' + role;
     const who = document.createElement('div');
     who.className = 'chat-bubble-who';
-    who.textContent = role === 'user' ? translate('chatYou') : role === 'ai' ? 'CraftMate AI' : translate('chatMinecraft');
+    who.textContent = role === 'user' ? translate('chatYou') : role === 'ai' ? 'BlockWhiz AI' : translate('chatMinecraft');
     const body = document.createElement('div');
     body.className = 'chat-bubble-text';
     body.textContent = msg.content;
@@ -1496,6 +1509,69 @@ on(document.getElementById('btn-settings'), 'click', () => {
   document.getElementById('setting-mc-port')?.focus();
   loadSettings();
   loadIntegrations();
+  loadCloudAccountSection();
+});
+
+// ---- クラウドアカウント（パスワード変更）----
+async function loadCloudAccountSection() {
+  const section = document.getElementById('cloud-account-section');
+  if (!section) return;
+  try {
+    const res = await fetch('/api/cloud/status', { cache: 'no-store' });
+    const data = await res.json();
+    if (data && data.configured && data.loggedIn) {
+      section.hidden = false;
+      const info = document.getElementById('cloud-account-info');
+      if (info) info.textContent = `クラウドアカウントでログイン中: ${data.email || data.displayName || ''}`;
+    } else {
+      section.hidden = true;
+    }
+  } catch { section.hidden = true; }
+}
+
+on(document.getElementById('btn-cloud-change-password'), 'click', async () => {
+  const cur = document.getElementById('cloud-current-password')?.value || '';
+  const next = document.getElementById('cloud-new-password')?.value || '';
+  const confirm = document.getElementById('cloud-new-password-confirm')?.value || '';
+  if (!cur || !next) { showSettingsMessage('現在のパスワードと新しいパスワードを入力してください。', 'error'); return; }
+  if (next !== confirm) { showSettingsMessage('新しいパスワードが一致しません。', 'error'); return; }
+  if (next.length < 8) { showSettingsMessage('新しいパスワードは8文字以上で入力してください。', 'error'); return; }
+  try {
+    const res = await fetch('/api/cloud/password/change', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword: cur, newPassword: next }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'パスワード変更に失敗しました');
+    showSettingsMessage(data.note || 'パスワードを変更しました。再度ログインしてください。', 'success');
+    document.getElementById('cloud-current-password').value = '';
+    document.getElementById('cloud-new-password').value = '';
+    document.getElementById('cloud-new-password-confirm').value = '';
+    // 全セッション失効 → ログアウト状態へ
+    setTimeout(() => window.location.replace('/login.html'), 1500);
+  } catch (e) {
+    showSettingsMessage(e.message || 'パスワード変更に失敗しました', 'error');
+  }
+});
+
+on(document.getElementById('btn-cloud-delete-account'), 'click', async () => {
+  const password = document.getElementById('cloud-delete-password')?.value || '';
+  if (!confirm('クラウドアカウントを削除しますか？この操作は取り消せません。')) return;
+  try {
+    const res = await fetch('/api/cloud/account/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || '削除に失敗しました');
+    showSettingsMessage(data.message || 'アカウントを削除しました。', 'success');
+    document.getElementById('cloud-delete-password').value = '';
+    setTimeout(() => window.location.replace('/login.html'), 1500);
+  } catch (e) {
+    showSettingsMessage(e.message || '削除に失敗しました', 'error');
+  }
 });
 on(document.getElementById('btn-close-settings'), 'click', () => { if (settingsModal) settingsModal.hidden = true; });
 on(document.getElementById('btn-cancel-settings'), 'click', () => { if (settingsModal) settingsModal.hidden = true; });

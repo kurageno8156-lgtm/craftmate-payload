@@ -1,10 +1,10 @@
 ﻿{
-  "name": "CraftMate",
-  "short_name": "CraftMate",
+  "name": "BlockWhiz",
+  "short_name": "BlockWhiz",
   "id": "/",
   "start_url": "/",
   "scope": "/",
-  "description": "CraftMate Minecraft AI Agent Dashboard",
+  "description": "BlockWhiz Minecraft AI Agent Dashboard",
   "display": "standalone",
   "background_color": "#111827",
   "theme_color": "#10b981",

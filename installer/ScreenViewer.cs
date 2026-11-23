@@ -56,7 +56,7 @@ namespace CraftMateScreenViewer
 
         public ViewerForm()
         {
-            Text = "CraftMate 画面共有ビューア";
+            Text = "BlockWhiz 画面共有ビューア";
             Width = 1024;
             Height = 640;
             MinimumSize = new Size(480, 360);

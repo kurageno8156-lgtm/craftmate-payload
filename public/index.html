@@ -34,7 +34,7 @@
         <span id="app-version" class="app-version"></span>
       </div>
       <div class="header-actions">
-        <a class="distribution-link" href="/distribution.html">CraftMate 配布ページ ↗</a>
+        <a class="distribution-link" href="/distribution.html">BlockWhiz 配布ページ ↗</a>
         <div class="header-status">
           <div class="status-indicator" id="connection-status">
             <span class="dot offline"></span>
@@ -166,7 +166,7 @@
     <section class="settings-dialog settings-dialog-wide">
       <div class="settings-heading">
         <div>
-          <p class="eyebrow" data-i18n="controlPanel">CRAFTMATE CONTROL</p>
+          <p class="eyebrow" data-i18n="controlPanel">BLOCKWHIZ CONTROL</p>
           <h2 id="settings-title" data-i18n="settingsTitle">⚙️ Settings</h2>
         </div>
         <button id="btn-close-settings" class="icon-button" type="button" aria-label="Close settings" data-i18n-aria="closeSettings">×</button>
@@ -233,6 +233,23 @@
         <p class="integrations-help" data-i18n="integrationsHelp">Google / GitHub / Discord との連携。OAuthクライアントはアプリに埋め込まれています。トークンは暗号化してローカルDBに保存されます。</p>
         <div id="integrations-list" class="integrations-list"></div>
       </div>
+      <div class="settings-divider"></div>
+      <div class="integrations-section" id="cloud-account-section" hidden>
+        <h3>クラウドアカウント</h3>
+        <p class="integrations-help" id="cloud-account-info">クラウドアカウントでログイン中です。</p>
+        <div class="settings-fields">
+          <label class="settings-field"><span>現在のパスワード</span><input id="cloud-current-password" type="password" autocomplete="current-password"></label>
+          <label class="settings-field"><span>新しいパスワード（8文字以上）</span><input id="cloud-new-password" type="password" autocomplete="new-password" minlength="8"></label>
+          <label class="settings-field"><span>新しいパスワード（確認）</span><input id="cloud-new-password-confirm" type="password" autocomplete="new-password" minlength="8"></label>
+        </div>
+        <button id="btn-cloud-change-password" class="btn-secondary" type="button">パスワードを変更</button>
+        <p class="integrations-help">変更すると全デバイスのセッションが無効になり、再ログインが必要になります。</p>
+        <div class="settings-divider"></div>
+        <h3 style="color:#f87171">アカウント削除</h3>
+        <p class="integrations-help">クラウドアカウントを削除します。この操作は取り消せません。全デバイスのセッションが無効になります。</p>
+        <label class="settings-field"><span>確認のためパスワードを入力</span><input id="cloud-delete-password" type="password" autocomplete="current-password"></label>
+        <button id="btn-cloud-delete-account" class="btn-secondary btn-danger" type="button">アカウントを削除</button>
+      </div>
             </div>
             <div class="settings-tab-panel" data-settings-panel="tools" hidden>
       <div class="backup-tools" aria-label="Settings backup" data-i18n-aria="backupTools">
@@ -272,7 +289,7 @@
     <div class="inventory-modal-backdrop" data-close-update-dialog></div>
     <section class="inventory-modal-panel update-dialog-panel">
       <header class="inventory-modal-header">
-        <h2 id="update-dialog-title" data-i18n="updateDialogTitle">CraftMate Update</h2>
+        <h2 id="update-dialog-title" data-i18n="updateDialogTitle">BlockWhiz Update</h2>
         <button class="inventory-modal-close" type="button" data-i18n="close" data-close-update-dialog>Close</button>
       </header>
       <div id="update-dialog-body" class="update-dialog-body"></div>

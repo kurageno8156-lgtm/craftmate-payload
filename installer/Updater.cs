@@ -89,13 +89,13 @@ namespace CraftMateUpdater
                     Log("Worker launch Win32Exception: native=" + error.NativeErrorCode + " " + error.Message);
                     MessageBox.Show(
                         error.NativeErrorCode == 1223 ? "管理者権限が許可されなかったため、更新を開始しませんでした。" : "アップデーターを起動できませんでした: " + error.Message,
-                        "CraftMate Updater", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        "BlockWhiz Updater", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 catch (Exception error)
                 {
                     Log("Worker launch exception: " + error);
                     MessageBox.Show("アップデーターを起動できませんでした: " + error.Message,
-                        "CraftMate Updater", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        "BlockWhiz Updater", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 return;
             }
@@ -128,7 +128,7 @@ namespace CraftMateUpdater
         public UpdaterForm(string installDirectory)
         {
             _installDirectory = Path.GetFullPath(installDirectory);
-            Text = "CraftMate Updater";
+            Text = "BlockWhiz Updater";
             Width = 620;
             Height = 430;
             MinimumSize = new System.Drawing.Size(520, 360);
@@ -138,7 +138,7 @@ namespace CraftMateUpdater
             try { Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
 
             Label heading = new Label();
-            heading.Text = "CraftMate アップデーター";
+            heading.Text = "BlockWhiz アップデーター";
             heading.Font = new System.Drawing.Font("Segoe UI", 14, System.Drawing.FontStyle.Bold);
             heading.Location = new System.Drawing.Point(18, 14);
             heading.Size = new System.Drawing.Size(560, 30);
@@ -250,7 +250,7 @@ namespace CraftMateUpdater
             else if (e.Result is UpdateOutcome && (UpdateOutcome)e.Result == UpdateOutcome.Updated)
             {
                 _progress.Value = 100;
-                _status.Text = "アップデートが完了し、CraftMateを再起動しました。";
+                _status.Text = "アップデートが完了し、BlockWhizを再起動しました。";
                 _status.ForeColor = System.Drawing.Color.DarkGreen;
             }
             else if (e.Result is UpdateOutcome && (UpdateOutcome)e.Result == UpdateOutcome.Declined)
@@ -479,8 +479,8 @@ namespace CraftMateUpdater
             {
                 DialogResult answer = MessageBox.Show(
                     this,
-                    "CraftMate の新しいバージョン v" + latestVersion + " があります (現在 v" + installedVersion + ")。\r\n本当にアップデートしますか？",
-                    "CraftMate Updater",
+                    "BlockWhiz の新しいバージョン v" + latestVersion + " があります (現在 v" + installedVersion + ")。\r\n本当にアップデートしますか？",
+                    "BlockWhiz Updater",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Question,
                     MessageBoxDefaultButton.Button2);
@@ -598,7 +598,7 @@ namespace CraftMateUpdater
         /// </summary>
         private void StopAllRunningCraftMate(BackgroundWorker worker)
         {
-            Report(worker, 64, "実行中の CraftMate 関連プロセスをすべて停止しています...");
+            Report(worker, 64, "実行中の BlockWhiz 関連プロセスをすべて停止しています...");
             string installRoot = Path.GetFullPath(_installDirectory).TrimEnd('\\') + "\\";
             int selfPid = Process.GetCurrentProcess().Id;
             int killed = 0;
@@ -808,7 +808,7 @@ namespace CraftMateUpdater
         private void StopInstalledNode(BackgroundWorker worker)
         {
             string expectedNode = Path.GetFullPath(Path.Combine(_installDirectory, "node.exe"));
-            Report(worker, 64, "実行中の CraftMate サーバーを停止しています...");
+            Report(worker, 64, "実行中の BlockWhiz サーバーを停止しています...");
             foreach (Process process in Process.GetProcessesByName("node"))
             {
                 try
@@ -816,12 +816,12 @@ namespace CraftMateUpdater
                     string executable = process.MainModule.FileName;
                     if (!String.Equals(Path.GetFullPath(executable), expectedNode, StringComparison.OrdinalIgnoreCase)) continue;
                     process.Kill();
-                    if (!process.WaitForExit(15000)) throw new IOException("CraftMate サーバーを停止できませんでした。");
+                    if (!process.WaitForExit(15000)) throw new IOException("BlockWhiz サーバーを停止できませんでした。");
                 }
                 catch (InvalidOperationException) { }
                 catch (System.ComponentModel.Win32Exception error)
                 {
-                    throw new IOException("実行中の CraftMate サーバーを停止できません: " + error.Message);
+                    throw new IOException("実行中の BlockWhiz サーバーを停止できません: " + error.Message);
                 }
                 finally { process.Dispose(); }
             }
@@ -831,7 +831,7 @@ namespace CraftMateUpdater
         private void StopInstalledLauncher(BackgroundWorker worker)
         {
             string expectedLauncher = Path.GetFullPath(Path.Combine(_installDirectory, "CraftMate.exe"));
-            Report(worker, 64, "起動中の CraftMate を終了しています...");
+            Report(worker, 64, "起動中の BlockWhiz を終了しています...");
             foreach (Process process in Process.GetProcessesByName("CraftMate"))
             {
                 try
@@ -839,12 +839,12 @@ namespace CraftMateUpdater
                     string executable = process.MainModule.FileName;
                     if (!String.Equals(Path.GetFullPath(executable), expectedLauncher, StringComparison.OrdinalIgnoreCase)) continue;
                     process.Kill();
-                    if (!process.WaitForExit(15000)) throw new IOException("起動中の CraftMate を終了できませんでした。");
+                    if (!process.WaitForExit(15000)) throw new IOException("起動中の BlockWhiz を終了できませんでした。");
                 }
                 catch (InvalidOperationException) { }
                 catch (System.ComponentModel.Win32Exception error)
                 {
-                    throw new IOException("起動中の CraftMate を終了できません: " + error.Message);
+                    throw new IOException("起動中の BlockWhiz を終了できません: " + error.Message);
                 }
                 finally { process.Dispose(); }
             }

@@ -103,7 +103,7 @@ namespace CraftMateSetup
         {
             SelectedLanguage = "en";
 
-            Text = "\u0043\u0072\u0061\u0066\u0074\u004d\u0061\u0074\u0065 \u0053\u0065\u0074\u0075\u0070 - \u8a00\u8a9e\u9078\u629e";
+            Text = "\u0042\u006c\u006f\u0063\u006b\u0057\u0068\u0069\u007a \u0053\u0065\u0074\u0075\u0070 - \u8a00\u8a9e\u9078\u629e";
             Size = new Size(420, 280);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -180,7 +180,7 @@ namespace CraftMateSetup
                 {
                     "ja", new Dictionary<string, string>
                     {
-                        { "Header", "\u0043\u0072\u0061\u0066\u0074\u004d\u0061\u0074\u0065\u0020セットアップ" },
+                        { "Header", "\u0042\u006c\u006f\u0063\u006b\u0057\u0068\u0069\u007a\u0020セットアップ" },
                         { "SelectFolder", "インストール先の親フォルダー\u003a" },
                         { "Browse", "参照\u2026" },
                         { "Install", "インストール" },
@@ -195,7 +195,7 @@ namespace CraftMateSetup
                 {
                     "en", new Dictionary<string, string>
                     {
-                        { "Header", "\u0043\u0072\u0061\u0066\u0074\u004d\u0061\u0074\u0065\u0020\u0053\u0065\u0074\u0075\u0070" },
+                        { "Header", "\u0042\u006c\u006f\u0063\u006b\u0057\u0068\u0069\u007a\u0020\u0053\u0065\u0074\u0075\u0070" },
                         { "SelectFolder", "\u0049\u006e\u0073\u0074\u0061\u006c\u006c\u0020\u0042\u0061\u0073\u0065\u0020\u0046\u006f\u006c\u0064\u0065\u0072\u003a" },
                         { "Browse", "\u0042\u0072\u006f\u0077\u0073\u0065\u002e\u002e\u002e" },
                         { "Install", "\u0049\u006e\u0073\u0074\u0061\u006c\u006c" },
@@ -210,7 +210,7 @@ namespace CraftMateSetup
                 {
                     "ko", new Dictionary<string, string>
                     {
-                        { "Header", "\ud06c\ub798\ud504\ud2b8\uba54\uc774\ud2b8\u0020\uc124\uce58" },
+                        { "Header", "\ube14\ub85d\uc704\uc988\u0020\uc124\uce58" },
                         { "SelectFolder", "\uc124\uce58\ud560\u0020\uae30\ubcf8\u0020\ud3f4\ub354\u003a" },
                         { "Browse", "\ucc3e\uc544\ubcf4\uae30\u002e\u002e\u002e" },
                         { "Install", "\uc124\uce58" },
@@ -225,7 +225,7 @@ namespace CraftMateSetup
                 {
                     "es", new Dictionary<string, string>
                     {
-                        { "Header", "\u0043\u006f\u006e\u0066\u0069\u0067\u0075\u0072\u0061\u0063\u0069\u00f3\u006e\u0020\u0064\u0065\u0020\u0043\u0072\u0061\u0066\u0074\u004d\u0061\u0074\u0065" },
+                        { "Header", "\u0043\u006f\u006e\u0066\u0069\u0067\u0075\u0072\u0061\u0063\u0069\u00f3\u006e\u0020\u0064\u0065\u0020\u0042\u006c\u006f\u0063\u006b\u0057\u0068\u0069\u007a" },
                         { "SelectFolder", "\u0043\u0061\u0072\u0070\u0065\u0074\u0061\u0020\u0064\u0065\u0020\u0069\u006e\u0073\u0074\u0061\u006c\u0061\u0063\u0069\u00f3\u006e\u0020\u0062\u0061\u0073\u0065\u003a" },
                         { "Browse", "\u0045\u0078\u0061\u006d\u0069\u006e\u0061\u0072\u002e\u002e\u002e" },
                         { "Install", "\u0049\u006e\u0073\u0074\u0061\u006c\u0061\u0072" },
@@ -240,7 +240,7 @@ namespace CraftMateSetup
                 {
                     "id", new Dictionary<string, string>
                     {
-                        { "Header", "\u0050\u0065\u006e\u0067\u0061\u0074\u0075\u0072\u0061\u006e\u0020\u0043\u0072\u0061\u0066\u0074\u004d\u0061\u0074\u0065" },
+                        { "Header", "\u0050\u0065\u006e\u0067\u0061\u0074\u0075\u0072\u0061\u006e\u0020\u0042\u006c\u006f\u0063\u006b\u0057\u0068\u0069\u007a" },
                         { "SelectFolder", "\u0046\u006f\u006c\u0064\u0065\u0072\u0020\u0069\u006e\u0073\u0074\u0061\u006c\u0061\u0073\u0069\u0020\u0064\u0061\u0073\u0061\u0072\u003a" },
                         { "Browse", "\u0054\u0065\u006c\u0075\u0073\u0075\u0072\u0069\u002e\u002e\u002e" },
                         { "Install", "\u0049\u006e\u0073\u0074\u0061\u006c" },
@@ -255,7 +255,7 @@ namespace CraftMateSetup
                 {
                     "zh", new Dictionary<string, string>
                     {
-                        { "Header", "\u0043\u0072\u0061\u0066\u0074\u004d\u0061\u0074\u0065\u0020\u8bbe\u7f6e" },
+                        { "Header", "\u0042\u006c\u006f\u0063\u006b\u0057\u0068\u0069\u007a\u0020\u8bbe\u7f6e" },
                         { "SelectFolder", "\u5b89\u88c5\u57fa\u6587\u4ef6\u5939\u003a" },
                         { "Browse", "\u6d4f\u89c8\u002e\u002e\u002e" },
                         { "Install", "\u5b89\u88c5" },
@@ -270,7 +270,7 @@ namespace CraftMateSetup
                 {
                     "hi", new Dictionary<string, string>
                     {
-                        { "Header", "\u0915\u094d\u0930\u093e\u092b\u094d\u091f\u092e\u0947\u091f\u0020\u0938\u0947\u091f\u0905\u092a" },
+                        { "Header", "\u092c\u094d\u0932\u0949\u0915\u0935\u094d\u0939\u093f\u091c\u093c\u0020\u0938\u0947\u091f\u0905\u092a" },
                         { "SelectFolder", "\u0907\u0902\u0938\u094d\u091f\u0949\u0932\u0020\u092c\u0947\u0938\u0020\u092b\u094b\u0932\u094d\u0921\u0930\u003a" },
                         { "Browse", "\u092c\u094d\u0930\u093e\u0909\u091c\u093c\u0020\u0915\u0930\u0947\u0902\u002e\u002e\u002e" },
                         { "Install", "\u0907\u0902\u0938\u094d\u091f\u0949\u0932\u0020\u0915\u0930\u0947\u0902" },
@@ -327,8 +327,8 @@ namespace CraftMateSetup
             policy.WordWrap = true;
             policy.BackColor = Color.White;
             policy.Text = lang == "ja"
-                ? "【利用規約】\r\nCraftMateはMinecraftの操作を支援するソフトウェアです。本ソフトウェアは現状有姿で提供され、利用者は自身の責任で使用するものとします。ゲーム、アカウント、サーバーの利用規約を守り、他の利用者に迷惑をかけないでください。作者は、本ソフトウェアの利用または利用不能によって生じた損害について、法令で認められる範囲で責任を負いません。\r\n\r\n【プライバシーポリシー】\r\n本インストーラーは、インストールのために必要なファイルをGitHubからダウンロードします。アプリは、利用者が設定したAIサービスの接続先にプロンプトやゲーム状態を送信する場合があります。送信される情報の取扱いは、利用するサービスのポリシーに従います。開発者が独自に個人情報を収集・販売することを目的とした機能はありません。APIキーなどの秘密情報を共有しないでください。"
-                : "TERMS OF USE\r\nCraftMate is software that assists with Minecraft gameplay. It is provided as is, and you use it at your own risk. Follow the terms of the game, your account, and each server, and do not disrupt other players. To the extent permitted by law, the authors are not liable for damage arising from use or inability to use this software.\r\n\r\nPRIVACY POLICY\r\nThis installer downloads required files from GitHub. The application may send prompts and game state to the AI service you configure. Handling of that information is governed by the service provider's policies. The developers do not intend to collect or sell personal information through a dedicated feature. Do not share API keys or other secrets. ";
+                ? "【利用規約】\r\nBlockWhizはMinecraftの操作を支援するソフトウェアです。本ソフトウェアは現状有姿で提供され、利用者は自身の責任で使用するものとします。ゲーム、アカウント、サーバーの利用規約を守り、他の利用者に迷惑をかけないでください。作者は、本ソフトウェアの利用または利用不能によって生じた損害について、法令で認められる範囲で責任を負いません。\r\n\r\n【プライバシーポリシー】\r\n本インストーラーは、インストールのために必要なファイルをGitHubからダウンロードします。アプリは、利用者が設定したAIサービスの接続先にプロンプトやゲーム状態を送信する場合があります。送信される情報の取扱いは、利用するサービスのポリシーに従います。開発者が独自に個人情報を収集・販売することを目的とした機能はありません。APIキーなどの秘密情報を共有しないでください。"
+                : "TERMS OF USE\r\nBlockWhiz is software that assists with Minecraft gameplay. It is provided as is, and you use it at your own risk. Follow the terms of the game, your account, and each server, and do not disrupt other players. To the extent permitted by law, the authors are not liable for damage arising from use or inability to use this software.\r\n\r\nPRIVACY POLICY\r\nThis installer downloads required files from GitHub. The application may send prompts and game state to the AI service you configure. Handling of that information is governed by the service provider's policies. The developers do not intend to collect or sell personal information through a dedicated feature. Do not share API keys or other secrets. ";
 
             CheckBox agree = new CheckBox();
             agree.Text = lang == "ja" ? "利用規約とプライバシーポリシーに同意する" : "I agree to the Terms and Privacy Policy";
@@ -445,7 +445,7 @@ namespace CraftMateSetup
 
             // 起動チェックボックス
             _chkLaunch = new CheckBox();
-            _chkLaunch.Text = _lang == "ja" ? "インストール後にCraftMateを起動する" : "Launch CraftMate after installation";
+            _chkLaunch.Text = _lang == "ja" ? "インストール後にBlockWhizを起動する" : "Launch BlockWhiz after installation";
             _chkLaunch.Location = new Point(20, 170);
             _chkLaunch.AutoSize = true;
             _chkLaunch.Checked = true;
@@ -627,19 +627,27 @@ namespace CraftMateSetup
                 {
                     string desktopDirectory = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
                     string programsDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Programs);
-                    string startMenuFolder = Path.Combine(programsDirectory, "CraftMate");
+                    string startMenuFolder = Path.Combine(programsDirectory, "BlockWhiz");
                     Directory.CreateDirectory(startMenuFolder);
                     string executable = Path.Combine(target, "CraftMate.exe");
 
                     Invoke(new Action(delegate { _txtLog.AppendText(UITexts.Get(_lang, "CreatingShortcuts") + "\r\n"); }));
 
-                    CreateShortcut(Path.Combine(desktopDirectory, "CraftMate.lnk"), executable, target);
-                    CreateShortcut(Path.Combine(startMenuFolder, "CraftMate.lnk"), executable, target);
-                    CreateShortcut(Path.Combine(startMenuFolder, "CraftMate Updater.lnk"), updaterExecutable, target);
+                    // 旧バージョンの CraftMate 名ショートカットを除去してから BlockWhiz 名で作成する
+                    foreach (string legacy in new string[] { "CraftMate.lnk", "CraftMate Updater.lnk", "CraftMate 画面共有ビューア.lnk" })
+                    {
+                        try { File.Delete(Path.Combine(desktopDirectory, legacy)); } catch { }
+                        try { File.Delete(Path.Combine(startMenuFolder, legacy)); } catch { }
+                    }
+                    try { Directory.Delete(Path.Combine(programsDirectory, "CraftMate"), true); } catch { }
+
+                    CreateShortcut(Path.Combine(desktopDirectory, "BlockWhiz.lnk"), executable, target);
+                    CreateShortcut(Path.Combine(startMenuFolder, "BlockWhiz.lnk"), executable, target);
+                    CreateShortcut(Path.Combine(startMenuFolder, "BlockWhiz Updater.lnk"), updaterExecutable, target);
                     string screenViewerExecutable = Path.Combine(target, "CraftMate_ScreenViewer.exe");
                     if (File.Exists(screenViewerExecutable))
                     {
-                        CreateShortcut(Path.Combine(startMenuFolder, "CraftMate 画面共有ビューア.lnk"), screenViewerExecutable, target);
+                        CreateShortcut(Path.Combine(startMenuFolder, "BlockWhiz 画面共有ビューア.lnk"), screenViewerExecutable, target);
                     }
 
                     Invoke(new Action(delegate { _txtLog.AppendText(UITexts.Get(_lang, "ShortcutsCreated") + "\r\n"); }));
@@ -659,7 +667,7 @@ namespace CraftMateSetup
                     {
                         if (key == null)
                         {
-                            throw new InvalidOperationException("Could not create the CraftMate uninstall registry key.");
+                            throw new InvalidOperationException("Could not create the BlockWhiz uninstall registry key.");
                         }
 
                         string uninstaller = Path.Combine(target, "Uninstall.exe");
@@ -678,9 +686,9 @@ namespace CraftMateSetup
                         }
 
                         int estimatedSizeKb = (int)Math.Min(int.MaxValue, Math.Ceiling(sizeBytes / 1024.0));
-                        key.SetValue("DisplayName", "CraftMate - Minecraft AI Agent", RegistryValueKind.String);
+                        key.SetValue("DisplayName", "BlockWhiz - Minecraft AI Agent", RegistryValueKind.String);
                         key.SetValue("DisplayVersion", CurrentVersion, RegistryValueKind.String);
-                        key.SetValue("Publisher", "CraftMate Team", RegistryValueKind.String);
+                        key.SetValue("Publisher", "BlockWhiz Team", RegistryValueKind.String);
                         key.SetValue("InstallLocation", target, RegistryValueKind.String);
                         key.SetValue("UninstallString", "\"" + uninstaller + "\"", RegistryValueKind.String);
                         key.SetValue("DisplayIcon", iconPath, RegistryValueKind.String);
@@ -708,8 +716,8 @@ namespace CraftMateSetup
                     {
                         DialogResult answer = MessageBox.Show(
                             this,
-                            "CraftMateのインストールが完了しました。OKを押すとアプリを起動します。",
-                            "CraftMate",
+                            "BlockWhizのインストールが完了しました。OKを押すとアプリを起動します。",
+                            "BlockWhiz",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Information);
                         launchAfterInstall = answer == DialogResult.OK;
@@ -718,7 +726,7 @@ namespace CraftMateSetup
                     {
                         MessageBox.Show(
                             UITexts.Get(_lang, "Completed"),
-                            "CraftMate",
+                            "BlockWhiz",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Information);
                     }
@@ -862,7 +870,7 @@ namespace CraftMateSetup
                 Type shortcutType = shortcut.GetType();
                 shortcutType.InvokeMember("TargetPath", BindingFlags.SetProperty, null, shortcut, new object[] { targetPath });
                 shortcutType.InvokeMember("WorkingDirectory", BindingFlags.SetProperty, null, shortcut, new object[] { workingDirectory });
-                shortcutType.InvokeMember("Description", BindingFlags.SetProperty, null, shortcut, new object[] { "CraftMate - Minecraft AI Agent" });
+                shortcutType.InvokeMember("Description", BindingFlags.SetProperty, null, shortcut, new object[] { "BlockWhiz - Minecraft AI Agent" });
                 shortcutType.InvokeMember("IconLocation", BindingFlags.SetProperty, null, shortcut, new object[] { Path.Combine(workingDirectory, "public", "app.ico") + ",0" });
                 shortcutType.InvokeMember("Save", BindingFlags.InvokeMethod, null, shortcut, null);
             }
@@ -896,9 +904,25 @@ namespace CraftMateSetup
     // =================================================================
     static class Program
     {
+        // .NET Framework 4.x の既定 SecurityProtocol は TLS 1.0 までのため、
+        // GitHub (TLS 1.2 必須) への HTTPS 通信前に明示的に有効化する。
+        // SchUseStrongCrypto レジストリや OS の TLS 設定には依存しない。
+        private static void EnsureTls12()
+        {
+            try
+            {
+                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+            }
+            catch
+            {
+                // Tls12 が未定義のランタイムでは何もしない（通信時に既存の既定値を使用）
+            }
+        }
+
         [STAThread]
         static void Main()
         {
+            EnsureTls12();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 

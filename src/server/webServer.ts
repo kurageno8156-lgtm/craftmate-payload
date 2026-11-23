@@ -26,6 +26,14 @@ import {
   resolveCraftmateUser,
   type IntegrationProvider,
 } from '../integrations.js';
+import {
+  cloudAuthConfigured, getCloudSession, clearCloudSession,
+  cloudRegister, cloudLogin, cloudLogout, cloudChangePassword, cloudMe,
+  ensureFreshAccessToken, cloudCraftmateUser, saveCloudSessionForLogin,
+  cloudRequestEmailVerification, cloudConfirmEmailVerification,
+  cloudRequestPasswordReset, cloudConfirmPasswordReset,
+  cloudDeleteAccount, cloudChangeEmail,
+} from './cloudAuth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -128,6 +136,22 @@ export class WebServer {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * クラウドセッション（Auth Server）を統合セッション形式で返す。
+   * '__auth_session' が無い場合のみ評価する（ローカル/OAuthを優先し、
+   * クラウドとローカルを勝手に統合しない）。
+   */
+  private getCloudAuthView(): { provider: string; account: { label?: string; detail?: string } | null; loginAt: number; craftmateUser?: string } | null {
+    const s = getCloudSession();
+    if (!s) return null;
+    return {
+      provider: 'cloud',
+      account: { label: s.user.email || s.user.displayName || 'cloud', detail: 'cloud account' },
+      loginAt: s.loginAt,
+      craftmateUser: `cloud:${s.user.id}`,
+    };
   }
 
   // ---- OAuth トークン自動更新 ----
@@ -260,8 +284,9 @@ export class WebServer {
     const publicPath = path.resolve(__dirname, '../../public');
     // ダッシュボード本体はサーバー側でも認証を強制する。
     // 未ログインの直接アクセス（/ および /index.html）はログイン画面へ。
-    this.app.get('/', (req, res) => {
-      if (!this.getAuthSession()) return res.redirect('/login.html');
+    this.app.get('/', async (req, res) => {
+      // ローカル/OAuthセッションを優先し、無ければクラウドセッションも認証済みとして扱う
+      if (!this.getAuthSession() && !this.getCloudAuthView()) return res.redirect('/login.html');
       try {
         let html = fs.readFileSync(path.join(publicPath, 'index.html'), 'utf8');
         html = html.replace(/(src|href)="(\/?)(app\.js|i18n\.js|style\.css|manifest\.json)(\?[^"]*)?"/g, `$1="$2$3?v=${this.appVersion}"`);
@@ -629,7 +654,7 @@ export class WebServer {
       const updaterPath = path.join(this.installationPath(), 'CraftMate_Updater.exe');
       if (!fs.existsSync(updaterPath)) {
         this.debugLog(`POST /api/launch-updater failed: updater not found at ${updaterPath}`);
-        return res.status(404).json({ error: 'CraftMate_Updater.exe was not found. Reinstall CraftMate to add the updater.' });
+        return res.status(404).json({ error: 'CraftMate_Updater.exe was not found. Reinstall BlockWhiz to add the updater.' });
       }
       try {
         const child = spawn(updaterPath, ['--install-dir', this.installationPath()], {
@@ -673,7 +698,7 @@ export class WebServer {
       const viewerPath = candidates.find(candidate => fs.existsSync(candidate));
       if (!viewerPath) {
         return res.status(404).json({
-          error: 'CraftMate_ScreenViewer.exe was not found. Reinstall or update CraftMate to add the screen viewer.',
+          error: 'CraftMate_ScreenViewer.exe was not found. Reinstall or update BlockWhiz to add the screen viewer.',
           searched: candidates,
         });
       }
@@ -743,13 +768,13 @@ export class WebServer {
       }
       const body = req.body as unknown;
       if (!body || typeof body !== 'object' || Array.isArray(body)) {
-        return res.status(400).json({ error: 'This is not a supported CraftMate settings backup.', code: 'INVALID_BACKUP_DATA' });
+        return res.status(400).json({ error: 'This is not a supported BlockWhiz settings backup.', code: 'INVALID_BACKUP_DATA' });
       }
       const backup = body as { format?: unknown; version?: unknown; env?: unknown; createdAt?: unknown; fileName?: unknown };
       if (backup.format !== 'craftmate-settings-backup' || backup.version !== 1 || typeof backup.env !== 'string' ||
           (backup.createdAt !== undefined && (typeof backup.createdAt !== 'string' || !Number.isFinite(Date.parse(backup.createdAt)))) ||
           (backup.fileName !== undefined && (typeof backup.fileName !== 'string' || !/^craftmate_backup_\d{8}_\d{6}\.json$/.test(backup.fileName)))) {
-        return res.status(400).json({ error: 'This is not a supported CraftMate settings backup.', code: 'INVALID_BACKUP_DATA' });
+        return res.status(400).json({ error: 'This is not a supported BlockWhiz settings backup.', code: 'INVALID_BACKUP_DATA' });
       }
       if (Buffer.byteLength(backup.env, 'utf8') > 128 * 1024 || backup.env.includes('\0')) {
         return res.status(413).json({ error: 'The backup file is too large or contains invalid data.', code: 'INVALID_BACKUP_DATA' });
@@ -760,7 +785,7 @@ export class WebServer {
       catch { return res.status(400).json({ error: 'The backup settings could not be parsed.', code: 'INVALID_BACKUP_DATA' }); }
       const knownSettings = ['MC_HOST', 'MC_PORT', 'MC_USERNAME', 'MINECRAFT_VERSION', 'WEB_PORT', 'LLM_PROVIDER', 'GEMINI_API_KEY', 'GROQ_API_KEY', 'OPENAI_API_KEY', 'OLLAMA_MODEL'];
       if (!Object.keys(values).some(key => knownSettings.includes(key))) {
-        return res.status(400).json({ error: 'The backup does not contain CraftMate settings.', code: 'INVALID_BACKUP_DATA' });
+        return res.status(400).json({ error: 'The backup does not contain BlockWhiz settings.', code: 'INVALID_BACKUP_DATA' });
       }
       const providers = ['gemini', 'groq', 'openai', 'ollama'];
       const provider = values.LLM_PROVIDER || 'gemini';
@@ -817,7 +842,7 @@ export class WebServer {
         console.error('[Restore] Could not replace .env:', error);
         const code = (error as NodeJS.ErrnoException).code;
         if (code === 'EACCES' || code === 'EPERM') {
-          return res.status(500).json({ error: 'Access was denied while replacing .env. The CraftMate install folder may require write permission.', code: 'RESTORE_PERMISSION_DENIED' });
+          return res.status(500).json({ error: 'Access was denied while replacing .env. The BlockWhiz install folder may require write permission.', code: 'RESTORE_PERMISSION_DENIED' });
         }
         return res.status(500).json({ error: 'Could not restore the settings file. Close applications that may be locking .env and try again.', code: 'RESTORE_WRITE_FAILED' });
       }
@@ -1135,7 +1160,8 @@ export class WebServer {
       const redirectUri = `${integrationRedirectBase()}/api/integrations/${provider.id}/oauth/callback`;
       const nonce = providerUsesNonce(provider) ? generateState() : undefined;
       // 既存アカウントへの追加連携は本人確認済みセッションを必須とする
-      const session = this.getAuthSession();
+      // クラウドセッション（cloud:<userId>）も craftmateUser を持つため連携可能
+      const session = this.getAuthSession() || this.getCloudAuthView();
       if (!session?.craftmateUser) {
         return res.status(401).json({ error: 'アカウント連携にはログインが必要です。', code: 'AUTH_REQUIRED' });
       }
@@ -1209,8 +1235,10 @@ export class WebServer {
       if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
       // セッションのアクセストークンが期限切れ間近なら更新を試行（失敗時は安全に再認証要求）
       await this.refreshAuthSession().catch(() => { });
-      const session = this.getAuthSession();
-      res.json({ authenticated: !!session, session });
+      // クラウドセッションのトークンも期限切れ間近なら更新を試行
+      if (cloudAuthConfigured()) await ensureFreshAccessToken().catch(() => { });
+      const session = this.getAuthSession() || this.getCloudAuthView();
+      res.json({ authenticated: !!session, session, cloudAuth: cloudAuthConfigured() });
     });
 
     this.app.post('/api/auth/login/:platform', async (req, res) => {
@@ -1288,11 +1316,195 @@ export class WebServer {
       res.json({ success: true });
     });
 
-    this.app.post('/api/auth/logout', (req, res) => {
+    this.app.post('/api/auth/logout', async (req, res) => {
       if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Forbidden' });
+      // クラウドセッションがあればサーバー側でも失効させる
+      if (cloudAuthConfigured() && getCloudSession()) {
+        await cloudLogout().catch(() => { });
+      }
       deleteIntegration(AUTH_SESSION_PLATFORM);
       this.debugLog('auth logout');
       res.json({ success: true });
+    });
+
+    // ---- クラウドアカウント（Auth Server 連携）----
+    // CRAFTMATE_AUTH_URL 未設定時は全エンドポイントを 503 で無効化する。
+    const cloudErrorMessage = (e: any): string => {
+      const code = e?.code;
+      const status = e?.status;
+      if (code === 'EMAIL_TAKEN') return 'このメールアドレスは既に登録されています。';
+      if (code === 'INVALID_EMAIL') return 'メールアドレスの形式が正しくありません。';
+      if (code === 'WEAK_PASSWORD') return 'パスワードは 8〜128 文字で入力してください。';
+      if (code === 'INVALID_CREDENTIALS') return 'メールアドレスまたはパスワードが正しくありません。';
+      if (code === 'RATE_LIMITED') return 'ログイン試行が多すぎます。しばらく待ってから再試行してください。';
+      if (code === 'AUTH_UNAVAILABLE') return '認証サービスが一時的に利用できません。';
+      if (status === 401 || status === 403) return '認証に失敗しました。再度お試しください。';
+      if (status === 429) return 'リクエストが多すぎます。しばらく待ってから再試行してください。';
+      if (status && status >= 500) return '認証サーバーでエラーが発生しました。時間をおいて再試行してください。';
+      return 'クラウド認証との通信に失敗しました。ネットワーク接続を確認してください。';
+    };
+
+    this.app.get('/api/cloud/status', (req, res) => {
+      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      const configured = cloudAuthConfigured();
+      const session = configured ? getCloudSession() : null;
+      res.json({
+        configured,
+        loggedIn: !!session,
+        email: session?.user.email || null,
+        displayName: session?.user.displayName || null,
+      });
+    });
+
+    this.app.post('/api/cloud/register', async (req, res) => {
+      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      if (!cloudAuthConfigured()) return res.status(503).json({ error: 'クラウド認証は設定されていません。', code: 'NOT_CONFIGURED' });
+      const { email, password, displayName } = (req.body || {}) as { email?: string; password?: string; displayName?: string };
+      const mail = String(email || '').trim();
+      const pass = String(password || '');
+      if (!mail || !pass) return res.status(400).json({ error: 'メールアドレスとパスワードを入力してください。' });
+      try {
+        const tokens = await cloudRegister(mail, pass, displayName ? String(displayName).slice(0, 100) : undefined);
+        // クラウドセッションを保存（パスワードは保存しない）
+        saveCloudSessionForLogin(tokens);
+        this.debugLog(`cloud register success: ${tokens.user?.email || mail}`);
+        res.json({ success: true, email: tokens.user?.email || mail });
+      } catch (e: any) {
+        this.debugLog(`cloud register failed: ${(e as Error).message}`);
+        res.status(e?.status === 409 ? 409 : 400).json({ error: cloudErrorMessage(e) });
+      }
+    });
+
+    this.app.post('/api/cloud/login', async (req, res) => {
+      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      if (!cloudAuthConfigured()) return res.status(503).json({ error: 'クラウド認証は設定されていません。', code: 'NOT_CONFIGURED' });
+      const { email, password } = (req.body || {}) as { email?: string; password?: string };
+      const mail = String(email || '').trim();
+      const pass = String(password || '');
+      if (!mail || !pass) return res.status(400).json({ error: 'メールアドレスとパスワードを入力してください。' });
+      try {
+        const tokens = await cloudLogin(mail, pass);
+        saveCloudSessionForLogin(tokens);
+        this.debugLog(`cloud login success: ${tokens.user?.email || mail}`);
+        res.json({ success: true, email: tokens.user?.email || mail });
+      } catch (e: any) {
+        this.debugLog(`cloud login failed: ${(e as Error).message}`);
+        const st = e?.status === 401 ? 401 : e?.status === 429 ? 429 : e?.status === 503 ? 503 : 400;
+        res.status(st).json({ error: cloudErrorMessage(e) });
+      }
+    });
+
+    this.app.post('/api/cloud/password/change', async (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Forbidden' });
+      if (!cloudAuthConfigured()) return res.status(503).json({ error: 'クラウド認証は設定されていません。', code: 'NOT_CONFIGURED' });
+      if (!getCloudSession()) return res.status(401).json({ error: 'クラウドアカウントでログインしていません。' });
+      const { currentPassword, newPassword } = (req.body || {}) as { currentPassword?: string; newPassword?: string };
+      const cur = String(currentPassword || '');
+      const next = String(newPassword || '');
+      if (!cur || !next) return res.status(400).json({ error: '現在のパスワードと新しいパスワードを入力してください。' });
+      try {
+        await cloudChangePassword(cur, next);
+        this.debugLog('cloud password changed');
+        res.json({ success: true, note: 'パスワードを変更しました。再度ログインしてください。' });
+      } catch (e) {
+        this.debugLog(`cloud password change failed: ${(e as Error).message}`);
+        res.status(400).json({ error: cloudErrorMessage(e) });
+      }
+    });
+
+    this.app.post('/api/cloud/logout', async (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Forbidden' });
+      if (cloudAuthConfigured() && getCloudSession()) {
+        await cloudLogout().catch(() => { });
+      }
+      this.debugLog('cloud logout');
+      res.json({ success: true });
+    });
+
+    // ---- Phase D: メール確認・パスワードリセット・アカウント削除 ----
+
+    this.app.post('/api/cloud/email/verify/request', async (req, res) => {
+      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      if (!cloudAuthConfigured()) return res.status(503).json({ error: 'クラウド認証は設定されていません。', code: 'NOT_CONFIGURED' });
+      const { email } = (req.body || {}) as { email?: string };
+      const mail = String(email || '').trim();
+      if (!mail) return res.status(400).json({ error: 'メールアドレスを入力してください。' });
+      try {
+        await cloudRequestEmailVerification(mail);
+        res.json({ success: true, message: '確認メールを送信しました（登録済みの場合）。' });
+      } catch (e: any) {
+        res.status(400).json({ error: cloudErrorMessage(e) });
+      }
+    });
+
+    this.app.post('/api/cloud/email/verify/confirm', async (req, res) => {
+      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      if (!cloudAuthConfigured()) return res.status(503).json({ error: 'クラウド認証は設定されていません。', code: 'NOT_CONFIGURED' });
+      const { token } = (req.body || {}) as { token?: string };
+      if (!token) return res.status(400).json({ error: '確認トークンがありません。' });
+      try {
+        await cloudConfirmEmailVerification(String(token));
+        res.json({ success: true });
+      } catch {
+        res.status(400).json({ error: '確認リンクが無効か期限切れです。' });
+      }
+    });
+
+    this.app.post('/api/cloud/password/reset/request', async (req, res) => {
+      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      if (!cloudAuthConfigured()) return res.status(503).json({ error: 'クラウド認証は設定されていません。', code: 'NOT_CONFIGURED' });
+      const { email } = (req.body || {}) as { email?: string };
+      const mail = String(email || '').trim();
+      if (!mail) return res.status(400).json({ error: 'メールアドレスを入力してください。' });
+      try {
+        await cloudRequestPasswordReset(mail);
+        res.json({ success: true, message: 'リセットメールを送信しました（登録済みの場合）。' });
+      } catch (e: any) {
+        res.status(400).json({ error: cloudErrorMessage(e) });
+      }
+    });
+
+    this.app.post('/api/cloud/password/reset/confirm', async (req, res) => {
+      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      if (!cloudAuthConfigured()) return res.status(503).json({ error: 'クラウド認証は設定されていません。', code: 'NOT_CONFIGURED' });
+      const { token, newPassword } = (req.body || {}) as { token?: string; newPassword?: string };
+      if (!token || !newPassword) return res.status(400).json({ error: 'トークンと新しいパスワードを入力してください。' });
+      try {
+        await cloudConfirmPasswordReset(String(token), String(newPassword));
+        res.json({ success: true, message: 'パスワードを変更しました。再度ログインしてください。' });
+      } catch (e: any) {
+        res.status(400).json({ error: cloudErrorMessage(e) });
+      }
+    });
+
+    this.app.post('/api/cloud/account/delete', async (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Forbidden' });
+      if (!cloudAuthConfigured()) return res.status(503).json({ error: 'クラウド認証は設定されていません。', code: 'NOT_CONFIGURED' });
+      if (!getCloudSession()) return res.status(401).json({ error: 'クラウドアカウントでログインしていません。' });
+      const { password } = (req.body || {}) as { password?: string };
+      try {
+        await cloudDeleteAccount(password ? String(password) : undefined);
+        this.debugLog('cloud account deleted');
+        res.json({ success: true, message: 'アカウントを削除しました。' });
+      } catch (e: any) {
+        this.debugLog(`cloud account delete failed: ${(e as Error).message}`);
+        res.status(e?.code === 'INVALID_CREDENTIALS' ? 401 : 400).json({ error: cloudErrorMessage(e) });
+      }
+    });
+
+    this.app.post('/api/cloud/email/change', async (req, res) => {
+      if (!this.isLocalUpdateRequest(req, true)) return res.status(403).json({ error: 'Forbidden' });
+      if (!cloudAuthConfigured()) return res.status(503).json({ error: 'クラウド認証は設定されていません。', code: 'NOT_CONFIGURED' });
+      if (!getCloudSession()) return res.status(401).json({ error: 'クラウドアカウントでログインしていません。' });
+      const { newEmail } = (req.body || {}) as { newEmail?: string };
+      const mail = String(newEmail || '').trim();
+      if (!mail) return res.status(400).json({ error: '新しいメールアドレスを入力してください。' });
+      try {
+        await cloudChangeEmail(mail);
+        res.json({ success: true, message: '確認メールを新しいアドレスに送信しました。' });
+      } catch (e: any) {
+        res.status(e?.code === 'EMAIL_TAKEN' ? 409 : 400).json({ error: cloudErrorMessage(e) });
+      }
     });
 
     this.app.get('/api/integrations/:platform/oauth/callback', async (req, res) => {
@@ -1302,7 +1514,7 @@ export class WebServer {
         const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         // window.open で開かれたウィンドウは script から閉じられる。
         // ダッシュボードへの復帰リンクも併記する。
-        res.type('html').send(`<!doctype html><html><head><meta charset="utf-8"><title>CraftMate</title></head><body style="font-family:sans-serif;background:#0b0f14;color:#e4e4e7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center;max-width:480px"><h2 style="color:${ok ? '#4ade80' : '#f87171'}">${ok ? '連携が完了しました' : '連携に失敗しました'}</h2><p>${esc(message)}</p><p style="color:#71717a;font-size:13px">このウィンドウは自動で閉じます。閉じない場合は <a href="http://127.0.0.1:3000" style="color:#60a5fa">ダッシュボードに戻る</a> をクリックしてください。</p></div><script>try{if(window.opener){window.opener.postMessage({type:'craftmate:oauth-done',platform:${JSON.stringify(platform)},ok:${ok}},location.origin)}}catch(e){}setTimeout(function(){try{window.close()}catch(e){}},1200)</script></body></html>`);
+        res.type('html').send(`<!doctype html><html><head><meta charset="utf-8"><title>BlockWhiz</title></head><body style="font-family:sans-serif;background:#0b0f14;color:#e4e4e7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center;max-width:480px"><h2 style="color:${ok ? '#4ade80' : '#f87171'}">${ok ? '連携が完了しました' : '連携に失敗しました'}</h2><p>${esc(message)}</p><p style="color:#71717a;font-size:13px">このウィンドウは自動で閉じます。閉じない場合は <a href="http://127.0.0.1:3000" style="color:#60a5fa">ダッシュボードに戻る</a> をクリックしてください。</p></div><script>try{if(window.opener){window.opener.postMessage({type:'craftmate:oauth-done',platform:${JSON.stringify(platform)},ok:${ok}},location.origin)}}catch(e){}setTimeout(function(){try{window.close()}catch(e){}},1200)</script></body></html>`);
       };
       if (!provider) return finish(false, 'Unknown platform.');
       const { code, state, error, error_description } = req.query as Record<string, string>;
@@ -1361,7 +1573,7 @@ export class WebServer {
         });
         if (resolved.conflict) {
           this.debugLog(`external identity conflict: ${platform} owned by ${existingIdentity!.craftmate_user}, rejected for ${resolved.craftmateUser}`);
-          return finish(false, 'この外部アカウントは既に別のCraftMateアカウントに連携されています。連携を解除してからやり直してください。');
+          return finish(false, 'この外部アカウントは既に別のBlockWhizアカウントに連携されています。連携を解除してからやり直してください。');
         }
         const craftmateUser = resolved.craftmateUser;
         // 外部IDと CraftMate ユーザーの紐付けを記録（メール一致での自動統合は行わない）

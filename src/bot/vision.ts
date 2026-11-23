@@ -48,7 +48,7 @@ const WINDOW_RECT_SCRIPT = [
   "  $className = $cn.ToString()",
   "  # Minecraft Java版のウィンドウクラス名は GLFW30。タイトル変更・別名でも確実に検出できる",
   "  if ($className -eq 'GLFW30') { $script:target = $h; return $false }",
-  "  if ($title -match 'Minecraft' -and $title -notmatch 'Launcher|ScreenViewer|CraftMate|画面共有') { $script:target = $h; return $false }",
+  "  if ($title -match 'Minecraft' -and $title -notmatch 'Launcher|ScreenViewer|CraftMate|BlockWhiz|画面共有') { $script:target = $h; return $false }",
   "  return $true",
   "}",
   "[void][WinEnum]::EnumWindows($cb, [IntPtr]::Zero)",

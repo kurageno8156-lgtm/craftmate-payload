@@ -30,7 +30,7 @@ case "$ARCH" in aarch64) ARCH=arm64 ;; esac
 OUT_NAME="craftmate-${OS}-${ARCH}"
 STAGE="$(mktemp -d)/${OUT_NAME}"
 
-echo "==> CraftMate ${VERSION} build (${OS}/${ARCH})"
+echo "==> BlockWhiz ${VERSION} build (${OS}/${ARCH})"
 
 # 1) 依存インストール（対象OSの prebuilt を取得）
 npm ci
@@ -98,7 +98,7 @@ if [ "${1:-}" = "--install" ]; then
   cat > "$APPS_DIR/craftmate.desktop" <<DESK
 [Desktop Entry]
 Type=Application
-Name=CraftMate
+Name=BlockWhiz
 Comment=Minecraft AI autonomous agent
 Exec="$START_PATH" %U
 Icon=craftmate
@@ -109,7 +109,7 @@ DESK
   [ -f ./craftmate.png ] && cp ./craftmate.png "$ICON_DIR/craftmate.png"
   update-desktop-database "$APPS_DIR" 2>/dev/null || true
   gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
-  echo "CraftMate をアプリケーションメニューに登録しました: $APPS_DIR/craftmate.desktop"
+  echo "BlockWhiz をアプリケーションメニューに登録しました: $APPS_DIR/craftmate.desktop"
   exit 0
 fi
 
@@ -117,7 +117,7 @@ if [ "${1:-}" = "--uninstall" ]; then
   rm -f "$HOME/.local/share/applications/craftmate.desktop" \
         "$HOME/.local/share/icons/hicolor/256x256/apps/craftmate.png"
   update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
-  echo "CraftMate のデスクトップ登録を削除しました。"
+  echo "BlockWhiz のデスクトップ登録を削除しました。"
   exit 0
 fi
 
@@ -133,7 +133,7 @@ EOF
 chmod +x "$STAGE/start.sh"
 
 cat > "$STAGE/README-PORTABLE.txt" <<EOF
-CraftMate ${VERSION} (${OS}/${ARCH}) — ポータブル版
+BlockWhiz ${VERSION} (${OS}/${ARCH}) — ポータブル版
 
 【起動方法】
   1. Node.js 18+ をインストール（https://nodejs.org）

@@ -1,6 +1,6 @@
 # Privacy Policy
 
-CraftMate is a locally-run application. It does not collect, transmit, or store any personal data on external servers.
+BlockWhiz is a locally-run application. It does not collect, transmit, or store any personal data on external servers.
 
 ## Data Handling
 

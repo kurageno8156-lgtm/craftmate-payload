@@ -1,14 +1,14 @@
-# CraftMate — Minecraftで自律的に動くAIボットを、あなたのPCで。
+# BlockWhiz — Minecraftで自律的に動くAIボットを、あなたのPCで。
 
 [![Latest Release](https://img.shields.io/github/v/release/kurageno8156-lgtm/craftmate-payload?label=latest&color=10b981)](https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-blue)]()
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**CraftMate** は、Google Gemini / OpenAI / Groq / Ollama などのAIと連携し、**Minecraft Java Edition の世界で建築・採掘・探索・戦闘・会話を自律的に実行する Windows アプリ**です。
+**BlockWhiz** は、Google Gemini / OpenAI / Groq / Ollama などのAIと連携し、**Minecraft Java Edition の世界で建築・採掘・探索・戦闘・会話を自律的に実行する Windows アプリ**です。
 
 「家を建てて」「鉄のツルハシを作って」「このモンスターを倒して」と自然な言葉で指示するだけで、AIが状況を判断し、必要な素材集めから道具作り、設計図の生成と建築まで自分で進めます。進行状況はブラウザのダッシュボードでリアルタイムに確認できます。
 
-![CraftMate Dashboard](public/dashboard-preview.svg)
+![BlockWhiz Dashboard](public/dashboard-preview.svg)
 
 ---
 
@@ -61,9 +61,9 @@
 ### macOS 版の起動方法
 
 1. `CraftMate-macos-arm64.dmg`（Apple Silicon）または `CraftMate-macos-x64.dmg`（Intel）をダウンロードして開く
-2. `CraftMate` を `Applications` フォルダへドラッグ＆ドロップ
+2. `BlockWhiz` を `Applications` フォルダへドラッグ＆ドロップ
 3. 初回起動時、Gatekeeper により「壊れている可能性があるため開けません」と表示される場合があります（署名・公証を行っていないため）。その場合は：
-   - **Finder で CraftMate を Control + クリック →「開く」→ ダイアログの「開く」**
+   - **Finder で BlockWhiz を Control + クリック →「開く」→ ダイアログの「開く」**
    - または `システム設定 → プライバシーとセキュリティ →「このまま開く」`
 4. 以降は通常通り起動できます
 
@@ -76,7 +76,7 @@
 chmod +x CraftMate-linux-x64.AppImage
 ./CraftMate-linux-x64.AppImage
 
-# または deb をインストール → アプリメニューの「CraftMate」から起動（x64のみ）
+# または deb をインストール → アプリメニューの「BlockWhiz」から起動（x64のみ）
 sudo apt install ./CraftMate-linux-x64.deb
 ```
 
@@ -100,7 +100,7 @@ chmod +x start.sh
 ## 📦 インストール方法
 
 1. **[CraftMate_Setup.exe](https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate_Setup.exe)** をダウンロードして実行
-2. デスクトップに作成されるショートカットから **CraftMate** を起動
+2. デスクトップに作成されるショートカットから **BlockWhiz** を起動
 3. 設定画面（⚙️）で AI プロバイダーと API キーを設定 → Minecraftワールドにボットが参加
 
 セットアップは以上です。アンインストールは Windows の「アプリと機能」または `Uninstall.exe` から行えます。
@@ -109,7 +109,7 @@ chmod +x start.sh
 
 ## 🔒 セキュリティとプライバシー
 
-- **APIキーはローカルの `.env` にのみ保存**され、CraftMateのサーバーや外部に送信・公開されることはありません
+- **APIキーはローカルの `.env` にのみ保存**され、BlockWhizのサーバーや外部に送信・公開されることはありません
 - チャット履歴・AIメモリ・レビューは `%LOCALAPPDATA%\CraftMate\craftmate.db`（SQLite）にローカル保存
 - ダッシュボードは `127.0.0.1:3000` のみで待ち受け、外部からのアクセスは遮断されます
 - アップデート等のローカル操作APIは認証ガードで保護されています
@@ -128,7 +128,7 @@ A. Minecraftのワールドが起動しているか確認してください。�
 A. v1.3.131 以降、ブラウザ終了を検知して関連プロセスを自動終了します（ボットがMinecraft接続中を除く）。確実に終了するには設定画面の「⏻ アプリを完全に終了」ボタンを使ってください。
 
 **Q. アンインストール方法は？**
-A. まず「⏻ アプリを完全に終了」でプロセスを停止し、Windows の「アプリと機能」から CraftMate を削除するか、`Uninstall.exe` を実行してください。
+A. まず「⏻ アプリを完全に終了」でプロセスを停止し、Windows の「アプリと機能」から BlockWhiz を削除するか、`Uninstall.exe` を実行してください。
 
 **Q. 建築が途中で止まる**
 A. v1.3.132 以降、設計図が無くてもフォールバック設計図で建築を継続し、コマンドブロック設置のタイムアウトにはリトライ＋`/setblock`フォールバックがあります。建築は1ブロックずつ設置するため時間がかかるのが正常です。
@@ -140,7 +140,7 @@ A. `CraftMate_Setup.exe` はコード署名を行っていないため、初回�
 2. 「**実行**」をクリック
 3. UAC（ユーザーアカウント制御）で「**はい**」
 
-CraftMateはあなたのPC上でのみ動作し、APIキー等の情報を外部に送信しません。コード署名証明書を導入すればこの警告は解消されます（後述「コード署名」を参照）。
+BlockWhizはあなたのPC上でのみ動作し、APIキー等の情報を外部に送信しません。コード署名証明書を導入すればこの警告は解消されます（後述「コード署名」を参照）。
 
 **Q. アップデートはどうやって適用されますか？**
 A. ダッシュボード上部に新バージョンの通知バーが表示されたら「今すぐ更新」を押してください。Windows版はアプリ内アップデーターが自動でダウンロード・適用します。Linux版 **AppImage** もアプリ内からダウンロード→SHA256検証→自動置換→再起動まで行えます（deb / tarball 版は手動更新）。設定画面の「↻ アップデートを確認」からも同じ手順で更新できます。
@@ -191,7 +191,7 @@ http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
 
 1. [Google Cloud Console](https://console.cloud.google.com/) でプロジェクトを作成
 2. 「APIとサービス」→「OAuth同意画面」でユーザータイプ（外部/内部）とスコープ（`openid`, `email`, `profile`）を設定
-3. **アプリのロゴを設定**（Google のログイン画面に CraftMate アイコンを表示するには必須）:
+3. **アプリのロゴを設定**（Google のログイン画面に BlockWhiz アイコンを表示するには必須）:
    - 「OAuth同意画面」→「ブランディング」（旧: アプリの情報）の「アプリのロゴをアップロード」で画像を選択
    - 使用する画像: リポジトリの `public/icon-512.png`（512x512 PNG。`app.ico` は ICO 形式のため使えません。PNG/JPG のみ対応）
    - アップロード後、Google の審査（数分〜数日）を経てログイン画面にアイコンが表示されます
@@ -207,14 +207,14 @@ http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback
 #### GitHub
 
 1. GitHub → Settings → Developer settings → **OAuth Apps** →「New OAuth App」
-2. Application name（例: CraftMate）を入力
+2. Application name（例: BlockWhiz）を入力
 3. Homepage URL（任意、例: リポジトリURL）
 4. **Authorization callback URL** に `http://127.0.0.1:3000/api/integrations/github/oauth/callback` を設定
 5. 「Register application」後、**Client ID** を控える
 6. ページ下部「Generate a new client secret」でシークレットを発行
 7. 必要なスコープは `read:user` + `user:email` のみ（本アプリが自動要求。過剰な権限は要求しません）
 
-> GitHub OAuth Apps は OpenID Connect の ID トークンを発行しません。CraftMate はアクセストークンで `api.github.com/user` と `/user/emails` を呼び出してユーザー情報を取得します。
+> GitHub OAuth Apps は OpenID Connect の ID トークンを発行しません。BlockWhiz はアクセストークンで `api.github.com/user` と `/user/emails` を呼び出してユーザー情報を取得します。
 
 #### Discord
 
@@ -267,8 +267,8 @@ Client ID が未設定のプロバイダは、ログインボタンに「未設�
 - **ID トークンは JWKS で署名検証**し、issuer・audience・有効期限・nonce を検証（`jose` ライブラリ使用）
 - GitHub は ID トークン非対応のため、`api.github.com/user` + `/user/emails` で `provider_user_id`（数値ID）を取得して紐付け
 - 連携情報は `external_identities` テーブルに `provider` / `provider_user_id` / `display_name` / `email` / `connected_at` / `updated_at` として記録。**メールアドレス一致による自動アカウント統合は行いません**
-- **外部アカウントの所有権は保護されます**: 同じ外部アカウントを別の CraftMate ユーザーが連携しようとすると拒否され、既存の所有者情報は上書きされません（DB 制約＋アプリ側チェックの二重防御）
-- **ログインは所有者アカウントに解決されます**: 連携済みの外部ID（例: Google でログイン後に連携した GitHub）でログインすると、`external_identities` の所有者である CraftMate アカウントに入ります。未連携の外部IDは新規アカウントとして扱われ、既存アカウントに勝手に紐付きません
+- **外部アカウントの所有権は保護されます**: 同じ外部アカウントを別の BlockWhiz ユーザーが連携しようとすると拒否され、既存の所有者情報は上書きされません（DB 制約＋アプリ側チェックの二重防御）
+- **ログインは所有者アカウントに解決されます**: 連携済みの外部ID（例: Google でログイン後に連携した GitHub）でログインすると、`external_identities` の所有者である BlockWhiz アカウントに入ります。未連携の外部IDは新規アカウントとして扱われ、既存アカウントに勝手に紐付きません
 - トークンは AES-256-GCM で暗号化して SQLite に保存。鍵は `OAUTH_ENCRYPTION_KEY` 環境変数または `integrations.key` ファイル
 - **アクセストークンは自動更新されます**: `refresh_token` を持つプロバイダ（Google / Discord、expiring tokens 有効時の GitHub）は期限切れ60秒前に自動で更新し、暗号化して保存します。更新失敗時は再認証が要求されます。GitHub OAuth Apps は通常 `refresh_token` を発行しないため自動更新対象外です
 - アクセストークン・シークレット・リフレッシュトークンはログに出力しません
@@ -303,16 +303,16 @@ OAuth プロバイダが使えない場合でもログインできるよう、�
 
 ---
 
-## 🧱 Minecraft統合版（Bedrock Edition）対応 — CraftMate Bedrock アドオン
+## 🧱 Minecraft統合版（Bedrock Edition）対応 — BlockWhiz Bedrock アドオン
 
-v1.5.0 以降、統合版向け機能は **`bedrock-app/` のゲーム内アドオン「CraftMate Bedrock」** として提供されます。Java 版 CraftMate（このリポジトリのデスクトップアプリ）とは完全に独立しており、Mineflayer / Node.js サーバーは使用しません。
+v1.5.0 以降、統合版向け機能は **`bedrock-app/` のゲーム内アドオン「BlockWhiz Bedrock」** として提供されます。Java 版 BlockWhiz（このリポジトリのデスクトップアプリ）とは完全に独立しており、Mineflayer / Node.js サーバーは使用しません。
 
 ### 仕組み
 
 - **ビヘイビアパック + リソースパックのアドオン**（`.mcaddon`）を Minecraft 統合版にインポートするだけで動作
 - ゲーム内スクリプト（`@minecraft/server` Script API）がチャットコマンドを処理
 - **LAN ポート不使用・シングルプレイ（オフライン）対応**・ダッシュボード不要・外部通信なし
-- リソースパックが HUD 左上に「CraftMate Bedrock」ステータスを表示
+- リソースパックが HUD 左上に「BlockWhiz Bedrock」ステータスを表示
 
 ### 使い方
 
@@ -345,7 +345,7 @@ v1.5.0 以降、統合版向け機能は **`bedrock-app/` のゲーム内アド�
 │   ├── db.ts               # SQLite 永続化
 │   └── index.ts            # エントリーポイント
 ├── installer/              # Setup / Updater / Uninstall / ScreenViewer (C#)
-├── bedrock-app/            # CraftMate Bedrock（統合版専用アドオン: BP+RP+.mcaddon）
+├── bedrock-app/            # BlockWhiz Bedrock（統合版専用アドオン: BP+RP+.mcaddon）
 └── Launcher.cs             # 起動・監視・プロセス管理 (C#)
 ```
 
@@ -353,7 +353,7 @@ v1.5.0 以降、統合版向け機能は **`bedrock-app/` のゲーム内アド�
 
 ## 📜 ライセンスとクレジット
 
-CraftMate は [MIT License](LICENSE) で公開しています。
+BlockWhiz は [MIT License](LICENSE) で公開しています。
 
 使用している主なOSSライブラリ: [Mineflayer](https://github.com/PrismarineJS/mineflayer), [better-sqlite3](https://github.com/WiseLibs/better-sqlite3), [Socket.IO](https://socket.io/), [Express](https://expressjs.com/), [mineflayer-pathfinder](https://github.com/PrismarineJS/mineflayer-pathfinder), TypeScript / Node.js。
 

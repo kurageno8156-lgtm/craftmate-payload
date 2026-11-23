@@ -42,7 +42,7 @@
     return fetch(FORMSUBMIT_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(Object.assign({ _subject: 'CraftMate', _template: 'table' }, fields))
+      body: JSON.stringify(Object.assign({ _subject: 'BlockWhiz', _template: 'table' }, fields))
     }).then(function (res) {
       return res.json().then(function (data) {
         if (!res.ok || data.success !== 'true') {
@@ -81,7 +81,7 @@
       if (submitBtn) submitBtn.disabled = true;
       showFormStatus(contactStatus, '送信中…', true);
       postViaFormSubmit({
-        _subject: 'CraftMate お問い合わせ - ' + (name.trim() || '匿名'),
+        _subject: 'BlockWhiz お問い合わせ - ' + (name.trim() || '匿名'),
         name: name.trim() || '（未入力）',
         message: message.trim()
       }).then(function () {
@@ -167,7 +167,7 @@
         if (!Array.isArray(issues)) throw new Error('bad response');
         // Utterances が作成したレビュー用 Issue を探す（タイトルに CraftMate を含む Issue）
         var issue = issues
-          .filter(function (i) { return !i.pull_request && /craftmate/i.test(i.title || ''); })
+          .filter(function (i) { return !i.pull_request && /(craftmate|blockwhiz)/i.test(i.title || ''); })
           .sort(function (a, b) { return new Date(b.updated_at) - new Date(a.updated_at); })[0];
         if (!issue) { setStatus(''); renderEmpty('まだレビューはありません。'); return null; }
         return fetch(API + '/issues/' + issue.number + '/comments?per_page=100', { headers: headers })
@@ -184,7 +184,7 @@
       });
   })();
 
-  // ---- 「CraftMate 検索結果」セクション ----
+  // ---- 「BlockWhiz 検索結果」セクション ----
   // Google Custom Search（CSE）の cx が URL パラメータ ?cse_cx=... で指定された場合は
   // 公式の検索結果ウィジェットを埋め込む。未指定の場合は、主要な検索リンクと
   // 公式情報（GitHub / リリース / 配布ページ）をカード形式で表示する。
@@ -215,9 +215,9 @@
 
     var cards = [
       {
-        title: 'CraftMate — GitHub リポジトリ',
+        title: 'BlockWhiz — GitHub リポジトリ',
         url: 'https://github.com/kurageno8156-lgtm/craftmate-payload',
-        desc: 'ソースコード・Issue・リリース情報。CraftMate の公式リポジトリです。'
+        desc: 'ソースコード・Issue・リリース情報。BlockWhiz の公式リポジトリです。'
       },
       {
         title: 'Releases — 最新版ダウンロード',
@@ -227,7 +227,7 @@
       {
         title: '配布ページ（このページ）',
         url: 'distribution.html',
-        desc: 'CraftMate の機能紹介・使い方・ユーザーレビュー。'
+        desc: 'BlockWhiz の機能紹介・使い方・ユーザーレビュー。'
       }
     ];
 
@@ -252,7 +252,7 @@
       });
       var note = document.createElement('p');
       note.className = 'search-results-note';
-      note.textContent = '※ Google 検索結果の直接埋め込みには Custom Search API キーが必要です。上の検索リンクから各検索エンジンで「CraftMate」を検索できます。';
+      note.textContent = '※ Google 検索結果の直接埋め込みには Custom Search API キーが必要です。上の検索リンクから各検索エンジンで「BlockWhiz」を検索できます。';
       fallback.appendChild(note);
     }
 
@@ -261,7 +261,7 @@
     if (form && input) {
       form.addEventListener('submit', function (e) {
         e.preventDefault();
-        var q = (input.value || 'CraftMate').trim() || 'CraftMate';
+        var q = (input.value || 'BlockWhiz').trim() || 'BlockWhiz';
         window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank', 'noopener');
       });
     }

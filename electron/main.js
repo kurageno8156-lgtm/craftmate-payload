@@ -62,7 +62,7 @@ function installDesktopEntry() {
     const desktop = [
       '[Desktop Entry]',
       'Type=Application',
-      'Name=CraftMate',
+      'Name=BlockWhiz',
       'Comment=Minecraft AI autonomous agent',
       `Exec="${execPath}" %U`,
       'Icon=craftmate',
@@ -98,7 +98,7 @@ function desktopEntryStatus() {
   let content = '';
   try { content = fs.readFileSync(desktopPath, 'utf8'); } catch (_) { }
   return {
-    installed: content.includes('CraftMate'),
+    installed: /CraftMate|BlockWhiz/.test(content),
     desktopPath,
     execLine: (content.match(/^Exec=(.*)$/m) || [])[1] || '',
   };
@@ -445,7 +445,7 @@ function probeDashboard(timeoutMs) {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    title: 'CraftMate',
+    title: 'BlockWhiz',
     width: 1280,
     height: 800,
     minWidth: 960,
@@ -482,19 +482,19 @@ function reuseOrCreateWindow() {
 
 function showInfoScreen(message) {
   const win = reuseOrCreateWindow();
-  const html = `<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="max-width:520px;text-align:center"><h2 style="color:#fbbf24">CraftMate</h2><p>${message.replace(/</g, '&lt;')}</p></div></body></html>`;
+  const html = `<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="max-width:520px;text-align:center"><h2 style="color:#fbbf24">BlockWhiz</h2><p>${message.replace(/</g, '&lt;')}</p></div></body></html>`;
   win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
 }
 
 function showTimeoutScreen() {
   const win = reuseOrCreateWindow();
-  const html = `<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="max-width:520px;text-align:center"><h2 style="color:#fbbf24">CraftMate</h2><p>サーバーは起動していますが、ダッシュボードへの応答が確認できませんでした。</p><p style="color:#a1a1aa;font-size:13px">ブラウザで <b>http://127.0.0.1:3000</b> を直接開くか、下のボタンで再読み込みしてください。</p><button onclick="location.reload()" style="margin-top:12px;padding:10px 24px;font-size:15px;border:none;border-radius:8px;background:#22c55e;color:#fff;cursor:pointer">再読み込み</button></div></body></html>`;
+  const html = `<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="max-width:520px;text-align:center"><h2 style="color:#fbbf24">BlockWhiz</h2><p>サーバーは起動していますが、ダッシュボードへの応答が確認できませんでした。</p><p style="color:#a1a1aa;font-size:13px">ブラウザで <b>http://127.0.0.1:3000</b> を直接開くか、下のボタンで再読み込みしてください。</p><button onclick="location.reload()" style="margin-top:12px;padding:10px 24px;font-size:15px;border:none;border-radius:8px;background:#22c55e;color:#fff;cursor:pointer">再読み込み</button></div></body></html>`;
   win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
 }
 
 function showError(message) {
   const win = reuseOrCreateWindow();
-  const html = `<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="max-width:520px;text-align:center"><h2 style="color:#f87171">CraftMate server failed to start</h2><pre style="white-space:pre-wrap;color:#a1a1aa;font-size:12px">${message.replace(/</g, '&lt;')}</pre><p>サーバーログは stderr / CraftMate_server.log を確認してください。</p></div></body></html>`;
+  const html = `<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="max-width:520px;text-align:center"><h2 style="color:#f87171">BlockWhiz server failed to start</h2><pre style="white-space:pre-wrap;color:#a1a1aa;font-size:12px">${message.replace(/</g, '&lt;')}</pre><p>サーバーログは stderr / CraftMate_server.log を確認してください。</p></div></body></html>`;
   win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
 }
 
@@ -521,7 +521,7 @@ async function boot() {
 
   const win = createWindow();
   win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(
-    '<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><h2>CraftMate</h2><p>Starting server…</p></div></body></html>'));
+    '<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><h2>BlockWhiz</h2><p>Starting server…</p></div></body></html>'));
 
   startServer(payloadDir);
 

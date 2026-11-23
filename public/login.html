@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CraftMate — ログイン</title>
+  <title>BlockWhiz — ログイン</title>
   <link rel="icon" type="image/x-icon" href="/app.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,23 +62,45 @@
 <body>
   <div class="card">
     <div class="logo">
-      <img src="/app.ico" alt="CraftMate">
+      <img src="/app.ico" alt="BlockWhiz">
       <div>
-        <h1>CraftMate</h1>
+        <h1>BlockWhiz</h1>
         <div class="sub">Minecraft 自律型 AI エージェント</div>
       </div>
     </div>
-    <p class="lead">続行するにはアカウントでログインしてください。<br>ボタンを押すと各サービスのログイン画面が開きます。</p>
+    <p class="lead">BlockWhiz アカウントでログインしてください。<br>クラウドアカウントはPCを変えても同じアカウントでログインできます。</p>
     <div id="providers"></div>
-    <div class="divider">または</div>
+    <div class="divider">BlockWhiz クラウドアカウント</div>
+    <form class="local-form" id="cloud-form" autocomplete="off" style="display:none">
+      <input type="email" id="cloud-email" placeholder="メールアドレス" maxlength="320" required>
+      <input type="password" id="cloud-password" placeholder="パスワード（8文字以上）" minlength="8" required>
+      <div class="local-row">
+        <button type="submit" class="local-btn primary" id="cloud-login-btn">ログイン</button>
+        <button type="button" class="local-btn secondary" id="cloud-register-btn">新規アカウント登録</button>
+      </div>
+      <p class="local-hint" id="cloud-hint">クラウドアカウントはサーバーに保存され、PCの変更・再インストール後も同じアカウントでログインできます。</p>
+      <div class="local-row">
+        <button type="button" class="local-btn secondary" id="cloud-forgot-btn" style="font-size:12px">パスワードを忘れた場合</button>
+        <button type="button" class="local-btn secondary" id="cloud-verify-btn" style="font-size:12px">確認メールを再送</button>
+      </div>
+    </form>
+    <div id="cloud-reset-panel" style="display:none;margin-top:12px;padding:12px;background:#0b0f14;border:1px solid rgba(255,255,255,.1);border-radius:8px">
+      <p style="font-size:12px;color:#a1a1aa;margin-bottom:8px">パスワードリセット：メールに記載されたトークンと新しいパスワードを入力してください。</p>
+      <div class="local-form">
+        <input type="text" id="reset-token" placeholder="リセットトークン（メール記載）" maxlength="100">
+        <input type="password" id="reset-newpass" placeholder="新しいパスワード（8文字以上）" minlength="8">
+        <button type="button" class="local-btn primary" id="reset-confirm-btn">パスワードを変更</button>
+      </div>
+    </div>
+    <div class="divider">またはこのPC内のアカウント</div>
     <form class="local-form" id="local-form" autocomplete="off">
-      <input type="text" id="local-username" placeholder="ユーザー名" maxlength="32" required>
+      <input type="text" id="local-username" placeholder="ユーザー名（3〜32文字）" maxlength="32" required>
       <input type="password" id="local-password" placeholder="パスワード（8文字以上）" minlength="8" required>
       <div class="local-row">
-        <button type="submit" class="local-btn primary" id="local-login-btn">内部アカウントでログイン</button>
-        <button type="button" class="local-btn secondary" id="local-register-btn">アカウント作成</button>
+        <button type="submit" class="local-btn primary" id="local-login-btn">ログイン</button>
+        <button type="button" class="local-btn secondary" id="local-register-btn">新規アカウント登録</button>
       </div>
-      <p class="local-hint">OAuth が使えない場合のフォールバックです。アカウント情報はこのPC内の暗号化DBに保存されます。</p>
+      <p class="local-hint">このPC内のアカウントはこのPCの暗号化DBにのみ保存されます。パスワードは scrypt でハッシュ化されます。</p>
     </form>
     <div class="status" id="status"></div>
     <p class="note">ログイン情報は AES-256-GCM で暗号化してローカルに保存され、次回起動時に自動でログインされます。</p>

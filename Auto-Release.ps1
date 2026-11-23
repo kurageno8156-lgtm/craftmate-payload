@@ -245,7 +245,7 @@ Write-Output "Change range: $($changeList.RangeLabel)"
 
 # Preserve the note text this script already produced, then append the commit list.
 $baseNotes = if ([string]::IsNullOrWhiteSpace($Notes)) {
-    "CraftMate $tag`n`nBug fixes and improvements"
+    "BlockWhiz $tag`n`nBug fixes and improvements"
 }
 else {
     $Notes
@@ -272,7 +272,7 @@ $noteParts.Add('')
 foreach ($changeLine in $changeLines) { $noteParts.Add($changeLine) }
 $notes = ($noteParts -join [Environment]::NewLine)
 
-gh release create $tag $setupPath $setupZipPath $updaterPath $payloadPath --repo $repo --target $defaultBranch --title "CraftMate Setup $tag" --notes $notes
+gh release create $tag $setupPath $setupZipPath $updaterPath $payloadPath --repo $repo --target $defaultBranch --title "BlockWhiz Setup $tag" --notes $notes
 if ($LASTEXITCODE -ne 0) { throw "GitHub release creation failed. The version commit was pushed; retry with -Version $Version after resolving the release error." }
 
 Write-Output "Released $tag to $repo"

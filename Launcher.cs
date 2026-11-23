@@ -45,10 +45,10 @@ namespace CraftMateLauncher
                 try
                 {
                     MessageBox.Show(
-                        "CraftMate を起動できませんでした: " + ex.Message +
+                        "BlockWhiz を起動できませんでした: " + ex.Message +
                         Environment.NewLine + Environment.NewLine +
                         "詳細ログ: " + LogPath,
-                        "CraftMate",
+                        "BlockWhiz",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
                 }
@@ -115,11 +115,11 @@ namespace CraftMateLauncher
                 {
                     Log("ERROR: Server did not become ready on port " + ServerPort + ".");
                     MessageBox.Show(
-                        "CraftMate server did not become ready on port " + ServerPort +
+                        "BlockWhiz server did not become ready on port " + ServerPort +
                         ". Check the installation and try again." +
                         Environment.NewLine + Environment.NewLine +
                         "詳細ログ: " + LogPath,
-                        "CraftMate",
+                        "BlockWhiz",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
                     return;
@@ -152,7 +152,7 @@ namespace CraftMateLauncher
                         "サーバーの自動復旧に失敗しました。PCを再起動してください。" +
                         Environment.NewLine + Environment.NewLine +
                         "詳細ログ: " + LogPath,
-                        "CraftMate",
+                        "BlockWhiz",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
                     return;
@@ -815,7 +815,7 @@ namespace CraftMateLauncher
                 Log("ERROR: No supported browser found.");
                 MessageBox.Show(
                     "開けるブラウザが見つかりません。ChromeかEdgeをインストールしてください。",
-                    "CraftMate",
+                    "BlockWhiz",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
                 return null;
@@ -827,7 +827,7 @@ namespace CraftMateLauncher
             {
                 string profileDirectory = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "CraftMate",
+                    "BlockWhiz",
                     "BrowserProfile");
                 Directory.CreateDirectory(profileDirectory);
 
@@ -850,7 +850,7 @@ namespace CraftMateLauncher
                 Log("Browser launch failed: " + browserError);
                 MessageBox.Show(
                     "ブラウザの起動に失敗しました: " + browserError.Message,
-                    "CraftMate",
+                    "BlockWhiz",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
                 return null;

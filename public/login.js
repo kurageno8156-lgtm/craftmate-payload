@@ -141,6 +141,120 @@
     localRegisterBtn.addEventListener('click', () => localAuth('/api/auth/register'));
   }
 
+  // ---- クラウドアカウント（Auth Server 連携）----
+  const cloudForm = document.getElementById('cloud-form');
+  const cloudEmailInput = document.getElementById('cloud-email');
+  const cloudPassInput = document.getElementById('cloud-password');
+  const cloudLoginBtn = document.getElementById('cloud-login-btn');
+  const cloudRegisterBtn = document.getElementById('cloud-register-btn');
+  const cloudHint = document.getElementById('cloud-hint');
+
+  // サーバー側でクラウド認証が設定されているか確認し、フォームを表示する
+  async function initCloudForm() {
+    if (!cloudForm) return;
+    try {
+      const res = await fetch('/api/cloud/status', { cache: 'no-store' });
+      const data = await res.json();
+      if (data && data.configured) {
+        cloudForm.style.display = 'grid';
+        if (data.loggedIn && data.email) {
+          cloudHint.textContent = 'クラウドアカウントでログイン中: ' + data.email;
+        }
+      }
+    } catch { /* cloud auth unavailable */ }
+  }
+
+  async function cloudAuth(endpoint) {
+    const email = (cloudEmailInput.value || '').trim();
+    const password = cloudPassInput.value || '';
+    if (!email || !password) { setStatus('メールアドレスとパスワードを入力してください。', 'error'); return; }
+    cloudLoginBtn.disabled = true;
+    cloudRegisterBtn.disabled = true;
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || '認証に失敗しました');
+      setStatus('ログインしました。ダッシュボードを開きます…', 'ok');
+      setTimeout(() => window.location.replace('/'), 400);
+    } catch (e) {
+      setStatus(e.message || '認証に失敗しました', 'error');
+      cloudLoginBtn.disabled = false;
+      cloudRegisterBtn.disabled = false;
+    }
+  }
+
+  if (cloudForm) {
+    cloudForm.addEventListener('submit', (e) => { e.preventDefault(); cloudAuth('/api/cloud/login'); });
+    cloudRegisterBtn.addEventListener('click', () => cloudAuth('/api/cloud/register'));
+    initCloudForm();
+  }
+
+  // ---- パスワードリセット・メール確認再送 ----
+  const resetPanel = document.getElementById('cloud-reset-panel');
+  const forgotBtn = document.getElementById('cloud-forgot-btn');
+  const verifyBtn = document.getElementById('cloud-verify-btn');
+  const resetConfirmBtn = document.getElementById('reset-confirm-btn');
+
+  if (forgotBtn && resetPanel) {
+    forgotBtn.addEventListener('click', async () => {
+      const email = (cloudEmailInput?.value || '').trim();
+      if (!email) { setStatus('メールアドレスを入力してください。', 'error'); return; }
+      forgotBtn.disabled = true;
+      try {
+        const res = await fetch('/api/cloud/password/reset/request', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || '送信に失敗しました');
+        setStatus(data.message || 'リセットメールを送信しました。', 'ok');
+        resetPanel.style.display = 'block';
+      } catch (e) {
+        setStatus(e.message || '送信に失敗しました', 'error');
+      } finally { forgotBtn.disabled = false; }
+    });
+  }
+  if (verifyBtn) {
+    verifyBtn.addEventListener('click', async () => {
+      const email = (cloudEmailInput?.value || '').trim();
+      if (!email) { setStatus('メールアドレスを入力してください。', 'error'); return; }
+      verifyBtn.disabled = true;
+      try {
+        const res = await fetch('/api/cloud/email/verify/request', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || '送信に失敗しました');
+        setStatus(data.message || '確認メールを送信しました。', 'ok');
+      } catch (e) {
+        setStatus(e.message || '送信に失敗しました', 'error');
+      } finally { verifyBtn.disabled = false; }
+    });
+  }
+  if (resetConfirmBtn) {
+    resetConfirmBtn.addEventListener('click', async () => {
+      const token = (document.getElementById('reset-token')?.value || '').trim();
+      const newPass = document.getElementById('reset-newpass')?.value || '';
+      if (!token || !newPass) { setStatus('トークンと新しいパスワードを入力してください。', 'error'); return; }
+      resetConfirmBtn.disabled = true;
+      try {
+        const res = await fetch('/api/cloud/password/reset/confirm', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, newPassword: newPass }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || '変更に失敗しました');
+        setStatus(data.message || 'パスワードを変更しました。', 'ok');
+        resetPanel.style.display = 'none';
+      } catch (e) {
+        setStatus(e.message || '変更に失敗しました', 'error');
+      } finally { resetConfirmBtn.disabled = false; }
+    });
+  }
+
   // OAuth は外部ブラウザで完了するため、セッション確立をポーリングで検知する
   async function pollForSession() {
     for (let i = 0; i < 60; i++) {

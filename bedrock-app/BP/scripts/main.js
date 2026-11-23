@@ -14,7 +14,7 @@
 // 日本語の自然言語（「家建てて」「夜にして」等）も一部解釈します。
 import { world, system, ItemStack, CustomCommandStatus, CommandPermissionLevel } from '@minecraft/server';
 
-const BOT_NAME = 'CraftMate';
+const BOT_NAME = 'BlockWhiz';
 const BOT_TAG = 'craftmate_bot';
 
 let botEntity = null;
@@ -23,7 +23,7 @@ const followers = new Map(); // playerName -> boolean
 
 // ---------- ユーティリティ ----------
 function tell(player, text) {
-  try { player.sendMessage(`§a[CraftMate] §f${text}`); } catch { /* ignore */ }
+  try { player.sendMessage(`§a[BlockWhiz] §f${text}`); } catch { /* ignore */ }
 }
 function usage(player) {
   tell(player, '使用方法: !craftmate help を参照してください。');
@@ -257,7 +257,7 @@ async function handleCommand(player, args) {
 
   switch (cmd) {
     case 'help':
-      tell(player, '【CraftMate コマンド】 !craftmate <command>');
+      tell(player, '【BlockWhiz コマンド】 !craftmate <command>');
       tell(player, 'status / say <文> / follow / stop / come / pos');
       tell(player, 'build <家|塔|橋|house|tower|bridge> / time <day|night> / weather <clear|rain|thunder>');
       tell(player, 'give <アイテム> <個数> / tp <x> <y> <z> / bot spawn|dismiss');
@@ -271,7 +271,7 @@ async function handleCommand(player, args) {
 
     case 'say':
       if (!restStr) { tell(player, 'say <文> の形式で入力してください。'); usage(player); break; }
-      world.sendMessage(`§d[CraftMate] ${player.name}: §f${restStr}`);
+      world.sendMessage(`§d[BlockWhiz] ${player.name}: §f${restStr}`);
       hud(player, 'say');
       break;
 
@@ -441,7 +441,7 @@ async function runSlashCommand(playerLike, cmdName, rawArgs) {
 function registerCustomCommands(startupEvent) {
   const registry = startupEvent.customCommandRegistry;
   if (!registry || typeof registry.registerCommand !== 'function') {
-    console.warn('[CraftMate] customCommandRegistry unavailable; /craftmate:* disabled (use !craftmate in chat or /scriptevent craftmate:*)');
+    console.warn('[BlockWhiz] customCommandRegistry unavailable; /craftmate:* disabled (use !craftmate in chat or /scriptevent craftmate:*)');
     return;
   }
   for (const def of COMMAND_DEFS) {
@@ -471,21 +471,21 @@ function registerCustomCommands(startupEvent) {
           await runSlashCommand(source, def.name, ordered.filter(v => v !== undefined));
           return { status: CustomCommandStatus.Success };
         } catch (e) {
-          try { origin && origin.sourceEntity && origin.sourceEntity.sendMessage(`§c[CraftMate] エラー: ${e}`); } catch { }
+          try { origin && origin.sourceEntity && origin.sourceEntity.sendMessage(`§c[BlockWhiz] エラー: ${e}`); } catch { }
           return { status: CustomCommandStatus.Failure };
         }
       });
     } catch (e) {
-      console.warn(`[CraftMate] failed to register craftmate:${def.name}: ${e}`);
+      console.warn(`[BlockWhiz] failed to register craftmate:${def.name}: ${e}`);
     }
   }
-  console.log('[CraftMate] custom commands registered: /craftmate:<cmd>');
+  console.log('[BlockWhiz] custom commands registered: /craftmate:<cmd>');
 }
 
 // ---------- チャット受信 ----------
 system.beforeEvents.startup.subscribe((event) => {
   // カスタムコマンド（/craftmate:help 等）を登録
-  try { registerCustomCommands(event); } catch (e) { console.warn('[CraftMate] customCommandRegistry error:', e); }
+  try { registerCustomCommands(event); } catch (e) { console.warn('[BlockWhiz] customCommandRegistry error:', e); }
 
   world.beforeEvents.chatSend.subscribe(async (event) => {
     try {
@@ -513,7 +513,7 @@ system.beforeEvents.startup.subscribe((event) => {
       }
     } catch (e) {
       try {
-        event.sender.sendMessage(`§c[CraftMate] エラー: ${e && e.message ? e.message : e}`);
+        event.sender.sendMessage(`§c[BlockWhiz] エラー: ${e && e.message ? e.message : e}`);
         usage(event.sender);
       } catch { /* ignore */ }
     }
@@ -543,9 +543,9 @@ system.beforeEvents.startup.subscribe((event) => {
       }
       runSlashCommand(source, cmdName, cmdArgs);
     } catch (e) {
-      console.warn('[CraftMate] scriptevent error:', e);
+      console.warn('[BlockWhiz] scriptevent error:', e);
     }
   });
 
-  world.sendMessage('§a[CraftMate Bedrock] §fアドオンが有効化されました。/craftmate:help またはチャットで「!craftmate help」と入力してください。');
+  world.sendMessage('§a[BlockWhiz Bedrock] §fアドオンが有効化されました。/craftmate:help またはチャットで「!craftmate help」と入力してください。');
 });

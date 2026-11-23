@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=CraftMate
+Name=BlockWhiz
 Comment=Minecraft AI autonomous agent
 Exec=craftmate %U
 Icon=craftmate

@@ -22,7 +22,7 @@ namespace CraftMateUninstall
         {
             ConfigureWindow();
             _statusLabel = new Label();
-            _statusLabel.Text = "Uninstall CraftMate and remove its installed files?";
+            _statusLabel.Text = "Uninstall BlockWhiz and remove its installed files?";
             _statusLabel.Location = new System.Drawing.Point(18, 20);
             _statusLabel.Size = new System.Drawing.Size(500, 45);
             Controls.Add(_statusLabel);
@@ -49,7 +49,7 @@ namespace CraftMateUninstall
             ConfigureWindow();
             _installLocation = installLocation;
             _parentProcessId = parentProcessId;
-            Text = "CraftMate Uninstall";
+            Text = "BlockWhiz Uninstall";
             Size = new System.Drawing.Size(590, 410);
 
             _statusLabel = new Label();
@@ -89,7 +89,7 @@ namespace CraftMateUninstall
 
         private void ConfigureWindow()
         {
-            Text = "CraftMate Uninstall";
+            Text = "BlockWhiz Uninstall";
             try { Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
             Size = new System.Drawing.Size(550, 155);
             StartPosition = FormStartPosition.CenterScreen;
@@ -111,8 +111,8 @@ namespace CraftMateUninstall
 
                 installLocation = ValidateInstallLocation(installLocation);
                 DialogResult answer = MessageBox.Show(
-                    "Remove CraftMate and all files in this folder?" + Environment.NewLine + installLocation,
-                    "Uninstall CraftMate", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                    "Remove BlockWhiz and all files in this folder?" + Environment.NewLine + installLocation,
+                    "Uninstall BlockWhiz", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
                 if (answer != DialogResult.Yes)
                 {
                     _actionButton.Enabled = true;
@@ -136,7 +136,7 @@ namespace CraftMateUninstall
             catch (Exception ex)
             {
                 _actionButton.Enabled = true;
-                MessageBox.Show("Uninstall could not start: " + ex.Message, "CraftMate Uninstall", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Uninstall could not start: " + ex.Message, "BlockWhiz Uninstall", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -214,13 +214,13 @@ namespace CraftMateUninstall
                     AppendLog("一部のファイルは手動で削除してください");
                     SetStatus("一部のファイルは手動で削除してください");
                     FlushUi();
-                    MessageBox.Show("アンインストールが完了しました。一部のファイルは手動で削除してください。", "CraftMate Uninstall", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("アンインストールが完了しました。一部のファイルは手動で削除してください。", "BlockWhiz Uninstall", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
                 else
                 {
                     SetStatus("アンインストールが完了しました");
                     FlushUi();
-                    MessageBox.Show("アンインストールが完了しました", "CraftMate Uninstall", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("アンインストールが完了しました", "BlockWhiz Uninstall", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 Close();
             }
@@ -370,7 +370,7 @@ namespace CraftMateUninstall
                 DialogResult answer = MessageBox.Show(
                     "チャット履歴とAI記憶を削除しますか？" + Environment.NewLine + Environment.NewLine +
                     "削除すると、チャット履歴・AI記憶・レビューが失われます。バックアップする場合は「いいえ」を選んでください。",
-                    "CraftMate Uninstall",
+                    "BlockWhiz Uninstall",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning);
                 if (answer != DialogResult.Yes)
@@ -569,7 +569,7 @@ namespace CraftMateUninstall
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Uninstall could not start: " + ex.Message, "CraftMate Uninstall", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Uninstall could not start: " + ex.Message, "BlockWhiz Uninstall", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
             }

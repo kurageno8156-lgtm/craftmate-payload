@@ -19,7 +19,7 @@
       {
         "craftmate_title_control": {
           "type": "label",
-          "text": "CraftMate Bedrock",
+          "text": "BlockWhiz Bedrock",
           "offset": [38, 4],
           "color": [0.55, 0.95, 0.65],
           "shadow": true

@@ -1,8 +1,8 @@
 {
   "format_version": 2,
   "header": {
-    "name": "CraftMate Bedrock HUD",
-    "description": "CraftMate Bedrock アドオンの HUD カスタマイズ（リソースパック）",
+    "name": "BlockWhiz Bedrock HUD",
+    "description": "BlockWhiz Bedrock アドオンの HUD カスタマイズ（リソースパック）",
     "uuid": "2f6d8a1c-5e9b-4c7d-b1a3-8e4f6d2c9b5a",
     "version": [1, 0, 0],
     "min_engine_version": [1, 20, 0]
