@@ -282,6 +282,14 @@ OAuth プロバイダが使えない場合でもログインできるよう、�
 - セッションは OAuth ログインと同じ AES-256-GCM 暗号化ストア（`__auth_session`）で管理され、次回起動時に自動ログインされます
 - 内部アカウントはローカルPC専用です。複数PC間での同期はありません
 
+#### クラウドアカウント（BlockWhiz アカウント）について
+
+v1.6.x では PC 間で引き継げる **クラウドアカウント** 機能の基盤（`auth-server/` の Auth Server）が同梱されていますが、**本番 Auth Server は未構築です**。
+
+- **利用できる機能（Auth Server 未設定でも動作）**: ローカル認証（内部アカウント）、OAuth ログイン（Google / GitHub / Discord）、Java 版ボット・ダッシュボードの全機能
+- **利用できない機能**: クラウドアカウントでのログイン・パスワード変更・アカウント削除・メール認証・パスワードリセット（`/api/cloud/*` は `NOT_CONFIGURED` を返します）
+- 本番環境の構築・メール配送（Resend 等）の実運用検証は今後のリリースで行います。詳細は `docs/AUTH_SERVER_PRODUCTION.md` を参照してください
+
 #### 実機ログインテストの手順
 
 1. 各プロバイダで OAuth アプリを登録し、Redirect URI に `http://127.0.0.1:3000/api/integrations/<provider>/oauth/callback` を設定（provider = `google` / `github` / `discord`）

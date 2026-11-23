@@ -152,7 +152,9 @@ EOF
 
 # 6) tarball 作成
 tar -czf "${OUT_NAME}.tar.gz" -C "$(dirname "$STAGE")" "$(basename "$STAGE")"
+sha256sum "${OUT_NAME}.tar.gz" > "${OUT_NAME}.tar.gz.sha256"
 echo "==> Created ${OUT_NAME}.tar.gz ($(du -h "${OUT_NAME}.tar.gz" | cut -f1))"
+echo "==> Wrote ${OUT_NAME}.tar.gz.sha256"
 
 # 7) Electron ラッパー用に payload をリポジトリ直下へコピー
 #    (electron-builder の extraResources が ../craftmate-payload を参照する)

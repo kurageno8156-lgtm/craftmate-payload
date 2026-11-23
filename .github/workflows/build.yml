@@ -11,9 +11,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to build (e.g. 1.4.0)'
+        description: 'Version to build (e.g. 1.6.2)'
         required: true
-        default: '1.4.0'
+        default: '1.6.2'
       publish_release:
         description: 'Create/update a GitHub Release with the built assets (explicit opt-in; leave false for verification builds)'
         required: false
@@ -73,11 +73,10 @@ jobs:
           CRAFTMATE_PFX_BASE64: ${{ secrets.CRAFTMATE_PFX_BASE64 }}
           CRAFTMATE_PFX_PASSWORD: ${{ secrets.CRAFTMATE_PFX_PASSWORD }}
         run: |
-          # 既存のリリーススクリプトを呼び出す。
-          # 注意: このスクリプトは GitHub Releases へのアップロードと
-          #       git tag 作成も行うため、CI では payload 生成部分のみ
-          #       分離することが望ましい（下記 TODO 参照）。
-          .\installer\Build-Release.ps1 -Version ${{ inputs.version || github.ref_name }}
+          # リリーススクリプトを呼び出す。Release・タグ作成は行わない
+          # （GitHub Release の公開はローカルの Auto-Release.ps1 が担当）。
+          # 出力先を RUNNER_TEMP に固定し、後続の upload-artifact パスと一致させる。
+          .\installer\Build-Release.ps1 -Version ${{ inputs.version || github.ref_name }} -OutputDirectory "$env:RUNNER_TEMP\CraftMate-release"
 
       # TODO(マルチアーキ):
       #   - x86 (32bit) ビルド: csc /platform:x86 + 32bit Node 同梱
@@ -85,14 +84,12 @@ jobs:
       #   - 現状の Build-Release.ps1 は単一アーキ前提のため、
       #     アーキ別に出力ディレクトリを分ける改修が必要。
 
-      # - name: Upload Windows artifacts
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: craftmate-windows-x64
-      #     path: |
-      #       CraftMate_Setup.exe
-      #       app_payload.zip
-      #       Uninstall.exe
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: craftmate-windows-x64
+          path: ${{ env.RUNNER_TEMP }}/CraftMate-release/*
+          if-no-files-found: error
 
   # ============================================================
   # Linux ビルド（準備中プレースホルダー）
@@ -116,7 +113,7 @@ jobs:
       # Linux 向け prebuilt の取得 + 必要時ソースビルド（build-essential/python3 は ubuntu-latest に同梱）
       # craftmate-payload/ にステージングされる（Electron の extraResources が参照）
       - name: Build portable tarball (linux/x64)
-        run: bash build-release.sh ${{ inputs.version || '1.4.0' }} linux x64
+        run: bash build-release.sh ${{ inputs.version || '1.6.2' }} linux x64
 
       # Electron デスクトップラッパー（AppImage + deb）
       # payload/dist/index.js を ELECTRON_RUN_AS_NODE で spawn し、
@@ -143,6 +140,7 @@ jobs:
           name: craftmate-linux-x64
           path: |
             craftmate-linux-x64.tar.gz
+            craftmate-linux-x64.tar.gz.sha256
             electron/dist-installer/*.AppImage
             electron/dist-installer/*.AppImage.sha256
             electron/dist-installer/*.deb
@@ -159,7 +157,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - name: Build portable tarball (linux/arm64)
-        run: bash build-release.sh ${{ inputs.version || '1.4.0' }} linux arm64
+        run: bash build-release.sh ${{ inputs.version || '1.6.2' }} linux arm64
 
       # arm64 runner では electron-builder 同梱の fpm (x86_64バイナリ) が動かないため
       # deb は生成せず AppImage のみビルドする。
@@ -183,6 +181,7 @@ jobs:
           name: craftmate-linux-arm64
           path: |
             craftmate-linux-arm64.tar.gz
+            craftmate-linux-arm64.tar.gz.sha256
             electron/dist-installer/*.AppImage
             electron/dist-installer/*.AppImage.sha256
             electron/dist-installer/*.deb
@@ -214,7 +213,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          VERSION="${{ inputs.version || '1.4.0' }}"
+          VERSION="${{ inputs.version || '1.6.2' }}"
           cd electron
           npm install --no-audit --no-fund
           cd ..
@@ -358,16 +357,20 @@ jobs:
   # ============================================================
   # リリース（タグ push 時のみ）
   # 命名規則メモ:
-  #   - Windows 単体: v1.4.0（現行通り）
-  #   - OS 別リリース: v1.4.0-linux / v1.4.0-macos / v1.4.0-android
-  #   - 全OS同時: v1.4.0 に全アセット同梱も可
+  #   - Windows 単体: v1.6.2（現行通り）
+  #   - OS 別リリース: v1.6.2-linux / v1.6.2-macos / v1.6.2-android
+  #   - 全OS同時: v1.6.2 に全アセット同梱も可
   # ============================================================
   release:
     # Linux/macOS のビルド成果物を GitHub Release に添付する。
     # Windows アセットはローカルの Auto-Release.ps1 が作成済みのため、
     # ここでは workflow_dispatch（version 入力あり）時のみ実行する。
-    # macOS ジョブが失敗/キャンセルでも Linux アセットは添付する。
-    needs: [build-linux, build-linux-arm64]
+    # Windows x64 + Linux x64/ARM64 の全対象ビルドが成功した場合のみ Release を作成する。
+    # macOS は署名・公証未完了のため対象外（ジョブは needs にも含めない）。
+    # Release に添付するのは Linux アーティファクトのみ。
+    # Windows アセットはローカルの Auto-Release.ps1 が作成・アップロードするため、
+    # ここで craftmate-windows-x64 を --clobber で上書きしない（署名済み資産の保護）。
+    needs: [build-windows, build-linux, build-linux-arm64]
     runs-on: ubuntu-latest
     # Release 作成は publish_release=true を明示した場合のみ。
     # 通常のビルド検証（デフォルト false）では Release・タグを一切変更しない。
@@ -390,7 +393,11 @@ jobs:
           if ! gh release view "$TAG" -R "$REPO" >/dev/null 2>&1; then
             gh release create "$TAG" -R "$REPO" --title "BlockWhiz $TAG" --notes "BlockWhiz $TAG"
           fi
-          find artifacts -type f | sort | while read -r f; do
+          # Linux アーティファクトのみをアップロード対象にする。
+          # craftmate-windows-x64 は needs でビルド成功をゲートする目的で取得するが、
+          # Release への添付は Auto-Release.ps1 が行う Windows 資産と重複するため除外。
+          # craftmate-macos は今回のリリース対象外のため除外。
+          find artifacts/craftmate-linux-x64 artifacts/craftmate-linux-arm64 -type f 2>/dev/null | sort | while read -r f; do
             echo "Uploading $f"
             gh release upload "$TAG" "$f" -R "$REPO" --clobber
           done
