@@ -42,6 +42,43 @@ if (isProd) {
   }
 }
 
+// ---- メールプロバイダ検証 ----
+// 本番では実送信プロバイダ必須（mock は実メールを送らないため禁止）。
+// 未対応のプロバイダ名・resend の設定不足は全環境で起動拒否。
+const mailProvider = opt('MAIL_PROVIDER', 'mock').toLowerCase();
+// メールアドレス形式の簡易検証。「addr」「Display Name <addr>」の両方を許可。
+// 過剰に厳しいRFC準拠は行わず、@とドメインの最低限の形だけを見る。
+function isValidMailAddress(s: string): boolean {
+  const trimmed = s.trim();
+  if (!trimmed || trimmed.length > 320) return false;
+  const m = trimmed.match(/<([^<>\s]+@[^<>\s]+)>/);
+  const addr = (m ? m[1] : trimmed).trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(addr);
+}
+const SUPPORTED_MAIL_PROVIDERS = new Set(['mock', 'resend']);
+if (!SUPPORTED_MAIL_PROVIDERS.has(mailProvider)) {
+  throw new Error(`Unsupported MAIL_PROVIDER: ${mailProvider} (supported: mock, resend)`);
+}
+if (isProd && mailProvider === 'mock') {
+  throw new Error('MAIL_PROVIDER=mock is not allowed in production (no real email is sent). Set MAIL_PROVIDER=resend with RESEND_API_KEY and MAIL_FROM.');
+}
+if (mailProvider === 'resend') {
+  if (!opt('RESEND_API_KEY')) {
+    throw new Error('RESEND_API_KEY is required when MAIL_PROVIDER=resend');
+  }
+  const mailFrom = opt('MAIL_FROM');
+  if (!mailFrom) {
+    throw new Error('MAIL_FROM is required when MAIL_PROVIDER=resend (e.g. BlockWhiz <noreply@your-domain.com>)');
+  }
+  if (!isValidMailAddress(mailFrom)) {
+    throw new Error('MAIL_FROM is not a valid email address (plain addr or "Display Name <addr>" format)');
+  }
+  const mailReplyTo = opt('MAIL_REPLY_TO');
+  if (mailReplyTo && !isValidMailAddress(mailReplyTo)) {
+    throw new Error('MAIL_REPLY_TO is not a valid email address');
+  }
+}
+
 // BIND_HOST: 本番では明示必須。開発時のみ loopback に限定。
 const bindHost = opt('BIND_HOST');
 if (isProd && !bindHost) {
@@ -100,7 +137,10 @@ export const config = {
     oneTimeCodeTtlSec: num('ONE_TIME_CODE_TTL_SECONDS', 60),
   },
   mail: {
-    provider: opt('MAIL_PROVIDER', 'mock').toLowerCase(),      // 'mock' | 将来の実プロバイダ
+    provider: opt('MAIL_PROVIDER', 'mock').toLowerCase(),      // 'mock' | 'resend'
+    resendApiKey: opt('RESEND_API_KEY'),
+    from: opt('MAIL_FROM'),
+    replyTo: opt('MAIL_REPLY_TO'),
     tokenTtlSec: num('EMAIL_TOKEN_TTL_SECONDS', 3600),       // メール確認・リセットトークン有効期限（1時間）
     resetTokenTtlSec: num('PASSWORD_RESET_TOKEN_TTL_SECONDS', 1800), // パスワードリセット（30分）
   },

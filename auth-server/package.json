@@ -11,14 +11,15 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "test": "npm run build && node tests/auth.test.mjs && node tests/phaseb.test.mjs"
+    "test": "npm run build && node tests/auth.test.mjs && node tests/phaseb.test.mjs && node tests/render-ip.test.mjs && node tests/resend.test.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.2.17",
     "express": "^4.21.2",
     "ioredis": "^5.11.1",
     "jose": "^5.9.6",
-    "pg": "^8.23.1"
+    "pg": "^8.23.1",
+    "resend": "^6.38.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

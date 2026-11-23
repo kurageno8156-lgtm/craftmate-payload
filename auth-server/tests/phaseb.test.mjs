@@ -82,6 +82,10 @@ await test('production without BIND_HOST → startup refused', async () => {
     DATABASE_URL: 'postgres://user:pass@127.0.0.1:1/db',
     AUTH_JWT_PRIVATE_KEY_PEM: privateKey.export({ type: 'pkcs8', format: 'pem' }),
     AUTH_JWT_PUBLIC_KEY_PEM: publicKey.export({ type: 'spki', format: 'pem' }),
+    // 本番は mock メール不可のため resend 設定を満たす（BIND_HOST 検証に到達させる）
+    MAIL_PROVIDER: 'resend',
+    RESEND_API_KEY: 're_test_key',
+    MAIL_FROM: 'BlockWhiz <noreply@example.com>',
     // BIND_HOST 未設定
   }));
   assert.notEqual(r.code, 0);
@@ -117,6 +121,10 @@ await test('unreachable DATABASE_URL → safe startup abort', async () => {
     AUTH_JWT_PRIVATE_KEY_PEM: privateKey.export({ type: 'pkcs8', format: 'pem' }),
     AUTH_JWT_PUBLIC_KEY_PEM: publicKey.export({ type: 'spki', format: 'pem' }),
     BIND_HOST: '127.0.0.1',
+    // 本番は mock メール不可のため resend 設定を満たす（DB接続検証に到達させる）
+    MAIL_PROVIDER: 'resend',
+    RESEND_API_KEY: 're_test_key',
+    MAIL_FROM: 'BlockWhiz <noreply@example.com>',
   }), 20000);
   assert.notEqual(r.code, 0, 'should exit non-zero on DB failure');
   assert.ok(!r.out.includes('listening'), 'must not listen when DB fails');

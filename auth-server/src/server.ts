@@ -512,6 +512,7 @@ export function createApp() {
             to: user.email,
             subject: 'BlockWhiz メールアドレス確認',
             text: `以下のリンクを開いてメールアドレスを確認してください（24時間有効）:\n${link}\n\nこのメールに心当たりがない場合は無視してください。`,
+            html: mailHtml('BlockWhiz メールアドレス確認', '以下のリンクを開いてメールアドレスを確認してください（24時間有効）:', link),
           });
           await audit('email_verify_sent', user.id, {}, ip, clientUa(req));
         } catch (e) {
@@ -598,6 +599,7 @@ export function createApp() {
             to: user.email,
             subject: 'BlockWhiz パスワード再設定',
             text: `パスワード再設定のリクエストを受け付けました。以下のリンクを開いて新しいパスワードを設定してください（30分有効）:\n${link}\n\nこのメールに心当たりがない場合は無視してください。`,
+            html: mailHtml('BlockWhiz パスワード再設定', 'パスワード再設定のリクエストを受け付けました。以下のリンクを開いて新しいパスワードを設定してください（30分有効）:', link),
           });
           await audit('password_reset_sent', user.id, {}, ip, clientUa(req));
         } catch (e) {
@@ -764,6 +766,7 @@ export function createApp() {
           to: mail,
           subject: 'BlockWhiz 新しいメールアドレスの確認',
           text: `メールアドレス変更を確認するには以下のリンクを開いてください（24時間有効）:\n${link}\n\nこのメールに心当たりがない場合は無視してください。`,
+          html: mailHtml('BlockWhiz 新しいメールアドレスの確認', 'メールアドレス変更を確認するには以下のリンクを開いてください（24時間有効）:', link),
         });
         await audit('email_change_sent', user.id, {}, ip, clientUa(req));
       } catch (e) {
@@ -954,6 +957,10 @@ async function revokeFamily(familyId: string, reason: string) {
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+}
+// メール本文のHTML版。リンクはエスケープしてhrefに埋め込む。
+function mailHtml(subject: string, leadText: string, link: string): string {
+  return `<!doctype html><html><body style="font-family:sans-serif;background:#0b0f14;color:#e4e4e7;padding:32px"><div style="max-width:480px;margin:0 auto"><h2 style="color:#e4e4e7">${escapeHtml(subject)}</h2><p>${escapeHtml(leadText)}</p><p><a href="${escapeHtml(link)}" style="display:inline-block;padding:10px 24px;border-radius:6px;background:#10b981;color:#052e1b;font-weight:600;text-decoration:none">リンクを開く</a></p><p style="color:#71717a;font-size:13px;word-break:break-all">${escapeHtml(link)}</p><p style="color:#71717a;font-size:13px">このメールに心当たりがない場合は無視してください。</p></div></body></html>`;
 }
 function errorPage(msg: string): string {
   return `<!doctype html><html><body style="font-family:sans-serif;background:#0b0f14;color:#e4e4e7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center;max-width:480px"><h2 style="color:#f87171">BlockWhiz Auth</h2><p>${escapeHtml(msg)}</p><p style="color:#71717a;font-size:13px">このウィンドウは閉じて BlockWhiz に戻ってください。</p></div></body></html>`;
