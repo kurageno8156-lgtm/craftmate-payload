@@ -75,8 +75,9 @@ jobs:
         run: |
           # リリーススクリプトを呼び出す。Release・タグ作成は行わない
           # （GitHub Release の公開はローカルの Auto-Release.ps1 が担当）。
-          # 出力先を RUNNER_TEMP に固定し、後続の upload-artifact パスと一致させる。
-          .\installer\Build-Release.ps1 -Version ${{ inputs.version || github.ref_name }} -OutputDirectory "$env:RUNNER_TEMP\CraftMate-release"
+          # 出力先をワークスペース内の専用フォルダーに固定し、
+          # 後続の upload-artifact パスと一致させる。
+          .\installer\Build-Release.ps1 -Version ${{ inputs.version || github.ref_name }} -OutputDirectory "${{ github.workspace }}\release-artifacts"
 
       # TODO(マルチアーキ):
       #   - x86 (32bit) ビルド: csc /platform:x86 + 32bit Node 同梱
@@ -88,7 +89,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: craftmate-windows-x64
-          path: ${{ env.RUNNER_TEMP }}/CraftMate-release/*
+          path: release-artifacts/*
           if-no-files-found: error
 
   # ============================================================
