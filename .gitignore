@@ -18,3 +18,9 @@ electron/node_modules/
 electron/dist-installer/
 electron/dist/
 oauth-clients.json
+
+# Local test artifacts / build outputs (Phase Z-2: prevent accidental commit)
+.test-cloud-localappdata/
+CraftMate_Setup.zip
+Launcher_debug.exe
+app.ico
