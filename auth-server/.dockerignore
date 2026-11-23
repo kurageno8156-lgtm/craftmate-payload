@@ -1,0 +1,26 @@
+# dependencies / build output
+node_modules
+dist
+
+# secrets & env — 絶対にイメージへ含めない
+.env
+.env.*
+*.pem
+*.key
+jwt-keys.json
+
+# runtime data（PGlite・メールoutbox・開発用鍵）
+data
+.test-data*
+
+# tests & dev files
+tests
+*.test.mjs
+# tsconfig.json はビルドに必要なため除外しない
+
+# logs & misc
+*.log
+.git
+.gitignore
+Dockerfile
+.dockerignore
