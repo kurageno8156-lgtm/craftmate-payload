@@ -1,9 +1,13 @@
-name: Build CraftMate
+name: Build BlockWhiz
 
 on:
   push:
     tags:
       - 'v*'
+    # auth-server の Docker イメージ検証を main への push 時にも実行する。
+    # 他ジョブは workflow_dispatch / タグ条件でゲートされているため影響なし。
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       version:
@@ -257,6 +261,101 @@ jobs:
           path: electron/dist-installer/*.dmg
 
   # ============================================================
+  # Auth Server Docker イメージ検証（ローカルビルドのみ・push なし）
+  # 目的: 開発PCに Docker がなくても CI 上で auth-server/Dockerfile の
+  #       実ビルドとイメージ内容を検証する。
+  # 実行タイミング: main への push、または workflow_dispatch。
+  # 他ジョブ・Release とは needs 関係なし・成果物アップロードなし。
+  # ============================================================
+  build-auth-server-docker:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build auth-server image (local only, no push)
+        run: docker build -t craftmate-auth-server:ci ./auth-server
+
+      - name: Inspect image user and CMD
+        run: |
+          USER=$(docker image inspect craftmate-auth-server:ci --format '{{.Config.User}}')
+          CMD=$(docker image inspect craftmate-auth-server:ci --format '{{json .Config.Cmd}}')
+          echo "User: $USER"
+          echo "Cmd:  $CMD"
+          test "$USER" = "node" || { echo "FAIL: image must run as non-root user 'node'"; exit 1; }
+          test "$USER" != "" && test "$USER" != "root" || { echo "FAIL: root user"; exit 1; }
+          echo "$CMD" | grep -q 'dist/index.js' || { echo "FAIL: CMD must run dist/index.js"; exit 1; }
+
+      - name: Verify image contents (dist, prod deps, no secrets/tests)
+        run: |
+          docker run --rm --entrypoint sh craftmate-auth-server:ci -c '
+            set -e
+            test -f /app/dist/index.js || { echo "FAIL: /app/dist/index.js missing"; exit 1; }
+            test -d /app/node_modules || { echo "FAIL: node_modules missing"; exit 1; }
+            test -d /app/node_modules/express || { echo "FAIL: prod dep express missing"; exit 1; }
+            test -w /app/data || { echo "FAIL: /app/data not writable"; exit 1; }
+            # 秘密情報・開発ファイルが含まれないこと
+            # （ls の複数パターンは一部不一致でも exit!=0 になり検出漏れするため個別判定）
+            for f in /app/.env /app/.env.* /app/*.pem /app/*.key /app/jwt-keys.json /app/oauth-clients.json; do
+              if [ -e "$f" ]; then echo "FAIL: secret/env file present: $f"; exit 1; fi
+            done
+            if [ -d /app/tests ]; then echo "FAIL: /app/tests present"; exit 1; fi
+            for f in /app/*.test.mjs /app/*.log; do
+              if [ -e "$f" ]; then echo "FAIL: dev file present: $f"; exit 1; fi
+            done
+            if [ -d /app/src ]; then echo "FAIL: /app/src (TS source) present in runtime image"; exit 1; fi
+            echo "image contents OK"
+          '
+
+      - name: Smoke test - start with dummy env and check health
+        run: |
+          # 失敗・タイムアウト・中断のいずれでもコンテナを確実に除去する。
+          # ログは docker logs で都度取得するため rm -f で失われない。
+          cleanup() { docker rm -f auth-smoke >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          docker run -d --name auth-smoke \
+            -e NODE_ENV=development \
+            -e BIND_HOST=0.0.0.0 \
+            -e PORT=8080 \
+            -e AUTH_PUBLIC_URL=http://localhost:8080 \
+            -e AUTH_DEV_INSECURE_HTTP=1 \
+            -e PGLITE_DIR=/tmp/pglite-smoke \
+            -e GOOGLE_CLIENT_ID=dummy-ci \
+            -e GOOGLE_CLIENT_SECRET=dummy-ci \
+            -e MAIL_PROVIDER=mock \
+            -p 127.0.0.1:18080:8080 \
+            craftmate-auth-server:ci
+          # ヘルスチェック（PGlite 初期化を含む起動を最大60秒待機）
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:18080/ops/health >/tmp/health.json 2>/dev/null; then
+              echo "health OK:"; cat /tmp/health.json; break
+            fi
+            if [ "$i" = "30" ]; then
+              echo "FAIL: health check timed out"; docker logs auth-smoke; exit 1
+            fi
+            sleep 2
+          done
+          # SIGTERM による graceful shutdown を検証する。
+          # docker stop の終了コードは SIGKILL フォールバックでも 0 になるため、
+          # アプリが出力する "shutdown complete" ログの存在で判定する。
+          # アプリ側の強制終了猶予は10秒。docker stop のデフォルト猶予も10秒だと
+          # Docker が先に SIGKILL を送り "shutdown complete" 前に終了し得るため、
+          # --time 15 でアプリ側の猶予を先に消化させる。
+          docker stop --time 15 auth-smoke >/dev/null
+          # shutdown complete が出るまで最大15秒待機（index.ts の猶予10秒+余裕）
+          for i in $(seq 1 15); do
+            if docker logs auth-smoke 2>&1 | grep -q "shutdown complete"; then
+              echo "graceful shutdown confirmed"; break
+            fi
+            if [ "$i" = "15" ]; then
+              echo "FAIL: 'shutdown complete' not found in logs"; docker logs auth-smoke; exit 1
+            fi
+            sleep 1
+          done
+          docker logs auth-smoke | tail -10
+          echo "smoke test OK"
+
+  # ============================================================
   # リリース（タグ push 時のみ）
   # 命名規則メモ:
   #   - Windows 単体: v1.4.0（現行通り）
@@ -289,7 +388,7 @@ jobs:
           # Auto-Release.ps1 が先にリリースを作成する想定。無ければ保険として作成。
           REPO="${{ github.repository }}"
           if ! gh release view "$TAG" -R "$REPO" >/dev/null 2>&1; then
-            gh release create "$TAG" -R "$REPO" --title "CraftMate $TAG" --notes "CraftMate $TAG"
+            gh release create "$TAG" -R "$REPO" --title "BlockWhiz $TAG" --notes "BlockWhiz $TAG"
           fi
           find artifacts -type f | sort | while read -r f; do
             echo "Uploading $f"
