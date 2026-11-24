@@ -338,7 +338,10 @@ function startServer(payloadDir) {
   // 同梱の Node.js バイナリを優先使用する。
   // ELECTRON_RUN_AS_NODE で Electron を Node として使うと、
   // better-sqlite3 等のネイティブモジュールが ABI 不一致で SIGSEGV するため。
-  const bundledNode = path.join(payloadDir, 'craftmate-node');
+  // Windows では craftmate-node.exe、POSIX では craftmate-node として同梱される。
+  const bundledNode = process.platform === 'win32'
+    ? path.join(payloadDir, 'craftmate-node.exe')
+    : path.join(payloadDir, 'craftmate-node');
   const useBundled = fs.existsSync(bundledNode);
   const execPath = useBundled ? bundledNode : process.execPath;
 

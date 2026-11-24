@@ -1805,7 +1805,7 @@ export class WebServer {
   private changePort(port: number): void {
     if (!this.server.listening) {
       this.port = port;
-      this.server.listen(port);
+      this.server.listen(port, '127.0.0.1');
       return;
     }
 
@@ -1816,7 +1816,7 @@ export class WebServer {
       }
       this.port = port;
       this.server.once('error', err => console.error(`[Web] Could not listen on port ${port}:`, err));
-      this.server.listen(port, () => console.log(`[Web] Dashboard moved to http://localhost:${port}`));
+      this.server.listen(port, '127.0.0.1', () => console.log(`[Web] Dashboard moved to http://localhost:${port}`));
     });
   }
 
@@ -1958,9 +1958,12 @@ export class WebServer {
         console.error(`[Web] Could not listen on port ${this.port}:`, err);
       };
       this.server.once('error', onError);
-      this.server.listen(this.port, () => {
+      // ループバックのみにバインドする。LAN/外部ネットワークからのアクセスを
+      // 遮断し、ダッシュボードはローカル利用専用とする。
+      // Socket.IO は同一 http.Server を共有するため自動的に loopback のみとなる。
+      this.server.listen(this.port, '127.0.0.1', () => {
         this.server.removeListener('error', onError);
-        this.debugLog(`WebServer listening on :${this.port} envPath=${this.envPath} cwd=${process.cwd()} execPath=${process.argv[1]}`);
+        this.debugLog(`WebServer listening on 127.0.0.1:${this.port} envPath=${this.envPath} cwd=${process.cwd()} execPath=${process.argv[1]}`);
         console.log('\n======================================================');
         console.log(`🌐 Web Dashboard is running at: http://localhost:${this.port}`);
         console.log('======================================================\n');

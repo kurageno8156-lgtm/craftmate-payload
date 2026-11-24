@@ -23,7 +23,11 @@
 set -euo pipefail
 
 VERSION="${1:-$(node -p "require('./package.json').version" 2>/dev/null || echo dev)}"
-OS="${2:-$(uname -s | tr '[:upper:]' '[:lower:]')}"   # linux | darwin
+OS="${2:-$(uname -s | tr '[:upper:]' '[:lower:]')}"   # linux | darwin | win32
+# Git Bash / MSYS / Cygwin の uname は MINGW64_NT-* 等を返すため win32 に正規化
+case "$OS" in
+  mingw*|msys*|cygwin*) OS=win32 ;;
+esac
 ARCH="${3:-$(uname -m)}"                                # x64 | arm64 | aarch64
 case "$ARCH" in aarch64) ARCH=arm64 ;; esac
 
@@ -59,6 +63,7 @@ NODE_VERSION="v20.18.1"
 case "$OS" in
   linux)  NODE_DIST="linux-${ARCH}" ;;
   darwin) NODE_DIST="darwin-${ARCH}" ;;
+  win32)  NODE_DIST="win-${ARCH}" ;;
   *)      NODE_DIST="" ;;
 esac
 if [ -n "$NODE_DIST" ]; then
@@ -69,8 +74,13 @@ if [ -n "$NODE_DIST" ]; then
   mkdir -p "$NODE_EXTRACT"
   tar -xJf "/tmp/${NODE_TAR}" -C "$NODE_EXTRACT" --strip-components=1
   mkdir -p "$STAGE/runtime"
-  cp "$NODE_EXTRACT/bin/node" "$STAGE/craftmate-node"
-  chmod +x "$STAGE/craftmate-node"
+  if [ "$OS" = "win32" ]; then
+    # Windows は node.exe を craftmate-node.exe として同梱する
+    cp "$NODE_EXTRACT/node.exe" "$STAGE/craftmate-node.exe"
+  else
+    cp "$NODE_EXTRACT/bin/node" "$STAGE/craftmate-node"
+    chmod +x "$STAGE/craftmate-node"
+  fi
   rm -rf "$NODE_EXTRACT" "/tmp/${NODE_TAR}"
   echo "==> Bundled Node.js runtime: $($STAGE/craftmate-node --version 2>/dev/null || echo OK)"
 fi
