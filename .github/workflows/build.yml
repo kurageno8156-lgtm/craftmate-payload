@@ -11,9 +11,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to build (e.g. 1.6.2)'
+        description: 'Version to build (e.g. 1.6.3)'
         required: true
-        default: '1.6.2'
+        default: '1.6.3'
       publish_release:
         description: 'Create/update a GitHub Release with the built assets (explicit opt-in; leave false for verification builds)'
         required: false
@@ -114,7 +114,7 @@ jobs:
       # Linux 向け prebuilt の取得 + 必要時ソースビルド（build-essential/python3 は ubuntu-latest に同梱）
       # craftmate-payload/ にステージングされる（Electron の extraResources が参照）
       - name: Build portable tarball (linux/x64)
-        run: bash build-release.sh ${{ inputs.version || '1.6.2' }} linux x64
+        run: bash build-release.sh ${{ inputs.version || '1.6.3' }} linux x64
 
       # Electron デスクトップラッパー（AppImage + deb）
       # payload/dist/index.js を ELECTRON_RUN_AS_NODE で spawn し、
@@ -158,7 +158,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - name: Build portable tarball (linux/arm64)
-        run: bash build-release.sh ${{ inputs.version || '1.6.2' }} linux arm64
+        run: bash build-release.sh ${{ inputs.version || '1.6.3' }} linux arm64
 
       # arm64 runner では electron-builder 同梱の fpm (x86_64バイナリ) が動かないため
       # deb は生成せず AppImage のみビルドする。
@@ -214,7 +214,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          VERSION="${{ inputs.version || '1.6.2' }}"
+          VERSION="${{ inputs.version || '1.6.3' }}"
           cd electron
           npm install --no-audit --no-fund
           cd ..
@@ -358,19 +358,14 @@ jobs:
   # ============================================================
   # リリース（タグ push 時のみ）
   # 命名規則メモ:
-  #   - Windows 単体: v1.6.2（現行通り）
-  #   - OS 別リリース: v1.6.2-linux / v1.6.2-macos / v1.6.2-android
-  #   - 全OS同時: v1.6.2 に全アセット同梱も可
+  #   - Windows 単体: v1.6.3（現行通り）
+  #   - OS 別リリース: v1.6.3-linux / v1.6.3-macos / v1.6.3-android
+  #   - 全OS同時: v1.6.3 に全アセット同梱も可
   # ============================================================
   release:
-    # Linux/macOS のビルド成果物を GitHub Release に添付する。
-    # Windows アセットはローカルの Auto-Release.ps1 が作成済みのため、
-    # ここでは workflow_dispatch（version 入力あり）時のみ実行する。
-    # Windows x64 + Linux x64/ARM64 の全対象ビルドが成功した場合のみ Release を作成する。
+    # Windows x64 + Linux x64/ARM64 の全対象ビルド成果物を GitHub Release に添付する。
     # macOS は署名・公証未完了のため対象外（ジョブは needs にも含めない）。
-    # Release に添付するのは Linux アーティファクトのみ。
-    # Windows アセットはローカルの Auto-Release.ps1 が作成・アップロードするため、
-    # ここで craftmate-windows-x64 を --clobber で上書きしない（署名済み資産の保護）。
+    # craftmate-macos artifact が同一 run に存在しても添付対象から除外する。
     needs: [build-windows, build-linux, build-linux-arm64]
     runs-on: ubuntu-latest
     # Release 作成は publish_release=true を明示した場合のみ。
@@ -383,22 +378,37 @@ jobs:
           pattern: craftmate-*
           merge-multiple: false
 
+      # 必須成果物が揃っていない場合は Release を作成せずジョブを失敗させる。
+      - name: Verify required assets exist
+        run: |
+          set -e
+          WIN=artifacts/craftmate-windows-x64
+          for f in app_payload.zip CraftMate_Setup.exe CraftMate_Setup.zip CraftMate_Updater.exe Uninstall.exe CraftMate_ScreenViewer.exe; do
+            if [ ! -f "$WIN/$f" ]; then echo "MISSING: $WIN/$f"; exit 1; fi
+          done
+          for d in craftmate-linux-x64 craftmate-linux-arm64; do
+            if [ ! -f "artifacts/$d/$d.tar.gz" ]; then echo "MISSING: artifacts/$d/$d.tar.gz"; exit 1; fi
+            if [ ! -f "artifacts/$d/$d.tar.gz.sha256" ]; then echo "MISSING: artifacts/$d/$d.tar.gz.sha256"; exit 1; fi
+            if ! compgen -G "artifacts/$d/electron/dist-installer/*.AppImage" >/dev/null; then echo "MISSING: $d AppImage"; exit 1; fi
+            if ! compgen -G "artifacts/$d/electron/dist-installer/*.AppImage.sha256" >/dev/null; then echo "MISSING: $d AppImage.sha256"; exit 1; fi
+          done
+          if ! compgen -G "artifacts/craftmate-linux-x64/electron/dist-installer/*.deb" >/dev/null; then echo "MISSING: linux-x64 deb"; exit 1; fi
+          if ! compgen -G "artifacts/craftmate-linux-x64/electron/dist-installer/*.deb.sha256" >/dev/null; then echo "MISSING: linux-x64 deb.sha256"; exit 1; fi
+          echo "All required release assets are present."
+
       - name: Upload assets to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ inputs.version }}"
           TAG="v${VERSION}"
-          # Auto-Release.ps1 が先にリリースを作成する想定。無ければ保険として作成。
           REPO="${{ github.repository }}"
           if ! gh release view "$TAG" -R "$REPO" >/dev/null 2>&1; then
             gh release create "$TAG" -R "$REPO" --title "BlockWhiz $TAG" --notes "BlockWhiz $TAG"
           fi
-          # Linux アーティファクトのみをアップロード対象にする。
-          # craftmate-windows-x64 は needs でビルド成功をゲートする目的で取得するが、
-          # Release への添付は Auto-Release.ps1 が行う Windows 資産と重複するため除外。
-          # craftmate-macos は今回のリリース対象外のため除外。
-          find artifacts/craftmate-linux-x64 artifacts/craftmate-linux-arm64 -type f 2>/dev/null | sort | while read -r f; do
+          # Windows x64（6ファイル・フラット構成）と Linux x64/ARM64 を添付する。
+          # craftmate-macos はリリース対象外のため含めない。
+          find artifacts/craftmate-windows-x64 artifacts/craftmate-linux-x64 artifacts/craftmate-linux-arm64 -type f | sort | while read -r f; do
             echo "Uploading $f"
             gh release upload "$TAG" "$f" -R "$REPO" --clobber
           done
