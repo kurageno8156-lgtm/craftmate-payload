@@ -95,6 +95,71 @@
     });
   }
 
+  // ---- レビュー投稿フォーム（FormSubmit → 運営メール、掲載は要確認）----
+  var reviewForm = document.getElementById('review-form');
+  if (reviewForm) {
+    var starsWrap = document.getElementById('review-stars');
+    var rating = 0;
+    if (starsWrap) {
+      starsWrap.addEventListener('click', function (e) {
+        var btn = e.target.closest('.star');
+        if (!btn) return;
+        rating = parseInt(btn.getAttribute('data-value'), 10) || 0;
+        starsWrap.querySelectorAll('.star').forEach(function (s) {
+          s.classList.toggle('on', parseInt(s.getAttribute('data-value'), 10) <= rating);
+        });
+      });
+    }
+    var reviewStatus = document.getElementById('review-status');
+    reviewForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var name = (document.getElementById('review-name') || {}).value || '';
+      var comment = (document.getElementById('review-comment') || {}).value || '';
+      var honeypot = (document.getElementById('review-website') || {}).value || '';
+      if (honeypot) { reviewForm.reset(); rating = 0; return; } // ボット対策: honeypot入力済みは無言で破棄
+      if (!comment.trim()) {
+        showFormStatus(reviewStatus, 'レビュー本文を入力してください。', false);
+        return;
+      }
+      var submitBtn = reviewForm.querySelector('.review-submit');
+      if (submitBtn) submitBtn.disabled = true;
+      showFormStatus(reviewStatus, '送信中…', true);
+      var stars = rating > 0 ? new Array(rating + 1).join('★') : '（未評価）';
+      postViaFormSubmit({
+        _subject: 'BlockWhiz レビュー - ' + (name.trim() || '匿名') + ' [' + stars + ']',
+        name: name.trim() || '（未入力）',
+        rating: rating > 0 ? rating + '/5' : 'なし',
+        comment: comment.trim(),
+        _template: 'table'
+      }).then(function () {
+        if (submitBtn) submitBtn.disabled = false;
+        reviewForm.reset();
+        rating = 0;
+        if (starsWrap) starsWrap.querySelectorAll('.star').forEach(function (s) { s.classList.remove('on'); });
+        showFormStatus(reviewStatus, 'レビューを送信しました。運営が確認後、掲載を検討します。ご協力ありがとうございます！', true);
+      }).catch(function (error) {
+        if (submitBtn) submitBtn.disabled = false;
+        showFormStatus(reviewStatus, (error && error.code === 'FORMSUBMIT_NEEDS_ACTIVATION' ? activationHint() : '送信に失敗しました: ' + (error && error.message ? error.message : error)), false);
+      });
+    });
+  }
+
+  // ---- 最新バージョン表示（アプリ内蔵サーバー経由でのみ取得可能）----
+  (function initVersionBadge() {
+    var note = document.getElementById('latest-version-note');
+    var el = document.getElementById('latest-version');
+    if (!note || !el) return;
+    fetch('api/version', { headers: { 'Accept': 'application/json' } })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) {
+        if (data && data.version) {
+          el.textContent = 'v' + data.version;
+          note.hidden = false;
+        }
+      })
+      .catch(function () { /* 静的ホスティングでは非表示のまま */ });
+  })();
+
   // ---- 公開レビュー一覧（GitHub Issues API・閲覧専用）----
   // これまでの Utterances / GitHub Issue に投稿されたレビューを
   // API 経由で取得して一覧表示する。投稿フォームは設けない。

@@ -4,10 +4,36 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#1e1e24">
-  <meta name="description" content="BlockWhiz は Minecraft の世界で目標に向かって行動する自律型 AI エージェントです。Windows 版をダウンロード。">
+  <meta name="description" content="BlockWhiz は Minecraft の世界で目標に向かって行動する自律型 AI エージェントです。Windows / Linux 版をダウンロード。Gemini・OpenAI・Ollama など複数の AI に対応。">
+  <link rel="canonical" href="https://kurageno8156-lgtm.github.io/craftmate-payload/distribution.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="BlockWhiz">
+  <meta property="og:title" content="BlockWhiz — Minecraft 自律型 AI エージェント">
+  <meta property="og:description" content="Minecraft の世界で自律的に行動する AI エージェント。採掘・建築・戦闘・会話を自然な言葉で指示できます。Windows / Linux 版を配布中。">
+  <meta property="og:url" content="https://kurageno8156-lgtm.github.io/craftmate-payload/distribution.html">
+  <meta property="og:image" content="https://kurageno8156-lgtm.github.io/craftmate-payload/icon-512.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="BlockWhiz — Minecraft 自律型 AI エージェント">
+  <meta name="twitter:description" content="Minecraft で自律行動する AI エージェント。Windows / Linux 版を配布中。">
+  <meta name="twitter:image" content="https://kurageno8156-lgtm.github.io/craftmate-payload/icon-512.png">
   <link rel="icon" href="app.ico" type="image/x-icon">
+  <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
   <link rel="stylesheet" href="distribution.css">
-  <title>BlockWhiz — Minecraft 自律型 AI エージェント</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "BlockWhiz",
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "Windows, Linux",
+    "description": "Minecraft Java Edition で自律的に行動する AI エージェント。採掘・クラフト・建築・戦闘・会話を自然言語で指示でき、Web ダッシュボードで進行を確認できます。",
+    "url": "https://kurageno8156-lgtm.github.io/craftmate-payload/distribution.html",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" },
+    "downloadUrl": "https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest",
+    "author": { "@type": "Organization", "name": "BlockWhiz", "url": "https://github.com/kurageno8156-lgtm/craftmate-payload" }
+  }
+  </script>
+  <title>BlockWhiz — Minecraft 自律型 AI エージェント | Windows / Linux 版ダウンロード</title>
 </head>
 <body>
   <header class="site-header">
@@ -28,7 +54,7 @@
 
     <!-- プラットフォーム選択 -->
     <section class="info-section" id="platforms">
-      <div class="section-heading"><p class="eyebrow">DOWNLOAD</p><h2>お使いのOSを選んでください</h2><p id="platform-detect-note">あなたの環境を自動判別して、おすすめのバージョンをハイライトしています。</p></div>
+      <div class="section-heading"><p class="eyebrow">DOWNLOAD</p><h2>お使いのOSを選んでください</h2><p id="platform-detect-note">あなたの環境を自動判別して、おすすめのバージョンをハイライトしています。</p><p class="version-note" id="latest-version-note" hidden>現在の最新バージョン: <strong id="latest-version">—</strong></p></div>
       <div class="platform-grid">
         <article class="platform-card" data-os="windows">
           <div class="platform-head"><span class="platform-icon" aria-hidden="true">🪟</span><div class="platform-title"><h3>Windows</h3><span class="badge badge-available">利用可能</span></div></div>
@@ -67,15 +93,11 @@
         </article>
 
         <article class="platform-card" data-os="macos">
-          <div class="platform-head"><span class="platform-icon" aria-hidden="true">🍎</span><div class="platform-title"><h3>macOS</h3><span class="badge">Apple Silicon / Intel</span></div></div>
-          <p class="platform-desc">Electron製デスクトップアプリを .dmg で配布。Apple Silicon（M1以降）と Intel Mac の両対応です。</p>
-          <a class="download-button platform-download" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate-macos-arm64.dmg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3h14v-3"/></svg><span><strong>Download for macOS (Apple Silicon)</strong><small>CraftMate-macos-arm64.dmg — 最新版</small></span><span class="button-arrow" aria-hidden="true">↗</span></a>
-          <div class="platform-alt-links">
-            <a class="platform-alt-link" href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate-macos-x64.dmg">Intel Mac（x64）はこちら</a>
-          </div>
-          <details class="platform-details"><summary>起動方法・注意事項</summary>
-            <ol><li>.dmg を開き、BlockWhiz を Applications フォルダへドラッグ</li><li>初回起動時は「BlockWhiz は壊れている可能性があるため、開けません」と表示される場合があります</li><li>その場合は <strong>Finder で BlockWhiz を Control+クリック →「開く」→「開く」</strong> で起動できます（Gatekeeper の警告を回避）</li></ol>
-            <p>※ 署名・公証は未実施のため、初回のみ右クリック→開くの手順が必要です。</p>
+          <div class="platform-head"><span class="platform-icon" aria-hidden="true">🍎</span><div class="platform-title"><h3>macOS</h3><span class="badge badge-soon">近日公開</span></div></div>
+          <p class="platform-desc">Electron製デスクトップアプリを .dmg で配布予定です。Apple Silicon（M1以降）と Intel Mac の両対応を予定しています。</p>
+          <span class="download-button platform-download disabled" aria-disabled="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 16v3h14v-3"/></svg><span><strong>Coming Soon</strong><small>CraftMate-macos-*.dmg</small></span><span class="button-arrow" aria-hidden="true">…</span></span>
+          <details class="platform-details"><summary>公開予定・注意事項</summary>
+            <ul><li>署名・公証（Apple Developer Program）の手続きが完了次第、.dmg を公開予定です</li><li>公開時は Gatekeeper 警告が表示される可能性があります（手順は公開ページにて案内します）</li><li>それまでは Windows 版（Boot Camp 等の Windows 環境）または Linux 版をご利用ください</li></ul>
           </details>
         </article>
 
@@ -97,7 +119,7 @@
           </details>
         </article>
       </div>
-      <p style="margin-top:18px;font-size:13px;color:#a1a1aa">🎮 <strong>Minecraft 統合版（Bedrock）</strong> の方は、ゲーム内アドオン <strong>BlockWhiz Bedrock</strong>（.mcaddon）をご利用ください。ダッシュボード不要・LANポート不使用で、ゲーム内チャットから操作できます → <a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate-Bedrock.mcaddon" style="color:#34d399">CraftMate-Bedrock.mcaddon ダウンロード</a></p>
+      <p style="margin-top:18px;font-size:13px;color:#a1a1aa">🎮 <strong>Minecraft 統合版（Bedrock）</strong> の方は、ゲーム内アドオン <strong>BlockWhiz Bedrock</strong> の利用を検討できます。ダッシュボード不要・LANポート不使用で、ゲーム内チャットから操作する設計です。現在 .mcaddon のビルド・配布を準備中のため、ソースコードは <a href="https://github.com/kurageno8156-lgtm/craftmate-payload/tree/main/bedrock-app" target="_blank" rel="noopener" style="color:#34d399">GitHub リポジトリ（bedrock-app/）</a> で公開しています。</p>
     </section>
 
     <section class="feature-section" id="features">
@@ -217,10 +239,26 @@
 
     <!-- レビュー -->
     <section class="info-section" id="reviews">
-      <div class="section-heading"><p class="eyebrow">REVIEWS</p><h2>ユーザーレビュー</h2><p id="review-summary">BlockWhiz を使った感想を GitHub で公開レビューとして投稿・閲覧できます。</p></div>
+      <div class="section-heading"><p class="eyebrow">REVIEWS</p><h2>ユーザーレビュー</h2><p id="review-summary">BlockWhiz を使った感想を投稿・閲覧できます。掲載されるレビューは運営が内容を確認したものです。</p></div>
       <div class="review-layout">
+        <form class="review-form" id="review-form" novalidate>
+          <h3>レビューを投稿する</h3>
+          <input type="text" id="review-name" maxlength="50" placeholder="お名前・ハンドルネーム（任意）" autocomplete="nickname" aria-label="お名前（任意）">
+          <div class="star-input" id="review-stars" role="radiogroup" aria-label="評価（5段階）">
+            <button type="button" class="star" data-value="1" aria-label="1">★</button>
+            <button type="button" class="star" data-value="2" aria-label="2">★</button>
+            <button type="button" class="star" data-value="3" aria-label="3">★</button>
+            <button type="button" class="star" data-value="4" aria-label="4">★</button>
+            <button type="button" class="star" data-value="5" aria-label="5">★</button>
+          </div>
+          <textarea id="review-comment" rows="5" maxlength="2000" placeholder="BlockWhiz の感想・不具合報告・要望を書いてください…" required aria-label="レビュー本文"></textarea>
+          <input type="text" id="review-website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" placeholder="Leave this field empty">
+          <button type="submit" class="review-submit">レビューを送信</button>
+          <p class="form-status" id="review-status" role="status"></p>
+          <p class="review-public-note" style="margin:0">※ 送信されたレビューは運営が確認し、問題がなければこのページに掲載を検討します。個人情報や不適切な内容を含む投稿は掲載されません。不具合の詳細な報告は <a href="https://github.com/kurageno8156-lgtm/craftmate-payload/issues" target="_blank" rel="noopener" style="color:#34d399">GitHub Issues</a> もご利用ください。</p>
+        </form>
         <div class="review-public">
-          <p class="review-public-note">みんなのレビュー一覧です（GitHub Issues から公開取得・閲覧専用）。新規レビューの投稿は GitHub リポジトリの Issue または Discussions からお願いします。</p>
+          <p class="review-public-note">掲載中のレビュー一覧です（GitHub Issues から公開取得・閲覧専用）。</p>
           <div id="review-list-public" class="review-list"></div>
           <p class="form-status" id="review-public-status" role="status"></p>
         </div>
@@ -251,10 +289,11 @@
     <section class="info-section" id="contact">
       <div class="section-heading"><p class="eyebrow">CONTACT</p><h2>お問い合わせ</h2><p>バグ報告・要望・ご質問はこちらから。サイト上でそのまま送信できます。</p></div>
       <form class="review-form" id="contact-form" style="max-width:560px;">
-        <input type="text" id="contact-name" maxlength="50" placeholder="お名前（任意）">
-        <textarea id="contact-message" rows="5" maxlength="2000" placeholder="お問い合わせ内容を入力してください…" required></textarea>
+        <input type="text" id="contact-name" maxlength="50" placeholder="お名前（任意）" autocomplete="name" aria-label="お名前（任意）">
+        <textarea id="contact-message" rows="5" maxlength="2000" placeholder="お問い合わせ内容を入力してください…" required aria-label="お問い合わせ内容"></textarea>
         <button type="submit" class="review-submit">送信する</button>
         <p class="form-status" id="contact-status" role="status"></p>
+        <p class="review-public-note" style="margin:0">※ 送信内容は FormSubmit（formsubmit.co）を経由して運営のメールアドレスに届きます。入力したお名前と本文が FormSubmit のサーバーを通過するため、第三者サービスのプライバシーポリシーをご確認ください。メールアドレスの入力は不要です。</p>
       </form>
     </section>
 

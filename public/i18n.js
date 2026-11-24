@@ -1,7 +1,7 @@
 (function () {
   const dictionaries = {
     en: {
-      pageTitle: 'Minecraft AI Agent Dashboard', connecting: 'Connecting...', settingsButton: '⚙️ Settings',
+      pageTitle: 'BlockWhiz Dashboard', connecting: 'Connecting...', settingsButton: '⚙️ Settings',
       botStatus: '📊 Bot Status', aiBrain: '🧠 AI Brain: {provider} ({model})', health: 'Health', food: 'Food', coordinates: '📍 Coordinates', dimension: '🌍 Dimension', biome: '🌲 Biome', time: '☀️ Time', heldItem: '🗡️ Held Item',
       equipment: '🛡️ Equipment', inventory: 'Inventory', items: 'items', emptyInventory: 'No items in inventory', unknownItem: 'Unknown item', unknownEntity: 'Unknown entity', showAllItems: 'Show all (all {count})', inventoryModalTitle: 'All inventory items', close: 'Close', closeInventory: 'Close inventory', nearbyEntities: '👀 Nearby Entities', noEntities: 'No nearby entities',
       restorePermissionDenied: 'Windows denied access to .env. Install BlockWhiz in a folder you can write to, or run it with permission to modify the installation folder.', restoreWriteFailed: 'Windows could not replace .env. Close BlockWhiz and try restoring the backup again.',
@@ -30,7 +30,7 @@
       chatRooms: 'Chat rooms', newChatRoom: 'New chat', chatEmptyHint: 'No messages yet. Send an instruction to start chatting with the bot.', chatYou: 'You', chatMinecraft: 'Minecraft', deleteChatRoom: 'Delete chat', chatRoomsLoadFailed: 'Could not load chat rooms. Check that the server is running.',
     },
     ja: {
-      pageTitle: 'Minecraft AI Agent ダッシュボード', connecting: '接続中...', settingsButton: '⚙️ 設定',
+      pageTitle: 'BlockWhiz ダッシュボード', connecting: '接続中...', settingsButton: '⚙️ 設定',
       botStatus: '📊 ボットの状態', aiBrain: '🧠 AI 脳: {provider} ({model})', health: '体力', food: '満腹度', coordinates: '📍 座標', dimension: '🌍 ディメンション', biome: '🌲 バイオーム', time: '☀️ 時刻', heldItem: '🗡️ 手持ちアイテム',
       equipment: '🛡️ 装備', inventory: 'インベントリ', items: '個', emptyInventory: 'アイテムを持っていません', unknownItem: '不明なアイテム', unknownEntity: '不明なエンティティ', showAllItems: 'すべて表示（全{count}個）', inventoryModalTitle: 'インベントリ一覧', close: '閉じる', closeInventory: 'インベントリを閉じる', nearbyEntities: '👀 周囲のエンティティ', noEntities: '周囲にエンティティはいません',
       restorePermissionDenied: 'Windowsが.envへの書き込みを拒否しました。書き込み可能なフォルダーにBlockWhizをインストールするか、インストール先を変更できる権限で実行してください。', restoreWriteFailed: 'Windowsが.envを置き換えられませんでした。.envを使用中のBlockWhizを閉じて、もう一度復元してください。',
@@ -59,7 +59,7 @@
       chatRooms: 'チャットルーム', newChatRoom: '新しいチャット', chatEmptyHint: 'まだメッセージがありません。指示を送るとボットとの会話がここに表示されます。', chatYou: 'あなた', chatMinecraft: 'Minecraft', deleteChatRoom: 'チャットを削除', chatRoomsLoadFailed: 'チャットルームを読み込めませんでした。サーバーが起動しているか確認してください。',
     },
     ko: {
-      pageTitle: '마인크래프트 AI 에이전트 대시보드', connecting: '연결 중...', settingsButton: '⚙️ 설정',
+      pageTitle: 'BlockWhiz 대시보드', connecting: '연결 중...', settingsButton: '⚙️ 설정',
       botStatus: '📊 봇 상태', aiBrain: '🧠 AI 두뇌: {provider} ({model})', health: '체력', food: '배고픔', coordinates: '📍 좌표', dimension: '🌍 디멘션', biome: '🌲 바이옴', time: '☀️ 시간', heldItem: '🗡️ 손에 든 아이템',
       equipment: '🛡️ 장비', inventory: '인벤토리', items: '개', emptyInventory: '인벤토리가 비어 있습니다', unknownItem: '알 수 없는 아이템', unknownEntity: '알 수 없는 엔티티', showAllItems: '모두 보기 (총 {count}개)', inventoryModalTitle: '인벤토리 전체', close: '닫기', closeInventory: '인벤토리 닫기', nearbyEntities: '👀 주변 엔티티', noEntities: '주변에 엔티티가 없습니다',
       entityCategory_player: '플레이어', entityCategory_hostile: '적대 몹', entityCategory_animal: '동물', entityCategory_item: '드롭 아이템', entityCategory_other: '엔티티',
@@ -78,7 +78,7 @@
       screenShareDesc: '봇 시점 화면 공유 (사람용)', screenShareTitle: '화면 공유 (사람용)', screenShareHelp: '켜면 봇의 화면이 브라우저에 표시됩니다.', screenShareToggleLabel: '화면 공유 활성화', adminTitle: '관리자 설정', adminHelp: '봇에 부여할 권한을 관리합니다. 변경 사항은 .env에 저장됩니다.', adminAllowCommands: '봇에 Minecraft 명령어 실행 권한 부여', adminAllowDangerous: '위험한 명령어(/kill, /ban 등) 실행 허용', adminAllowFileOps: '봇 파일 작업 권한 부여 (향후 확장용)', adminAllowAutoguard: '봇 자동 방어 허용', mcVersionTooNew: 'Minecraft 버전은 26.1 이하여야 합니다.', botScreenTitle: '봇 시점', closeBotScreen: '봇 화면 닫기',
     },
     es: {
-      pageTitle: 'Panel de Minecraft AI Agent', connecting: 'Conectando...', settingsButton: '⚙️ Ajustes',
+      pageTitle: 'Panel de BlockWhiz', connecting: 'Conectando...', settingsButton: '⚙️ Ajustes',
       botStatus: '📊 Estado del bot', aiBrain: '🧠 Cerebro IA: {provider} ({model})', health: 'Salud', food: 'Comida', coordinates: '📍 Coordenadas', dimension: '🌍 Dimensión', biome: '🌲 Bioma', time: '☀️ Hora', heldItem: '🗡️ Objeto en mano',
       equipment: '🛡️ Equipo', inventory: 'Inventario', items: 'objetos', emptyInventory: 'Inventario vacío', unknownItem: 'Objeto desconocido', unknownEntity: 'Entidad desconocida', showAllItems: 'Mostrar todo ({count})', inventoryModalTitle: 'Inventario completo', close: 'Cerrar', closeInventory: 'Cerrar inventario', nearbyEntities: '👀 Entidades cercanas', noEntities: 'No hay entidades cerca',
       entityCategory_player: 'Jugador', entityCategory_hostile: 'Mob hostil', entityCategory_animal: 'Animal', entityCategory_item: 'Objeto soltado', entityCategory_other: 'Entidad',
@@ -97,7 +97,7 @@
       screenShareDesc: 'Compartir vista del bot (para humanos)', screenShareTitle: 'Compartir pantalla (para humanos)', screenShareHelp: 'Al activarlo, la vista del bot se muestra en el navegador.', screenShareToggleLabel: 'Activar compartir pantalla', adminTitle: 'Ajustes de administrador', adminHelp: 'Administra los permisos otorgados al bot. Los cambios se guardan en .env.', adminAllowCommands: 'Permitir al bot ejecutar comandos de Minecraft', adminAllowDangerous: 'Permitir comandos peligrosos (/kill, /ban, etc.)', adminAllowFileOps: 'Permitir operaciones de archivos del bot (uso futuro)', adminAllowAutoguard: 'Permitir defensa automática del bot', mcVersionTooNew: 'La versión de Minecraft debe ser 26.1 o inferior.', botScreenTitle: 'Vista del bot', closeBotScreen: 'Cerrar vista del bot',
     },
     id: {
-      pageTitle: 'Dasbor Agen AI Minecraft', connecting: 'Menghubungkan...', settingsButton: '⚙️ Pengaturan',
+      pageTitle: 'Dasbor BlockWhiz', connecting: 'Menghubungkan...', settingsButton: '⚙️ Pengaturan',
       botStatus: '📊 Status Bot', aiBrain: '🧠 Otak AI: {provider} ({model})', health: 'Nyawa', food: 'Makanan', coordinates: '📍 Koordinat', dimension: '🌍 Dimensi', biome: '🌲 Bioma', time: '☀️ Waktu', heldItem: '🗡️ Item di Tangan',
       equipment: '🛡️ Perlengkapan', inventory: 'Inventaris', items: 'item', emptyInventory: 'Inventaris kosong', unknownItem: 'Item tidak dikenal', unknownEntity: 'Entitas tidak dikenal', showAllItems: 'Tampilkan semua ({count})', inventoryModalTitle: 'Semua item inventaris', close: 'Tutup', closeInventory: 'Tutup inventaris', nearbyEntities: '👀 Entitas di Sekitar', noEntities: 'Tidak ada entitas di sekitar',
       entityCategory_player: 'Pemain', entityCategory_hostile: 'Mob musuh', entityCategory_animal: 'Hewan', entityCategory_item: 'Item jatuh', entityCategory_other: 'Entitas',
@@ -116,7 +116,7 @@
       screenShareDesc: 'Bagikan tampilan bot (untuk manusia)', screenShareTitle: 'Berbagi layar (untuk manusia)', screenShareHelp: 'Jika aktif, tampilan bot ditampilkan di browser.', screenShareToggleLabel: 'Aktifkan berbagi layar', adminTitle: 'Pengaturan admin', adminHelp: 'Kelola izin yang diberikan kepada bot. Perubahan disimpan ke .env.', adminAllowCommands: 'Izinkan bot menjalankan perintah Minecraft', adminAllowDangerous: 'Izinkan perintah berbahaya (/kill, /ban, dll.)', adminAllowFileOps: 'Izinkan operasi file bot (untuk masa depan)', adminAllowAutoguard: 'Izinkan pertahanan otomatis bot', mcVersionTooNew: 'Versi Minecraft harus 26.1 atau lebih rendah.', botScreenTitle: 'Tampilan bot', closeBotScreen: 'Tutup tampilan bot',
     },
     zh: {
-      pageTitle: '我的世界 AI 智能体仪表板', connecting: '连接中...', settingsButton: '⚙️ 设置',
+      pageTitle: 'BlockWhiz 仪表板', connecting: '连接中...', settingsButton: '⚙️ 设置',
       botStatus: '📊 机器人状态', aiBrain: '🧠 AI 大脑: {provider} ({model})', health: '生命值', food: '饥饿值', coordinates: '📍 坐标', dimension: '🌍 维度', biome: '🌲 生物群系', time: '☀️ 时间', heldItem: '🗡️ 手持物品',
       equipment: '🛡️ 装备', inventory: '物品栏', items: '个', emptyInventory: '物品栏为空', unknownItem: '未知物品', unknownEntity: '未知实体', showAllItems: '显示全部（共{count}个）', inventoryModalTitle: '全部物品', close: '关闭', closeInventory: '关闭物品栏', nearbyEntities: '👀 附近实体', noEntities: '附近没有实体',
       entityCategory_player: '玩家', entityCategory_hostile: '敌对生物', entityCategory_animal: '动物', entityCategory_item: '掉落物', entityCategory_other: '实体',
@@ -135,7 +135,7 @@
       screenShareDesc: '共享机器人视角（供人类观看）', screenShareTitle: '屏幕共享（人类用）', screenShareHelp: '开启后，机器人的视角将显示在浏览器中。', screenShareToggleLabel: '启用屏幕共享', adminTitle: '管理员设置', adminHelp: '管理授予机器人的权限。更改将保存到 .env。', adminAllowCommands: '允许机器人执行 Minecraft 命令', adminAllowDangerous: '允许危险命令（/kill、/ban 等）', adminAllowFileOps: '允许机器人文件操作（未来扩展）', adminAllowAutoguard: '允许机器人自动防御', mcVersionTooNew: 'Minecraft 版本必须为 26.1 或更低。', botScreenTitle: '机器人视角', closeBotScreen: '关闭机器人画面',
     },
     hi: {
-      pageTitle: 'Minecraft AI एजेंट डैशबोर्ड', connecting: 'कनेक्ट हो रहा है...', settingsButton: '⚙️ सेटिंग्स',
+      pageTitle: 'BlockWhiz डैशबोर्ड', connecting: 'कनेक्ट हो रहा है...', settingsButton: '⚙️ सेटिंग्स',
       botStatus: '📊 बॉट स्थिति', aiBrain: '🧠 AI मस्तिष्क: {provider} ({model})', health: 'HP', food: 'भोजन', coordinates: '📍 निर्देशांक', dimension: '🌍 आयाम', biome: '🌲 बायोम', time: '☀️ समय', heldItem: '🗡️ हाथ में वस्तु',
       equipment: '🛡️ उपकरण', inventory: 'इन्वेंटरी', items: 'आइटम', emptyInventory: 'इन्वेंटरी खाली है', unknownItem: 'अज्ञात आइटम', unknownEntity: 'अज्ञात एंटिटी', showAllItems: 'सभी दिखाएं ({count})', inventoryModalTitle: 'पूरी इन्वेंटरी', close: 'बंद करें', closeInventory: 'इन्वेंटरी बंद करें', nearbyEntities: '👀 आसपास की एंटिटी', noEntities: 'आसपास कोई एंटिटी नहीं',
       entityCategory_player: 'खिलाड़ी', entityCategory_hostile: 'शत्रुतापूर्ण मोब', entityCategory_animal: 'जानवर', entityCategory_item: 'गिरी वस्तु', entityCategory_other: 'एंटिटी',
