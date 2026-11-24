@@ -53,21 +53,18 @@
     },
     "win": {
       "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
+        "nsis",
+        "portable"
       ],
-      "icon": "icon.png",
-      "artifactName": "BlockWhiz-${version}-win-x64.${ext}"
+      "icon": "icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "BlockWhiz-Setup-${version}-win-x64.${ext}"
+    },
+    "portable": {
+      "artifactName": "BlockWhiz-${version}-win-x64-portable.${ext}"
     },
     "mac": {
       "category": "public.app-category.games",
