@@ -2056,8 +2056,13 @@ export class WebServer {
     // AIタスク実行中でもなくMinecraftボットも未接続なら、サーバー自身を終了する。
     // これによりブラウザだけ閉じた場合に node.exe がゾンビ化するのを防ぐ。
     // ボット接続中・タスク実行中は終了しない（自律動作を継続させるため）。
+    // Electron デスクトップ版（CRAFTMATE_DESKTOP=1）ではウィンドウの
+    // ライフサイクルは Electron 側が管理するため、この自動終了は行わない
+    // （ログイン画面でソケット未接続のまま90秒経過すると誤終了するため）。
+    const idleShutdownDisabled = process.env.CRAFTMATE_DESKTOP === '1';
     this.idleShutdownTimer = setInterval(() => {
       try {
+        if (idleShutdownDisabled) return;
         if (this.connectedSockets > 0) return;
         const idleMs = Date.now() - this.lastSocketActivityAt;
         if (idleMs < 90 * 1000) return;

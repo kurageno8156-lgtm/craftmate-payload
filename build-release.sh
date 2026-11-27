@@ -36,15 +36,32 @@ STAGE="$(mktemp -d)/${OUT_NAME}"
 
 echo "==> BlockWhiz ${VERSION} build (${OS}/${ARCH})"
 
-# 1) 依存インストール（対象OSの prebuilt を取得）
-npm ci
+# 同梱する Node.js ランタイムのバージョン。
+# better-sqlite3 のプリビルドは Node.js v22 の ABI 向けのため、
+# npm ci / npm rebuild を実行する「ビルドマシンの Node.js」も
+# メジャーバージョンを揃える必要がある（不一致だと実行時に SIGSEGV）。
+# 不一致のまま進めると ABI 不一致の配布物ができてしまうため、警告ではなく停止する。
+NODE_VERSION="v22.20.0"
+BUILD_NODE_MAJOR="$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo '?')"
+BUNDLED_NODE_MAJOR="${NODE_VERSION#v}"; BUNDLED_NODE_MAJOR="${BUNDLED_NODE_MAJOR%%.*}"
+if [ "$BUILD_NODE_MAJOR" != "$BUNDLED_NODE_MAJOR" ]; then
+  echo "ERROR: build Node.js is $(node -v 2>/dev/null || echo '?') but bundled runtime is ${NODE_VERSION}."
+  echo "       better-sqlite3 prebuilds target Node.js ${BUNDLED_NODE_MAJOR}.x ABI."
+  echo "       Re-run this script with Node.js ${BUNDLED_NODE_MAJOR}.x (e.g. via nvm/volta/fnm)."
+  exit 1
+fi
 
-# 2) ネイティブモジュールを対象プラットフォーム向けに再ビルド
-#    prebuilt が無い場合のみソースビルド（python3/make/g++ or xcode CLT が必要）
-npm rebuild better-sqlite3 || {
-  echo "!! better-sqlite3 rebuild failed; trying source build..."
-  npm rebuild better-sqlite3 --build-from-source
-}
+# 1) 依存インストール（install scripts はスキップ）
+#    better-sqlite3 は prebuilds/ に win32/linux/darwin × x64/arm64 の
+#    プリビルドを同梱しており node-gyp ビルドは不要（CI と同じ方式）。
+#    install scripts を有効にすると better-sqlite3 が node-gyp を起動し、
+#    VS 未導入環境では失敗する。esbuild の postinstall のみ手動実行する。
+npm ci --ignore-scripts
+node node_modules/esbuild/install.js
+
+# 2) ネイティブモジュールの再ビルドは不要
+#    better-sqlite3 のプリビルドは Node.js v22 ABI 向け。
+#    上の NODE_VERSION ガードによりビルドマシンも Node.js 22.x 必須。
 
 # 3) TypeScript ビルド
 npm run build
@@ -59,7 +76,6 @@ done
 #    Electron を ELECTRON_RUN_AS_NODE で Node として使うと、ネイティブモジュール
 #    (better-sqlite3) が Electron の ABI と不一致で SIGSEGV するため、
 #    対象プラットフォーム用の公式 Node.js バイナリを同梱する。
-NODE_VERSION="v20.18.1"
 case "$OS" in
   linux)  NODE_DIST="linux-${ARCH}" ;;
   darwin) NODE_DIST="darwin-${ARCH}" ;;
@@ -68,11 +84,29 @@ case "$OS" in
 esac
 if [ -n "$NODE_DIST" ]; then
   echo "==> Downloading Node.js ${NODE_VERSION} (${NODE_DIST})"
-  NODE_TAR="node-${NODE_VERSION}-${NODE_DIST}.tar.xz"
+  # win32 の公式配布物は .zip、Linux/macOS は .tar.xz
+  if [ "$OS" = "win32" ]; then
+    NODE_TAR="node-${NODE_VERSION}-${NODE_DIST}.zip"
+  else
+    NODE_TAR="node-${NODE_VERSION}-${NODE_DIST}.tar.xz"
+  fi
+  curl -fsSL "https://nodejs.org/dist/${NODE_VERSION}/SHASUMS256.txt" -o /tmp/SHASUMS256.txt
+  EXPECTED="$(grep " ${NODE_TAR}\$" /tmp/SHASUMS256.txt | awk '{print $1}')"
+  [ -n "$EXPECTED" ] || { echo "ERROR: ${NODE_TAR} not found in SHASUMS256.txt"; exit 1; }
   curl -fsSL "https://nodejs.org/dist/${NODE_VERSION}/${NODE_TAR}" -o "/tmp/${NODE_TAR}"
+  ACTUAL="$(sha256sum "/tmp/${NODE_TAR}" | awk '{print $1}')"
+  [ "$EXPECTED" = "$ACTUAL" ] || { echo "ERROR: SHA256 mismatch for ${NODE_TAR}"; exit 1; }
+  echo "==> SHA256 verified: ${ACTUAL}"
+  rm -f /tmp/SHASUMS256.txt
   NODE_EXTRACT="$(mktemp -d)/node-${NODE_VERSION}-${NODE_DIST}"
   mkdir -p "$NODE_EXTRACT"
-  tar -xJf "/tmp/${NODE_TAR}" -C "$NODE_EXTRACT" --strip-components=1
+  if [ "$OS" = "win32" ]; then
+    # zip はトップレベルに node-vX.Y.Z-win-x64/ を含むため、その中身を展開先にする
+    unzip -q -o "/tmp/${NODE_TAR}" -d "$NODE_EXTRACT"
+    NODE_EXTRACT="$NODE_EXTRACT/node-${NODE_VERSION}-${NODE_DIST}"
+  else
+    tar -xJf "/tmp/${NODE_TAR}" -C "$NODE_EXTRACT" --strip-components=1
+  fi
   mkdir -p "$STAGE/runtime"
   if [ "$OS" = "win32" ]; then
     # Windows は node.exe を craftmate-node.exe として同梱する

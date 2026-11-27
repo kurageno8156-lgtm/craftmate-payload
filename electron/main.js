@@ -39,6 +39,15 @@ let serverProc = null;
 let quitting = false;
 let payloadDirGlobal = null;
 
+// 診断ログ: パッケージ版では console 出力が見えないため
+// %TEMP%\CraftMate_server.log にも記録する（サーバー側と同じファイル）
+function diagLog(message) {
+  try {
+    const logPath = path.join(require('os').tmpdir(), 'CraftMate_server.log');
+    fs.appendFileSync(logPath, `[${new Date().toISOString()}] [main] ${message}\n`);
+  } catch (_) { /* ignore */ }
+}
+
 // ---------- Linux デスクトップ登録（.desktop + アイコン） ----------
 // AppImage はシステムに登録されないため、ユーザー領域
 // (~/.local/share/applications, ~/.local/share/icons) に登録する。
@@ -334,6 +343,7 @@ let retryingWithSqlJs = false;
 let serverExtraEnv = {};   // 追加で子プロセスへ渡す環境変数
 
 function startServer(payloadDir) {
+  diagLog(`startServer payloadDir=${payloadDir}`);
   const entry = path.join(payloadDir, 'dist', 'index.js');
   // 同梱の Node.js バイナリを優先使用する。
   // ELECTRON_RUN_AS_NODE で Electron を Node として使うと、
@@ -384,10 +394,19 @@ function startServer(payloadDir) {
     detached: process.platform !== 'win32',
   });
   serverProc.stdout.on('data', d => process.stdout.write('[server] ' + d));
-  serverProc.stderr.on('data', d => process.stderr.write('[server] ' + d));
+  // パッケージ版では stderr が失われるため、末尾2KBを保持して終了時にログへ出す
+  let stderrTail = '';
+  serverProc.stderr.on('data', d => {
+    process.stderr.write('[server] ' + d);
+    stderrTail = (stderrTail + d.toString()).slice(-2048);
+  });
+  serverProc.on('error', (err) => {
+    diagLog(`spawn error: ${err && err.message}`);
+  });
   serverProc.on('exit', (code, signal) => {
     lastServerExit = { code, signal };
     serverProc = null;
+    diagLog(`server exited code=${code} signal=${signal} stderrTail=${JSON.stringify(stderrTail)}`);
     const crashSignal = signal === 'SIGSEGV' || signal === 'SIGABRT' || signal === 'SIGILL' || signal === 'SIGTRAP';
     if (!quitting && crashSignal && !serverExtraEnv.CRAFTMATE_USE_SQLJS) {
       // ネイティブモジュールのクラッシュ（WSL等）→ sql.js 互換モードで自動再起動
@@ -502,8 +521,10 @@ function showError(message) {
 }
 
 async function boot() {
+  diagLog('boot() start');
   const payloadDir = resolvePayloadDir();
   payloadDirGlobal = payloadDir;
+  diagLog(`payload dir: ${payloadDir}`);
   console.log('[CraftMate] payload dir:', payloadDir);
 
   // AppImage の場合はアプリケーションメニューへ自動登録（冪等・軽量）
@@ -513,7 +534,9 @@ async function boot() {
   }
 
   // If something already serves the dashboard (e.g. previous instance), reuse it.
-  if (await probeDashboard(1500)) {
+  const alreadyUp = await probeDashboard(1500);
+  diagLog(`probeDashboard(pre-start) => ${alreadyUp}`);
+  if (alreadyUp) {
     console.log('[CraftMate] dashboard already reachable, attaching window only');
     createWindow().loadURL(DASHBOARD_URL);
     return;
@@ -531,17 +554,20 @@ async function boot() {
   const deadline = Date.now() + SERVER_READY_TIMEOUT_MS;
   while (Date.now() < deadline) {
     if (await probeDashboard(1500)) {
+      diagLog('dashboard ready');
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.loadURL(DASHBOARD_URL);
       }
       return;
     }
-    if (!serverProc && !retryingWithSqlJs) break; // server died
+    if (!serverProc && !retryingWithSqlJs) { diagLog('server died during startup wait'); break; } // server died
     await new Promise(r => setTimeout(r, 500));
   }
   // TCPプローブで最終確認: HTTPが詰まっていてもポートが開いていれば
   // ダッシュボードURLをそのまま開く（ブラウザ側の再試行に任せる）
-  if (await tcpProbe(2000)) {
+  const tcpOk = await tcpProbe(2000);
+  diagLog(`tcpProbe(final) => ${tcpOk} serverProc=${!!serverProc}`);
+  if (tcpOk) {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.loadURL(DASHBOARD_URL);
     }
@@ -588,11 +614,14 @@ function killServer() {
 }
 
 const gotLock = app.requestSingleInstanceLock();
+diagLog(`requestSingleInstanceLock => ${gotLock}`);
 const installerMode = process.argv.includes('--install') || process.argv.includes('--uninstall');
 if (!gotLock) {
+  diagLog('no single-instance lock; quitting (another instance assumed running)');
   app.quit();
 } else {
   app.on('second-instance', () => {
+    diagLog('second-instance event');
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();

@@ -14,6 +14,10 @@ conversations/
 
 # Electron / portable payload build outputs
 craftmate-payload/
+craftmate-*.tar.gz
+craftmate-*.tar.gz.sha256
+craftmate-*.dmg
+craftmate-*.AppImage
 electron/node_modules/
 electron/dist-installer/
 electron/dist/
@@ -24,3 +28,8 @@ oauth-clients.json
 CraftMate_Setup.zip
 Launcher_debug.exe
 app.ico
+
+# Local IDE/conversation data (not part of the app)
+conversation_summaries.db
+conversation_summaries.db-shm
+conversation_summaries.db-wal
