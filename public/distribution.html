@@ -237,30 +237,21 @@
       </div>
     </section>
 
-    <!-- レビュー -->
+    <!-- レビュー（GitHub Discussions） -->
     <section class="info-section" id="reviews">
-      <div class="section-heading"><p class="eyebrow">REVIEWS</p><h2>ユーザーレビュー</h2><p id="review-summary">BlockWhiz を使った感想を投稿・閲覧できます。掲載されるレビューは運営が内容を確認したものです。</p></div>
+      <div class="section-heading"><p class="eyebrow">REVIEWS</p><h2>ユーザーレビュー</h2><p>BlockWhiz の感想は GitHub Discussions で投稿・閲覧できます。GitHub アカウントでログインするだけで、サイトを離れずにそのまま投稿できます。</p></div>
       <div class="review-layout">
-        <form class="review-form" id="review-form" novalidate>
-          <h3>レビューを投稿する</h3>
-          <input type="text" id="review-name" maxlength="50" placeholder="お名前・ハンドルネーム（任意）" autocomplete="nickname" aria-label="お名前（任意）">
-          <div class="star-input" id="review-stars" role="radiogroup" aria-label="評価（5段階）">
-            <button type="button" class="star" data-value="1" aria-label="1">★</button>
-            <button type="button" class="star" data-value="2" aria-label="2">★</button>
-            <button type="button" class="star" data-value="3" aria-label="3">★</button>
-            <button type="button" class="star" data-value="4" aria-label="4">★</button>
-            <button type="button" class="star" data-value="5" aria-label="5">★</button>
-          </div>
-          <textarea id="review-comment" rows="5" maxlength="2000" placeholder="BlockWhiz の感想・不具合報告・要望を書いてください…" required aria-label="レビュー本文"></textarea>
-          <input type="text" id="review-website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" placeholder="Leave this field empty">
-          <button type="submit" class="review-submit">レビューを送信</button>
-          <p class="form-status" id="review-status" role="status"></p>
-          <p class="review-public-note" style="margin:0">※ 送信されたレビューは運営が確認し、問題がなければこのページに掲載を検討します。個人情報や不適切な内容を含む投稿は掲載されません。不具合の詳細な報告は <a href="https://github.com/kurageno8156-lgtm/craftmate-payload/issues" target="_blank" rel="noopener" style="color:#34d399">GitHub Issues</a> もご利用ください。</p>
-        </form>
+        <div class="review-cta">
+          <a class="download-button review-write-btn" href="https://github.com/kurageno8156-lgtm/craftmate-payload/discussions/new" target="_blank" rel="noopener"><span><strong>レビューを書く</strong><small>GitHub Discussions で投稿（GitHub アカウントでログイン）</small></span><span class="button-arrow" aria-hidden="true">↗</span></a>
+          <a class="platform-alt-link" href="https://github.com/kurageno8156-lgtm/craftmate-payload/discussions" target="_blank" rel="noopener">投稿済みのレビューを読む ↗</a>
+        </div>
         <div class="review-public">
-          <p class="review-public-note">掲載中のレビュー一覧です（GitHub Issues から公開取得・閲覧専用）。</p>
-          <div id="review-list-public" class="review-list"></div>
-          <p class="form-status" id="review-public-status" role="status"></p>
+          <div class="review-notes">
+            <p>・レビューは GitHub Discussions にそのまま投稿されます。投稿者名・投稿日・本文は GitHub 側のページで確認できます（サイト側で内容を改変することはありません）。</p>
+            <p>・星評価は本文に ★ の数で書いていただけます（例：★★★★★）。</p>
+            <p>・<strong>個人情報・パスワード・APIキーなどの秘密情報は投稿しないでください。</strong>GitHub のアカウント名と投稿内容は公開されます。</p>
+            <p>・不具合の詳細な報告や要望は <a href="https://github.com/kurageno8156-lgtm/craftmate-payload/issues" target="_blank" rel="noopener" style="color:#34d399">GitHub Issues</a> もご利用ください。</p>
+          </div>
         </div>
       </div>
     </section>
@@ -302,22 +293,29 @@
 
 
 
-<section class="previous-versions" style="padding: 2rem; max-width: 800px; margin: 0 auto; color: #ccc;">
+<section class="previous-versions" style="padding: 2rem; max-width: 960px; margin: 0 auto; color: #ccc;">
   <details>
     <summary style="cursor: pointer; font-size: 1.2rem; color: #10b981;">過去のバージョン (Previous Versions)</summary>
-    <p style="margin-top: .75rem; font-size: .9rem;">最新版はページ上部のダウンロードボタンから入手できます。それ以前のバージョンは以下から取得可能です（旧バージョンは不具合を含む場合があります）。</p>
-    <ul style="margin-top: 1rem; line-height: 1.8; list-style: none; padding-left: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem;">
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.132/CraftMate_Setup.exe" style="color: #10b981;">v1.3.132</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.131/CraftMate_Setup.exe" style="color: #10b981;">v1.3.131</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.130/CraftMate_Setup.exe" style="color: #10b981;">v1.3.130</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.129/CraftMate_Setup.exe" style="color: #10b981;">v1.3.129</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.128/CraftMate_Setup.exe" style="color: #10b981;">v1.3.128</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.127/CraftMate_Setup.exe" style="color: #10b981;">v1.3.127</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.126/CraftMate_Setup.exe" style="color: #10b981;">v1.3.126</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.125/CraftMate_Setup.exe" style="color: #10b981;">v1.3.125</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.3.124/CraftMate_Setup.exe" style="color: #10b981;">v1.3.124</a></li>
-      <li><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases" style="color: #10b981;">さらに古いバージョンは GitHub Releases へ ↗</a></li>
-    </ul>
+    <p style="margin-top: .75rem; font-size: .9rem;">最新版はページ上部のダウンロードボタンから入手できます。それ以前のバージョンは以下から取得可能です（旧バージョンは不具合を含む場合があります）。SHA256 は Windows インストーラー（CraftMate_Setup.exe）の値です。Linux / macOS など他のアセットは各リリースページからダウンロードできます。</p>
+    <div class="version-table-wrap">
+      <table class="version-table">
+        <thead>
+          <tr><th>バージョン</th><th>リリース日</th><th>対応OS</th><th>Windows ダウンロード</th><th>SHA256 (Setup.exe)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>v1.6.3 <span class="badge-latest">最新</span></td><td>2026-11-24</td><td>Windows / Linux</td><td><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.6.3/CraftMate_Setup.exe">CraftMate_Setup.exe</a></td><td class="sha">43c519736ba463479752de7fb64b4ef28ca5655d8c117aaad6ff1d5b69e3b85d</td></tr>
+          <tr><td>v1.6.2</td><td>2026-11-21</td><td>Windows</td><td><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.6.2/CraftMate_Setup.exe">CraftMate_Setup.exe</a></td><td class="sha">6e391bd5ce6d6460d3b1cad886ca5d8b788c3d3df944791675e4c62d35a9a712</td></tr>
+          <tr><td>v1.6.1</td><td>2026-11-21</td><td>Windows</td><td><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.6.1/CraftMate_Setup.exe">CraftMate_Setup.exe</a></td><td class="sha">f59324f182c57635acb129c5f9469e1d1e1da3940a4f1c60691d1c0076bbd212</td></tr>
+          <tr><td>v1.6.0</td><td>2026-11-21</td><td>Windows / Linux / macOS</td><td><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.6.0/CraftMate_Setup.exe">CraftMate_Setup.exe</a></td><td class="sha">2120b538c57f9d406fd8089d66a500f5712df6b15c4e8ba3d93f98e7160b29bd</td></tr>
+          <tr><td>v1.5.3</td><td>2026-11-21</td><td>Windows / Linux / macOS</td><td><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.5.3/CraftMate_Setup.exe">CraftMate_Setup.exe</a></td><td class="sha">03fc294df3a6b7ee809645a8556e150c35f7225d3f3d6aec0431db37300280df</td></tr>
+          <tr><td>v1.5.2</td><td>2026-11-21</td><td>Windows / Linux / macOS</td><td><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.5.2/CraftMate_Setup.exe">CraftMate_Setup.exe</a></td><td class="sha">af4f8cda108bedd6e49161d8268eda704fa339c181e68f75a780d1d8f6cb25aa</td></tr>
+          <tr><td>v1.5.0</td><td>2026-11-21</td><td>Windows / Linux / macOS</td><td><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.5.0/CraftMate_Setup.exe">CraftMate_Setup.exe</a></td><td class="sha">f5fedbd64c633fa2545a2eae801ca47d7256faa3db3b579115f3327f0a0f3c68</td></tr>
+          <tr><td>v1.4.1</td><td>2026-11-21</td><td>Windows / Linux / macOS</td><td><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.4.1/CraftMate_Setup.exe">CraftMate_Setup.exe</a></td><td class="sha">e48c5fd2cbb90488bb1f00a5ab306187445e7a84589ca351fc325905aaff5a77</td></tr>
+          <tr><td>v1.4.0</td><td>2026-11-21</td><td>Windows / Linux / macOS</td><td><a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases/download/v1.4.0/CraftMate_Setup.exe">CraftMate_Setup.exe</a></td><td class="sha">3c382618001804babb0130d6247532be3c428f13973e33d5e7d6168020a9e506</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top: 1rem; font-size: .9rem;">さらに古いバージョン（v1.3.x 以前を含む）は <a href="https://github.com/kurageno8156-lgtm/craftmate-payload/releases" style="color: #10b981;">GitHub Releases</a> で確認できます。新しいバージョンはこの表に順次追加されます。</p>
   </details>
 </section>
 </main>
