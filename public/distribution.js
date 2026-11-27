@@ -1,6 +1,6 @@
-// CraftMate 配布ページ: プラットフォーム自動判別 + お問い合わせ（FormSubmit）
-// ユーザーレビューは GitHub Issues ベースの Utterances ウィジェットで公開
-// （distribution.html に埋め込み。全世界が閲覧可能、投稿は GitHub ログイン）。
+// BlockWhiz 配布ページ: プラットフォーム自動判別 + お問い合わせ（FormSubmit）
+// ユーザーレビューは GitHub Discussions に誘導する（distribution.html のリンクのみ。
+// サイト側で投稿内容を収集・改変しない設計）。
 (function () {
   'use strict';
 
@@ -95,93 +95,24 @@
     });
   }
 
-  // ---- 公開レビュー一覧（GitHub Issues API・閲覧専用）----
-  // これまでの Utterances / GitHub Issue に投稿されたレビューを
-  // API 経由で取得して一覧表示する。投稿フォームは設けない。
-  (function initPublicReviews() {
-    var listEl = document.getElementById('review-list-public');
-    var statusEl = document.getElementById('review-public-status');
-    if (!listEl) return;
-    var REPO = 'kurageno8156-lgtm/craftmate-payload';
-    var API = 'https://api.github.com/repos/' + REPO;
-    var headers = { 'Accept': 'application/vnd.github+json' };
+  // ---- レビュー機能 ----
+  // レビュー投稿・閲覧は GitHub Discussions 側で行う（distribution.html のリンク）。
+  // サイト側では投稿フォーム・外部サービスを持たない。
 
-    function setStatus(text, ok) {
-      if (!statusEl) return;
-      statusEl.textContent = text || '';
-      statusEl.style.color = ok === false ? '#f87171' : '#a1a1aa';
-    }
-
-    function renderEmpty(text) {
-      listEl.innerHTML = '';
-      var p = document.createElement('p');
-      p.className = 'review-empty';
-      p.textContent = text;
-      listEl.appendChild(p);
-    }
-
-    function fmtDate(ts) {
-      try { return new Date(ts).toLocaleDateString('ja-JP'); } catch (e) { return ''; }
-    }
-
-    function renderComments(comments) {
-      listEl.innerHTML = '';
-      if (!comments || !comments.length) {
-        renderEmpty('まだレビューはありません。GitHub の Issue から感想を投稿できます。');
-        return;
-      }
-      // 新しい順に表示
-      comments.slice().sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); }).forEach(function (c) {
-        var card = document.createElement('article');
-        card.className = 'review-card';
-        var head = document.createElement('div');
-        head.className = 'review-card-head';
-        var author = document.createElement('span');
-        author.className = 'review-meta';
-        author.textContent = '@' + ((c.user && c.user.login) || 'unknown') + ' ・ ' + fmtDate(c.created_at);
-        var link = document.createElement('a');
-        link.className = 'review-meta';
-        link.href = c.html_url || '#';
-        link.target = '_blank';
-        link.rel = 'noopener';
-        link.textContent = 'GitHub ↗';
-        head.appendChild(author);
-        head.appendChild(link);
-        var body = document.createElement('p');
-        body.className = 'review-card-body';
-        body.textContent = (c.body || '').slice(0, 2000);
-        card.appendChild(head);
-        card.appendChild(body);
-        listEl.appendChild(card);
-      });
-    }
-
-    setStatus('レビューを読み込み中…');
-    fetch(API + '/issues?state=all&per_page=50', { headers: headers })
-      .then(function (res) {
-        if (res.status === 403) throw new Error('rate-limit');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.json();
+  // ---- 最新バージョン表示（アプリ内蔵サーバー経由でのみ取得可能）----
+  (function initVersionBadge() {
+    var note = document.getElementById('latest-version-note');
+    var el = document.getElementById('latest-version');
+    if (!note || !el) return;
+    fetch('api/version', { headers: { 'Accept': 'application/json' } })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) {
+        if (data && data.version) {
+          el.textContent = 'v' + data.version;
+          note.hidden = false;
+        }
       })
-      .then(function (issues) {
-        if (!Array.isArray(issues)) throw new Error('bad response');
-        // Utterances が作成したレビュー用 Issue を探す（タイトルに CraftMate を含む Issue）
-        var issue = issues
-          .filter(function (i) { return !i.pull_request && /(craftmate|blockwhiz)/i.test(i.title || ''); })
-          .sort(function (a, b) { return new Date(b.updated_at) - new Date(a.updated_at); })[0];
-        if (!issue) { setStatus(''); renderEmpty('まだレビューはありません。'); return null; }
-        return fetch(API + '/issues/' + issue.number + '/comments?per_page=100', { headers: headers })
-          .then(function (r) { return r.ok ? r.json() : []; });
-      })
-      .then(function (comments) {
-        if (comments === null) return;
-        setStatus('');
-        renderComments(Array.isArray(comments) ? comments : []);
-      })
-      .catch(function (e) {
-        setStatus('レビューの読み込みに失敗しました' + (e && e.message === 'rate-limit' ? '（GitHub API のレート制限。しばらくして再読み込みしてください）' : '。'), false);
-        renderEmpty('レビューを読み込めませんでした。');
-      });
+      .catch(function () { /* 静的ホスティングでは非表示のまま */ });
   })();
 
   // ---- 「BlockWhiz 検索結果」セクション ----

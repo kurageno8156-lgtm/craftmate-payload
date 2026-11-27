@@ -1,7 +1,7 @@
 {
   "name": "craftmate-desktop",
   "productName": "BlockWhiz",
-  "version": "1.6.3",
+  "version": "1.7.0",
   "description": "Minecraft AI autonomous agent — desktop wrapper",
   "homepage": "https://github.com/kurageno8156-lgtm/craftmate-payload",
   "main": "main.js",
@@ -50,6 +50,21 @@
           "Categories": "Utility;Game;"
         }
       }
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "BlockWhiz-Setup-${version}-win-x64.${ext}"
+    },
+    "portable": {
+      "artifactName": "BlockWhiz-${version}-win-x64-portable.${ext}"
     },
     "mac": {
       "category": "public.app-category.games",

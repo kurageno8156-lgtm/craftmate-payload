@@ -786,8 +786,21 @@ namespace CraftMateSetup
                 throw new FileNotFoundException("The installed dashboard runtime is incomplete.");
             }
 
+            // 起動失敗の原因追跡用にサーバーの stdout/stderr をログへ保存する。
+            // webServer 側の debugLog は秘密値をマスクするが、stdout には
+            // APIキー等は出力されない設計のためそのまま記録してよい。
+            string serverLogPath = Path.Combine(Path.GetTempPath(), "CraftMate_server.log");
+
+            System.Diagnostics.Process serverProcess = null;
             if (!IsDashboardReady())
             {
+                // ポート3000が既に使用中の場合は原因を記録する
+                // （別アプリが占有しているとサーバーは EADDRINUSE でリトライを続ける）。
+                if (IsPortListening(3000))
+                {
+                    try { File.AppendAllText(serverLogPath, "[Setup] Port 3000 is already in use by another process before dashboard start.\r\n"); } catch { }
+                }
+
                 System.Diagnostics.ProcessStartInfo serverInfo = new System.Diagnostics.ProcessStartInfo();
                 serverInfo.FileName = nodePath;
                 serverInfo.Arguments = "\"dist\\index.js\"";
@@ -795,35 +808,85 @@ namespace CraftMateSetup
                 serverInfo.UseShellExecute = false;
                 serverInfo.CreateNoWindow = true;
                 serverInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-                using (System.Diagnostics.Process serverProcess = System.Diagnostics.Process.Start(serverInfo))
+                serverInfo.RedirectStandardOutput = true;
+                serverInfo.RedirectStandardError = true;
+                serverProcess = System.Diagnostics.Process.Start(serverInfo);
+                if (serverProcess == null)
                 {
-                    if (serverProcess == null)
-                    {
-                        throw new InvalidOperationException("Could not start the local dashboard server.");
-                    }
+                    throw new InvalidOperationException("Could not start the local dashboard server.");
                 }
+                serverProcess.OutputDataReceived += delegate(object s, System.Diagnostics.DataReceivedEventArgs e) { AppendServerLog(serverLogPath, e.Data); };
+                serverProcess.ErrorDataReceived += delegate(object s, System.Diagnostics.DataReceivedEventArgs e) { AppendServerLog(serverLogPath, e.Data); };
+                serverProcess.BeginOutputReadLine();
+                serverProcess.BeginErrorReadLine();
             }
 
+            // 初回起動は DB 生成・ネイティブモジュール読込・ウイルススキャンで
+            // 時間がかかることがあるため最大120秒待機する（Launcher.cs と同等）。
+            // プロセスが早期終了した場合は待たずに失敗とする。
             bool ready = false;
-            for (int attempt = 0; attempt < 24; attempt++)
+            DateTime deadline = DateTime.UtcNow.AddSeconds(120);
+            while (DateTime.UtcNow < deadline)
             {
                 if (IsDashboardReady())
                 {
                     ready = true;
                     break;
                 }
-                Thread.Sleep(500);
+                if (serverProcess != null)
+                {
+                    try
+                    {
+                        if (serverProcess.HasExited)
+                        {
+                            try { File.AppendAllText(serverLogPath, "[Setup] Server process exited early with code " + serverProcess.ExitCode + ".\r\n"); } catch { }
+                            throw new InvalidOperationException(
+                                "The dashboard server exited during startup (exit code " + serverProcess.ExitCode + "). " +
+                                "Log: " + serverLogPath);
+                        }
+                    }
+                    catch (InvalidOperationException) { throw; }
+                    catch { }
+                }
+                Thread.Sleep(1000);
             }
 
             if (!ready)
             {
-                throw new InvalidOperationException("The dashboard server did not become ready within 12 seconds.");
+                // タイムアウト: インストール自体は成功しているため、
+                // 「起動に失敗した」こととログの場所を明示して区別する。
+                try { File.AppendAllText(serverLogPath, "[Setup] Dashboard did not become ready within 120 seconds.\r\n"); } catch { }
+                throw new InvalidOperationException(
+                    "BlockWhiz のインストールは完了しましたが、ダッシュボードサーバーの起動が120秒以内に完了しませんでした。\r\n" +
+                    "初回起動は時間がかかる場合があります。もう一度アプリを起動してください。\r\n" +
+                    "詳細ログ: " + serverLogPath);
             }
 
             System.Diagnostics.ProcessStartInfo launcherInfo = new System.Diagnostics.ProcessStartInfo(launcherPath);
             launcherInfo.WorkingDirectory = targetDirectory;
             launcherInfo.UseShellExecute = true;
             System.Diagnostics.Process.Start(launcherInfo);
+        }
+
+        private static void AppendServerLog(string logPath, string line)
+        {
+            if (line == null) return;
+            try { File.AppendAllText(logPath, line + "\r\n"); } catch { }
+        }
+
+        private static bool IsPortListening(int port)
+        {
+            try
+            {
+                System.Net.Sockets.TcpClient client = new System.Net.Sockets.TcpClient();
+                client.Connect("127.0.0.1", port);
+                client.Close();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private static bool IsDashboardReady()
