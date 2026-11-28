@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kurageno8156-lgtm.github.io/craftmate-payload/sitemap.xml
