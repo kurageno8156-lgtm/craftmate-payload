@@ -29,7 +29,12 @@ case "$OS" in
   mingw*|msys*|cygwin*) OS=win32 ;;
 esac
 ARCH="${3:-$(uname -m)}"                                # x64 | arm64 | aarch64
-case "$ARCH" in aarch64) ARCH=arm64 ;; esac
+# Git Bash / MSYS の uname -m は x86_64 を返す。Node.js 公式配布物の
+# ディレクトリ名は win-x64 / linux-x64 等なので必ず正規化する。
+case "$ARCH" in
+  x86_64|amd64) ARCH=x64 ;;
+  aarch64)      ARCH=arm64 ;;
+esac
 
 OUT_NAME="craftmate-${OS}-${ARCH}"
 STAGE="$(mktemp -d)/${OUT_NAME}"
