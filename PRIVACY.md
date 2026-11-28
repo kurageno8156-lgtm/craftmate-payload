@@ -14,4 +14,4 @@ When you use an AI provider (Google Gemini, OpenAI, Groq, Ollama), your inputs m
 
 ## Contact
 
-For questions, please open an issue on GitHub: https://github.com/kurageno8156-lgtm/craftmate-payload/issues
+For questions, please open an issue on GitHub: https://github.com/kurageno8156-lgtm/blockwhiz/issues

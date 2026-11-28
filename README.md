@@ -1,6 +1,6 @@
 # BlockWhiz — Minecraftで自律的に動くAIボットを、あなたのPCで。
 
-[![Latest Release](https://img.shields.io/github/v/release/kurageno8156-lgtm/craftmate-payload?label=latest&color=10b981)](https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/kurageno8156-lgtm/blockwhiz?label=latest&color=10b981)](https://github.com/kurageno8156-lgtm/blockwhiz/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-blue)]()
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -14,9 +14,9 @@
 
 ## ⬇️ ダウンロード
 
-**[最新版をダウンロード (CraftMate_Setup.exe)](https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate_Setup.exe)**
+**[最新版をダウンロード (CraftMate_Setup.exe)](https://github.com/kurageno8156-lgtm/blockwhiz/releases/latest/download/CraftMate_Setup.exe)**
 
-> 常に最新リリースがダウンロードされます。過去のバージョンは [Releases](https://github.com/kurageno8156-lgtm/craftmate-payload/releases) ページから取得できます。
+> 常に最新リリースがダウンロードされます。過去のバージョンは [Releases](https://github.com/kurageno8156-lgtm/blockwhiz/releases) ページから取得できます。
 
 ---
 
@@ -99,7 +99,7 @@ chmod +x start.sh
 
 ## 📦 インストール方法
 
-1. **[CraftMate_Setup.exe](https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest/download/CraftMate_Setup.exe)** をダウンロードして実行
+1. **[CraftMate_Setup.exe](https://github.com/kurageno8156-lgtm/blockwhiz/releases/latest/download/CraftMate_Setup.exe)** をダウンロードして実行
 2. デスクトップに作成されるショートカットから **BlockWhiz** を起動
 3. 設定画面（⚙️）で AI プロバイダーと API キーを設定 → Minecraftワールドにボットが参加
 
@@ -369,6 +369,6 @@ BlockWhiz は [MIT License](LICENSE) で公開しています。
 
 ## 📝 変更履歴
 
-最新の変更は [Releases](https://github.com/kurageno8156-lgtm/craftmate-payload/releases) を参照してください。
+最新の変更は [Releases](https://github.com/kurageno8156-lgtm/blockwhiz/releases) を参照してください。
 
 > **リリース方針**: v1.4.0 以降、バグ修正のたびにリリースを繰り返さず、**主要な目標（統合版対応・主要バグの解消）が達成されるまで変更をまとめて1つのリリース**とします。
