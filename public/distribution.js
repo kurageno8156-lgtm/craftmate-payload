@@ -147,12 +147,12 @@
     var cards = [
       {
         title: 'BlockWhiz — GitHub リポジトリ',
-        url: 'https://github.com/kurageno8156-lgtm/craftmate-payload',
+        url: 'https://github.com/kurageno8156-lgtm/blockwhiz',
         desc: 'ソースコード・Issue・リリース情報。BlockWhiz の公式リポジトリです。'
       },
       {
         title: 'Releases — 最新版ダウンロード',
-        url: 'https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest',
+        url: 'https://github.com/kurageno8156-lgtm/blockwhiz/releases/latest',
         desc: 'Windows / Linux / macOS 向けの最新インストーラーとポータブル版。'
       },
       {

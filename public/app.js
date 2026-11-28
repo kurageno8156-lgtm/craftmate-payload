@@ -264,7 +264,7 @@ async function performPlatformUpdate(info, onProgress) {
     return;
   }
   // Linux/macOS/その他: 自OS用アセット（またはリリースページ）をブラウザで開く
-  window.open(info.downloadUrl || info.releaseUrl || 'https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest', '_blank');
+  window.open(info.downloadUrl || info.releaseUrl || 'https://github.com/kurageno8156-lgtm/blockwhiz/releases/latest', '_blank');
 }
 
 async function applyUpdateFromBanner() {
@@ -306,9 +306,9 @@ async function openManualUpdateDownload() {
     const info = await res.json();
     // Windows では絶対に他OSアセットを開かない（多層防御）
     if (info.platform === 'win32') return;
-    window.open(info.downloadUrl || info.releaseUrl || 'https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest', '_blank');
+    window.open(info.downloadUrl || info.releaseUrl || 'https://github.com/kurageno8156-lgtm/blockwhiz/releases/latest', '_blank');
   } catch (_) {
-    window.open('https://github.com/kurageno8156-lgtm/craftmate-payload/releases/latest', '_blank');
+    window.open('https://github.com/kurageno8156-lgtm/blockwhiz/releases/latest', '_blank');
   }
 }
 

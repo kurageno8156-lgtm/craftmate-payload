@@ -58,7 +58,7 @@ Beta版でクラウドアカウントを使うには、Auth ServerのURLを環�
 | メール確認 | MockMailerのみ（実メール未送信）。確認メールのリンクは開発環境のoutboxに記録されるのみ |
 | パスワードリセット | 同上。実メール未実装のため利用者はリセット不可（ローカルでの再設定手段なし） |
 | OAuth専用ユーザー | パスワード設定・メール確認フロー未実装（設計案は `AUTH_ACCOUNT_FLOWS.md`） |
-| 表示名 | インストーラー・ダッシュボード・ログイン画面は BlockWhiz 統一。内部識別子（`CraftMate.exe`、`%LOCALAPPDATA%\CraftMate`、レジストリキー、リポジトリ名 `craftmate-payload`、配布ファイル名 `CraftMate_Setup.exe`）は互換性のため維持 |
+| 表示名 | インストーラー・ダッシュボード・ログイン画面は BlockWhiz 統一。内部識別子（`CraftMate.exe`、`%LOCALAPPDATA%\CraftMate`、レジストリキー、リポジトリ名 `blockwhiz`（旧 `craftmate-payload`）、配布ファイル名 `CraftMate_Setup.exe`）は互換性のため維持 |
 | アイドル自動終了 | ダッシュボード未接続90秒+ボット未接続でアプリ自動終了（仕様） |
 | 実DB/Redis結合 | Auth ServerはPGlite/メモリ実装で検証済み。**実PostgreSQL・実Redisとのアプリ結合テストは未実施** |
 | PGバックアップ/復元 | PostgreSQL 16.15で `pg_dump -Fc` → 空DBへの `pg_restore --no-owner --no-privileges` を検証済み（スキーマ・データ・制約が完全一致）。既存DB上書き（`--clean --if-exists`）は未検証 |
