@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Security.Principal;
+using Microsoft.Win32;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web.Script.Serialization;
@@ -394,6 +395,7 @@ namespace CraftMateUpdater
                 string verifiedVersion = Convert.ToString(verifiedPackage["version"]);
                 if (CompareVersions(verifiedVersion, latestVersion) != 0) throw new InvalidDataException("更新後のバージョン確認に失敗しました。");
                 Report(worker, 99, "更新を確認しています... (v" + verifiedVersion + ")");
+                UpdateArpRegistry(verifiedVersion);
                 WaitForPortReleased(worker, 3000);
                 StartInstalledLauncherWithVerification(worker);
                 Report(worker, 100, "アップデートが完了しました (v" + verifiedVersion + ")。");
@@ -893,6 +895,55 @@ namespace CraftMateUpdater
             {
                 Report(worker, 99, "警告: ダッシュボードがまだ応答しません。手動で CraftMate.exe を起動してください。");
             }
+        }
+
+        /// <summary>
+        /// アップデート成功後に Windows「アプリと機能」の表示を更新する。
+        /// InstallLocation がこのインストール先と一致する Uninstall キーを探し、
+        /// DisplayVersion / InstallDate / Publisher / DisplayName を最新化する。
+        /// 失敗しても更新自体は成功扱い（レジストリは補助情報のため）。
+        /// </summary>
+        private void UpdateArpRegistry(string verifiedVersion)
+        {
+            try
+            {
+                string uninstallRoot = @"Software\Microsoft\Windows\CurrentVersion\Uninstall";
+                string[] knownKeys = new string[] { "CraftMate" };
+                using (RegistryKey root = Registry.CurrentUser.OpenSubKey(uninstallRoot, false))
+                {
+                    if (root == null) return;
+                    foreach (string sub in root.GetSubKeyNames())
+                    {
+                        using (RegistryKey probe = root.OpenSubKey(sub, false))
+                        {
+                            if (probe == null) continue;
+                            string loc = probe.GetValue("InstallLocation") as string;
+                            if (string.IsNullOrEmpty(loc)) continue;
+                            try
+                            {
+                                if (string.Equals(Path.GetFullPath(loc.TrimEnd('\\')), _installDirectory.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase))
+                                {
+                                    knownKeys = new string[] { sub };
+                                    break;
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                }
+                foreach (string keyName in knownKeys)
+                {
+                    using (RegistryKey key = Registry.CurrentUser.OpenSubKey(uninstallRoot + "\\" + keyName, true))
+                    {
+                        if (key == null) continue;
+                        key.SetValue("DisplayVersion", verifiedVersion, RegistryValueKind.String);
+                        key.SetValue("InstallDate", DateTime.Now.ToString("yyyyMMdd"), RegistryValueKind.String);
+                        key.SetValue("Publisher", "BlockWhiz Team", RegistryValueKind.String);
+                        key.SetValue("DisplayName", "BlockWhiz - Minecraft AI Agent", RegistryValueKind.String);
+                    }
+                }
+            }
+            catch { /* レジストリ更新失敗は無視 */ }
         }
 
         /// <summary>http://127.0.0.1:3000/api/version が応答するまで待機（最大秒）。</summary>

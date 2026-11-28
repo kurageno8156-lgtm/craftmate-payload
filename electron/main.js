@@ -533,21 +533,24 @@ async function boot() {
     console.log('[CraftMate] desktop entry:', JSON.stringify(reg));
   }
 
+  // 起動速度改善: ウィンドウ（ローディング画面）を最初に表示し、
+  // その後でポート確認・サーバー起動を行う。ユーザーは即座に
+  // ウィンドウを得られ、サーバー起動はバックグラウンドで進む。
+  const win = createWindow();
+  win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(
+    '<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><h2>BlockWhiz</h2><p>Starting server…</p></div></body></html>'));
+
   // If something already serves the dashboard (e.g. previous instance), reuse it.
   const alreadyUp = await probeDashboard(1500);
   diagLog(`probeDashboard(pre-start) => ${alreadyUp}`);
   if (alreadyUp) {
     console.log('[CraftMate] dashboard already reachable, attaching window only');
-    createWindow().loadURL(DASHBOARD_URL);
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(DASHBOARD_URL);
     return;
   }
 
   // ポート3000を掴む古い CraftMate サーバーが残っていれば掃除してから起動
   await sweepPort3000();
-
-  const win = createWindow();
-  win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(
-    '<!doctype html><html><body style="background:#0b0f14;color:#e4e4e7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><h2>BlockWhiz</h2><p>Starting server…</p></div></body></html>'));
 
   startServer(payloadDir);
 

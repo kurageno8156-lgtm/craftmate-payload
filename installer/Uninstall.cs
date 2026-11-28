@@ -39,6 +39,9 @@ namespace CraftMateUninstall
             cancelButton.Location = new System.Drawing.Point(430, 82);
             cancelButton.Size = new System.Drawing.Size(90, 30);
             cancelButton.DialogResult = DialogResult.Cancel;
+            // Application.Run はモーダルではないため DialogResult だけでは
+            // フォームが閉じない。明示的に Close する。
+            cancelButton.Click += delegate { Close(); };
             Controls.Add(cancelButton);
             AcceptButton = _actionButton;
             CancelButton = cancelButton;
@@ -549,11 +552,30 @@ namespace CraftMateUninstall
 
     internal static class Program
     {
+        // アンインストーラーの多重起動防止
+        private static Mutex _instanceMutex = null;
+
         [STAThread]
         private static void Main(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            bool createdNew;
+            _instanceMutex = new Mutex(true, "Local\\BlockWhizUninstall_" +
+                (args.Length > 0 ? string.Join("_", args).GetHashCode().ToString("X8") : "default"),
+                out createdNew);
+            if (!createdNew)
+            {
+                // 既に起動中。ヘルパー（--progress）はパス単位で別名になるため
+                // 通常起動のみを対象に二重起動を防ぐ。
+                if (!(args.Length == 3 && args[0] == "--progress"))
+                {
+                    MessageBox.Show("BlockWhiz のアンインストーラーは既に起動しています。",
+                        "BlockWhiz Uninstall", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+            }
 
             if (args.Length == 3 && args[0] == "--progress")
             {
