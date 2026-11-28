@@ -1,0 +1,17 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BlockWhiz Bedrock</title>
+<style>body{margin:0;background:#0b0f14;color:#e4e4e7;font-family:system-ui,sans-serif}.wrap{max-width:900px;margin:0 auto;padding:24px}h1{font-size:20px}.card{background:#16161b;border:1px solid #2a2a33;border-radius:12px;padding:16px;margin:12px 0}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}button{padding:8px 18px;border:none;border-radius:8px;background:#10b981;color:#062117;font-weight:700;cursor:pointer}button:disabled{opacity:.5}#log{background:#000;border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:280px;overflow:auto}.muted{color:#a1a1aa;font-size:12px}</style></head>
+<body><div class="wrap"><h1>🧱 BlockWhiz Bedrock — BDS ダッシュボード</h1>
+<div class="card"><div class="row"><strong>サーバー状態:</strong><span id="st">確認中…</span>
+<button id="startBtn">起動</button><button id="stopBtn">停止</button></div>
+<p class="muted" id="dir"></p></div>
+<div class="card"><strong>サーバー設定 (server.properties)</strong><pre id="cfg" class="muted">読み込み中…</pre></div>
+<div class="card"><strong>ログ</strong><div id="log">（BDSログは今後IPC経由で表示予定）</div></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+async function refresh(){const s=await window.bedrock.status();$('st').textContent=s.running?('実行中 pid='+s.pid):'停止中';$('dir').textContent='BDS dir: '+s.bdsDir+(s.exeExists?'':' (bedrock_server.exe 未検出)');$('startBtn').disabled=s.running;$('stopBtn').disabled=!s.running;}
+$('startBtn').onclick=async()=>{await window.bedrock.start();refresh();};
+$('stopBtn').onclick=async()=>{await window.bedrock.stop();refresh();};
+window.bedrock.getConfig().then(r=>{$('cfg').textContent=r.ok?r.config:r.error;});
+refresh();setInterval(refresh,3000);
+</script></body></html>

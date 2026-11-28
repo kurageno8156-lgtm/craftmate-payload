@@ -1,0 +1,32 @@
+{
+  "name": "blockwhiz-bedrock",
+  "productName": "BlockWhiz Bedrock",
+  "version": "0.1.0",
+  "description": "Minecraft Bedrock Dedicated Server dashboard - independent BlockWhiz app",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  },
+  "build": {
+    "appId": "com.kurageno8156.blockwhiz-bedrock",
+    "productName": "BlockWhiz Bedrock",
+    "directories": { "output": "dist-bedrock" },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "artifactName": "BlockWhiz-Bedrock-Setup-${version}-win-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "BlockWhiz Bedrock"
+    }
+  }
+}
