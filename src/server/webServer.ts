@@ -644,6 +644,18 @@ export class WebServer {
         this.debugLog('POST /api/launch-updater rejected: not a local authenticated request');
         return res.status(403).json({ error: 'The updater can be launched only from the authenticated local dashboard.' });
       }
+      // Electronデスクトップ版（resources\payload\dist で実行）では
+      // CraftMate_Updater.exe はレガシーペイロード構成専用のため非対応。
+      // 誤ったパスを探して404を返すのではなく、明示的に手動更新を案内する。
+      const isElectronPayload = /[\\/]payload[\\/]dist$/i.test(__dirname)
+        || /craftmate-node/i.test(process.execPath || '');
+      if (isElectronPayload) {
+        this.debugLog('POST /api/launch-updater rejected: Electron desktop build uses installer-based updates');
+        return res.status(501).json({
+          error: 'The built-in updater is not available in the BlockWhiz desktop app. Please download and run the latest installer from the distribution page.',
+          manualUpdate: true,
+        });
+      }
       // 起動前に、以前のバージョンで残った CraftMate 補助プロセスを掃除する。
       // （Updater本体はこれから起動するので対象外。node.exe/Launcher.exe の掃除は Updater 側が行う）
       for (const staleName of ['CraftMate_Updater', 'CraftMate_ScreenViewer']) {
