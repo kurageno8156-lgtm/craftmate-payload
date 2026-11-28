@@ -8,15 +8,15 @@
   const providersEl = document.getElementById('providers');
   const statusEl = document.getElementById('status');
 
-  // OAuthクライアント未設定時の共通案内。
-  // 配布物に Client Secret は同梱されないため、ユーザー自身が設定ファイルを配置する必要がある。
-  const OAUTH_SETUP_FILE = '%LOCALAPPDATA%\\CraftMate\\oauth-clients.json';
-  const OAUTH_SETUP_HINT = 'Client ID/Secret を ' + OAUTH_SETUP_FILE + ' に設定してください（雛形: oauth-clients.example.json）。';
+  // OAuthクライアント未設定時の案内。
+  // 通常ユーザーは OAuth クライアント設定不要（クラウドログインは Auth Server が仲介）。
+  // 直接 OAuth は運営者がサーバー側で設定した場合のみ有効。
+  const OAUTH_UNAVAILABLE_HINT = 'このログイン方法は現在利用できません。ローカルアカウントをご利用ください。';
 
   const PROVIDER_META = {
-    google: { icon: '🔵', label: 'Google でログイン', setupHint: 'Google Cloud Console でOAuthクライアントを登録し、' + OAUTH_SETUP_HINT },
-    github: { icon: '🐙', label: 'GitHub でログイン', setupHint: 'GitHub Developer Settings で OAuth App を登録し、' + OAUTH_SETUP_HINT },
-    discord: { icon: '💬', label: 'Discord でログイン', setupHint: 'Discord Developer Portal でアプリケーションを登録し、' + OAUTH_SETUP_HINT },
+    google: { icon: '🔵', label: 'Google でログイン', setupHint: OAUTH_UNAVAILABLE_HINT },
+    github: { icon: '🐙', label: 'GitHub でログイン', setupHint: OAUTH_UNAVAILABLE_HINT },
+    discord: { icon: '💬', label: 'Discord でログイン', setupHint: OAUTH_UNAVAILABLE_HINT },
   };
 
   function setStatus(text, kind) {
@@ -50,8 +50,51 @@
       platforms = Object.keys(PROVIDER_META).map((id) => ({ id, label: PROVIDER_META[id].label }));
     }
     providersEl.textContent = '';
+    // クラウド OAuth（Auth Server 仲介）が有効なら最優先で表示。
+    // ユーザー側の oauth-clients.json 設定は不要。
+    try {
+      const cs = await fetch('/api/cloud/status', { cache: 'no-store' });
+      const cdata = await cs.json();
+      if (cdata && cdata.configured) {
+        providersEl.appendChild(buildCloudOAuthBlock());
+      }
+    } catch { /* cloud auth unavailable */ }
     for (const p of platforms) {
       providersEl.appendChild(buildProviderBlock(p));
+    }
+  }
+
+  // クラウド OAuth ボタン（Google・Auth Server 仲介）
+  function buildCloudOAuthBlock() {
+    const wrap = document.createElement('div');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'provider-btn';
+    btn.innerHTML = '<span class="icon">🔵</span><span>Google でログイン</span><span class="provider-badge ok">クラウド</span>';
+    btn.addEventListener('click', () => startCloudOAuth(btn));
+    wrap.appendChild(btn);
+    return wrap;
+  }
+
+  async function startCloudOAuth(btn) {
+    btn.disabled = true;
+    setStatus('認証ページを開いています…');
+    try {
+      const res = await fetch('/api/cloud/oauth/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: 'google' }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'ログイン開始に失敗しました');
+      if (data.authUrl) {
+        window.open(data.authUrl, '_blank');
+        setStatus('ブラウザで Google 認証を完了してください…（自動で遷移します）');
+        pollForSession();
+      }
+    } catch (e) {
+      setStatus(e.message || 'ログイン開始に失敗しました', 'error');
+      btn.disabled = false;
     }
   }
 

@@ -290,3 +290,59 @@ export async function cloudChangeEmail(newEmail: string): Promise<void> {
     throw err;
   }
 }
+
+// ---------- OAuth ログイン（Auth Server 仲介） ----------
+// デスクトップアプリは OAuth Client Secret を一切保持しない。
+// Auth Server がプロバイダ（現状 Google のみ）との OAuth を仲介し、
+// デスクトップ側は Authorization Code + PKCE（第2PKCE）で
+// ワンタイムコードをアクセストークンに交換する。
+
+export interface CloudOAuthStartResult {
+  authUrl: string;
+  state: string;
+  expiresIn?: number;
+}
+
+export async function cloudOAuthStart(opts: {
+  provider?: string;
+  redirectUri: string;
+  tokenCodeChallenge: string;
+  clientState?: string;
+  deviceId?: string;
+}): Promise<CloudOAuthStartResult> {
+  const { status, data } = await apiRequest('/auth/oauth/start', {
+    provider: opts.provider || 'google',
+    redirectUri: opts.redirectUri,
+    tokenCodeChallenge: opts.tokenCodeChallenge,
+    clientState: opts.clientState,
+    deviceId: opts.deviceId,
+  });
+  if (status !== 200 || !data?.authUrl) {
+    const err = new Error(data?.error || 'oauth start failed') as Error & { code?: string; status?: number };
+    err.code = data?.code; err.status = status;
+    throw err;
+  }
+  return data as CloudOAuthStartResult;
+}
+
+export async function cloudOAuthExchange(opts: {
+  code: string;
+  tokenCodeVerifier: string;
+  clientState?: string;
+  deviceId?: string;
+  deviceName?: string;
+}): Promise<CloudTokens> {
+  const { status, data } = await apiRequest('/auth/token', {
+    code: opts.code,
+    tokenCodeVerifier: opts.tokenCodeVerifier,
+    clientState: opts.clientState,
+    deviceId: opts.deviceId,
+    deviceName: opts.deviceName,
+  });
+  if (status !== 200 || !data?.accessToken) {
+    const err = new Error(data?.error || 'token exchange failed') as Error & { code?: string; status?: number };
+    err.code = data?.code; err.status = status;
+    throw err;
+  }
+  return data as CloudTokens;
+}

@@ -30,6 +30,7 @@ import {
   cloudAuthConfigured, getCloudSession, clearCloudSession,
   cloudRegister, cloudLogin, cloudLogout, cloudChangePassword, cloudMe,
   ensureFreshAccessToken, cloudCraftmateUser, saveCloudSessionForLogin,
+  cloudOAuthStart, cloudOAuthExchange,
   cloudRequestEmailVerification, cloudConfirmEmailVerification,
   cloudRequestPasswordReset, cloudConfirmPasswordReset,
   cloudDeleteAccount, cloudChangeEmail,
@@ -72,6 +73,7 @@ export class WebServer {
   private lastSocketActivityAt: number = Date.now();
   private idleShutdownTimer: NodeJS.Timeout | null = null;
   private updateCheckCache: { at: number; data: any } | null = null;
+  private cloudConfigWarnedAt = 0;
   // 統合版（Bedrock）機能は bedrock-app/ のゲーム内アドオンへ移行。
   // 旧 /api/bedrock/* および /api/bedrock-pack は削除済み。
   // 進行中の OAuth フロー: platform -> { state, codeVerifier, clientId, clientSecret, createdAt, purpose }
@@ -1359,6 +1361,14 @@ export class WebServer {
     this.app.get('/api/cloud/status', (req, res) => {
       if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
       const configured = cloudAuthConfigured();
+      // 管理者向けログ: クラウド認証未設定を定期的に記録（利用者には status のみ返す）
+      if (!configured) {
+        const now = Date.now();
+        if (!this.cloudConfigWarnedAt || now - this.cloudConfigWarnedAt > 60 * 60 * 1000) {
+          this.cloudConfigWarnedAt = now;
+          this.debugLog('cloud auth NOT configured: set CRAFTMATE_AUTH_URL to enable cloud login (email/password + Google OAuth via auth server)');
+        }
+      }
       const session = configured ? getCloudSession() : null;
       res.json({
         configured,
@@ -1516,6 +1526,79 @@ export class WebServer {
         res.json({ success: true, message: '確認メールを新しいアドレスに送信しました。' });
       } catch (e: any) {
         res.status(e?.code === 'EMAIL_TAKEN' ? 409 : 400).json({ error: cloudErrorMessage(e) });
+      }
+    });
+
+    // ---- クラウド OAuth ログイン（Auth Server 仲介）----
+    // Client Secret は Auth Server 側にのみ存在する。デスクトップは
+    // Authorization Code + PKCE（第2PKCE）のみを扱い、ワンタイムコードを
+    // /auth/token でアクセストークンに交換する。ユーザー側の
+    // oauth-clients.json 設定は不要。
+    this.app.post('/api/cloud/oauth/start', async (req, res) => {
+      if (!this.isLocalUpdateRequest(req, false)) return res.status(403).json({ error: 'Forbidden' });
+      if (!cloudAuthConfigured()) {
+        this.debugLog('cloud oauth start rejected: CRAFTMATE_AUTH_URL not configured');
+        return res.status(503).json({ error: 'クラウド認証は設定されていません。', code: 'NOT_CONFIGURED' });
+      }
+      const body = (req.body || {}) as { provider?: string };
+      const providerId = String(body.provider || 'google');
+      if (providerId !== 'google') {
+        this.debugLog(`cloud oauth start rejected: provider ${providerId} not supported by auth server`);
+        return res.status(400).json({ error: 'このプロバイダはクラウドログインに対応していません。', code: 'PROVIDER_UNSUPPORTED' });
+      }
+      try {
+        const clientState = generateState();
+        const { verifier, challenge } = generatePkce();
+        const redirectUri = `${integrationRedirectBase()}/api/cloud/oauth/callback`;
+        const started = await cloudOAuthStart({
+          provider: providerId,
+          redirectUri,
+          tokenCodeChallenge: challenge,
+          clientState,
+        });
+        this.pendingOAuth.set(`cloud:${providerId}`, {
+          state: clientState, codeVerifier: verifier, clientId: '(cloud)',
+          createdAt: Date.now(), purpose: 'login',
+        });
+        // 期限切れフローの掃除
+        const now = Date.now();
+        for (const [k, v] of this.pendingOAuth) {
+          if (now - v.createdAt > 10 * 60 * 1000) this.pendingOAuth.delete(k);
+        }
+        this.debugLog(`cloud oauth start: ${providerId} redirect=${redirectUri}`);
+        res.json({ success: true, authUrl: started.authUrl });
+      } catch (e: any) {
+        this.debugLog(`cloud oauth start failed: ${(e as Error).message}`);
+        res.status(e?.status === 503 ? 503 : 502).json({ error: cloudErrorMessage(e), code: e?.code });
+      }
+    });
+
+    this.app.get('/api/cloud/oauth/callback', async (req, res) => {
+      const finish = (ok: boolean, message: string) => {
+        const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        res.type('html').send(`<!doctype html><html><head><meta charset="utf-8"><title>BlockWhiz</title></head><body style="font-family:sans-serif;background:#0b0f14;color:#e4e4e7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center;max-width:480px"><h2 style="color:${ok ? '#4ade80' : '#f87171'}">${ok ? 'ログインが完了しました' : 'ログインに失敗しました'}</h2><p>${esc(message)}</p><p style="color:#71717a;font-size:13px">このウィンドウは自動で閉じます。閉じない場合は <a href="http://127.0.0.1:${this.port}" style="color:#60a5fa">アプリに戻る</a> をクリックしてください。</p></div><script>setTimeout(function(){try{window.close()}catch(e){}},1500)</script></body></html>`);
+      };
+      const { code, state, error } = req.query as Record<string, string>;
+      if (error) { this.debugLog(`cloud oauth callback provider error: ${error}`); return finish(false, '認証がキャンセルまたは拒否されました。'); }
+      if (!code || !state) return finish(false, '認証コードが返されませんでした。');
+      const pending = this.pendingOAuth.get('cloud:google');
+      if (!pending || pending.state !== state || pending.purpose !== 'login') {
+        this.debugLog('cloud oauth callback rejected: unknown/expired state');
+        return finish(false, '認証セッションが無効または期限切れです。アプリからやり直してください。');
+      }
+      this.pendingOAuth.delete('cloud:google');
+      try {
+        const tokens = await cloudOAuthExchange({
+          code,
+          tokenCodeVerifier: pending.codeVerifier || '',
+          clientState: state,
+        });
+        saveCloudSessionForLogin(tokens);
+        this.debugLog(`cloud oauth login success: ${tokens.user?.email || tokens.user?.id || 'unknown'}`);
+        return finish(true, 'ブラウザを閉じてアプリに戻ってください。');
+      } catch (e: any) {
+        this.debugLog(`cloud oauth exchange failed: ${(e as Error).message}`);
+        return finish(false, cloudErrorMessage(e));
       }
     });
 
